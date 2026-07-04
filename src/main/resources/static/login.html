@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 献血管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            min-height: 100vh;
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .login-shell {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            overflow: hidden;
+        }
+        .login-header {
+            background: #d32f2f;
+            color: #fff;
+            padding: 26px 30px;
+            text-align: center;
+        }
+        .login-header h1 {
+            font-size: 26px;
+            margin-bottom: 6px;
+        }
+        .login-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .login-body {
+            padding: 30px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            height: 42px;
+            padding: 9px 11px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 15px;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #d32f2f;
+            box-shadow: 0 0 0 3px rgba(211,47,47,0.12);
+        }
+        .login-btn {
+            width: 100%;
+            height: 44px;
+            border: none;
+            border-radius: 4px;
+            background: #d32f2f;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .login-btn:hover {
+            background: #b71c1c;
+        }
+        .login-btn:disabled {
+            background: #bdbdbd;
+            cursor: not-allowed;
+        }
+        .message {
+            display: none;
+            padding: 11px 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .message.error {
+            display: block;
+            color: #b71c1c;
+            background: #ffebee;
+        }
+        .message.success {
+            display: block;
+            color: #1b5e20;
+            background: #e8f5e9;
+        }
+    </style>
+</head>
+<body>
+    <main class="login-shell">
+        <div class="login-header">
+            <h1>献血管理系统</h1>
+            <p>Blood Donation Management System</p>
+        </div>
+
+        <div class="login-body">
+            <div id="message" class="message"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input id="username" name="username" type="text" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required>
+                </div>
+                <button id="loginButton" class="login-btn" type="submit">登录</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        const form = document.getElementById('loginForm');
+        const message = document.getElementById('message');
+        const button = document.getElementById('loginButton');
+
+        function showMessage(type, text) {
+            message.className = 'message ' + type;
+            message.textContent = text;
+        }
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            button.disabled = true;
+            button.textContent = '登录中...';
+            message.className = 'message';
+            message.textContent = '';
+
+            try {
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                const user = await BloodAuth.login(username, password);
+                showMessage('success', '登录成功');
+
+                const params = new URLSearchParams(window.location.search);
+                const redirect = BloodAuth.safeRedirectTarget(params.get('redirect'), user.role);
+                setTimeout(() => {
+                    window.location.href = redirect;
+                }, 250);
+            } catch (error) {
+                showMessage('error', error.message || '登录失败');
+                button.disabled = false;
+                button.textContent = '登录';
+            }
+        });
+    </script>
+</body>
+</html>
