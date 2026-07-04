@@ -30,6 +30,8 @@ public class BloodCollectionServiceImpl extends ServiceImpl<BloodCollectionMappe
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addCollectionRecord(CollectionAddDTO dto) {
+        Long operatorId = SecurityUtil.getCurrentUserId();
+
         // 1. 校验献血者档案是否存在
         Donor donor = donorService.getByIdCard(dto.getIdCard());
         if (donor == null) {
@@ -52,12 +54,12 @@ public class BloodCollectionServiceImpl extends ServiceImpl<BloodCollectionMappe
         // 3. 生成采血记录
         BloodCollection collection = new BloodCollection();
         collection.setDonorId(donor.getId());
-        collection.setDonorIdCard(dto.getIdCard());
+        collection.setDonorIdCard(donor.getIdCard());
         collection.setDonateAmount(dto.getDonateAmount());
         collection.setDonateType(dto.getDonateType());
         collection.setInitialScreenResult(dto.getInitialScreenResult());
         collection.setCollectionTime(LocalDateTime.now());
-        collection.setOperatorId(SecurityUtil.getCurrentUserId());
+        collection.setOperatorId(operatorId);
         save(collection);
 
         // 4. 初筛不合格直接标记，不进入复检
@@ -68,7 +70,7 @@ public class BloodCollectionServiceImpl extends ServiceImpl<BloodCollectionMappe
             test.setBloodStatus(BloodConstants.STATUS_UNQUALIFIED);
             test.setUnqualifiedReason("初筛不合格");
             test.setJudgeTime(LocalDateTime.now());
-            test.setOperatorId(SecurityUtil.getCurrentUserId());
+            test.setOperatorId(operatorId);
             bloodTestService.save(test);
         } else {
             // 初筛合格，生成待检验记录
@@ -76,6 +78,7 @@ public class BloodCollectionServiceImpl extends ServiceImpl<BloodCollectionMappe
             test.setCollectionId(collection.getId());
             test.setDonorId(donor.getId());
             test.setBloodStatus(BloodConstants.STATUS_PENDING_TEST);
+            test.setOperatorId(operatorId);
             bloodTestService.save(test);
         }
     }
