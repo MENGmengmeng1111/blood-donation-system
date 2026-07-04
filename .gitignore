@@ -37,3 +37,10 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### codex-conf
+.codex_doc_review
+.agents
+
+### other
+src/main/resources/blood_donation.sql
