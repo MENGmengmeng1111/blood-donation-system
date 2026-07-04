@@ -66,12 +66,13 @@ public class SecurityConfig {
                 .authorizeRequests()
                 // 放行：登录、注册、找回密码等公开接口
                 .antMatchers("/api/user/login", "/api/user/register", "/api/user/reset-password").permitAll()
+                // 放行：静态页面资源
+                .antMatchers("/", "/*.html", "/css/**", "/js/**", "/images/**", "/error").permitAll()
                 // 放行：Knife4j接口文档所有资源
-                .antMatchers("/doc.html", "/webjars/**", "/api-docs", "/swagger-ui.html", "/swagger-ui/**", "/favicon.ico").permitAll()
+                .antMatchers("/doc.html", "/webjars/**", "/api-docs", "/api-docs/**",
+                        "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**", "/favicon.ico").permitAll()
                 // 放行：AI问答公开接口（可选）
                 .antMatchers("/api/ai/chat").permitAll()
-                // 【开发阶段临时放行所有接口，用户模块做完后删除此行】
-                .antMatchers("/**").permitAll()
                 // 其余所有接口必须登录认证
                 .anyRequest().authenticated()
                 .and()
