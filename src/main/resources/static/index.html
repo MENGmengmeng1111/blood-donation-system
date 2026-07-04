@@ -338,6 +338,7 @@
         </div>
     </div>
 
+    <script src="auth.js"></script>
     <script>
         const API_BASE = '/api';
 
@@ -353,10 +354,13 @@
         }
 
         async function loadStats() {
+            const role = BloodAuth.getUserRole();
+            const isDonor = role === 'ROLE_DONOR';
+            const isAdmin = BloodAuth.hasAnyRole(['ROLE_ADMIN', 'ROLE_SUPER_ADMIN']);
             const activities = await fetchData('/activity/all');
-            const appointments = await fetchData('/appointment/my/list?pageNum=1&pageSize=1000');
-            const donors = await fetchData('/donor/list?pageNum=1&pageSize=1000');
-            const stocks = await fetchData('/stock/summary?bloodType=A型');
+            const appointments = isDonor ? await fetchData('/appointment/my/list?pageNum=1&pageSize=1000') : null;
+            const donors = isAdmin ? await fetchData('/donor/list?pageNum=1&pageSize=1000') : null;
+            const stocks = isAdmin ? await fetchData('/stock/summary?bloodType=A型') : null;
 
             document.getElementById('activityCount').textContent = activities ? activities.length : 0;
             document.getElementById('appointmentCount').textContent = appointments ? appointments.total : 0;
@@ -385,8 +389,13 @@
         }
 
         async function loadTodayAppointments() {
-            const appointments = await fetchData('/appointment/my/list?pageNum=1&pageSize=10');
             const tbody = document.getElementById('todayAppointments');
+            if (BloodAuth.getUserRole() !== 'ROLE_DONOR') {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">管理员可通过左侧业务模块查看数据</td></tr>';
+                return;
+            }
+
+            const appointments = await fetchData('/appointment/my/list?pageNum=1&pageSize=10');
             
             if (!appointments || appointments.records.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">暂无数据</td></tr>';
