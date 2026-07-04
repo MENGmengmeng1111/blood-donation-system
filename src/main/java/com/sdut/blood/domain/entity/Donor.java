@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @TableName("donor")
 public class Donor {
 
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
@@ -45,6 +45,21 @@ public class Donor {
     private String phone;
 
     /**
+     * 性别
+     */
+    private String gender;
+
+    /**
+     * 年龄
+     */
+    private Integer age;
+
+    /**
+     * 地址
+     */
+    private String address;
+
+    /**
      * 病史（加密存储）
      */
     private String medicalHistory;
@@ -58,6 +73,11 @@ public class Donor {
      * 最近一次献血日期
      */
     private LocalDate lastDonateDate;
+
+    /**
+     * 是否重点关注：0-否，1-是
+     */
+    private Integer attentionFlag;
 
     private LocalDateTime createTime;
 

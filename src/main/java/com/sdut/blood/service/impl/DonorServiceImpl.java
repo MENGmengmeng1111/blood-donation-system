@@ -1,5 +1,6 @@
 package com.sdut.blood.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sdut.blood.common.exception.BusinessException;
 import com.sdut.blood.common.utils.DateUtil;
@@ -8,16 +9,27 @@ import com.sdut.blood.common.utils.IdCardUtil;
 import com.sdut.blood.common.utils.PhoneUtil;
 import com.sdut.blood.domain.dto.DonorAddDTO;
 import com.sdut.blood.domain.dto.DonorUpdateDTO;
+import com.sdut.blood.domain.entity.BloodCollection;
 import com.sdut.blood.domain.entity.Donor;
 import com.sdut.blood.domain.vo.DonorVO;
 import com.sdut.blood.mapper.DonorMapper;
+import com.sdut.blood.service.BloodCollectionService;
 import com.sdut.blood.service.DonorService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class DonorServiceImpl extends ServiceImpl<DonorMapper, Donor> implements DonorService {
+
+    @Resource
+    @Lazy
+    private BloodCollectionService bloodCollectionService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -44,6 +56,7 @@ public class DonorServiceImpl extends ServiceImpl<DonorMapper, Donor> implements
             donor.setMedicalHistory(EncryptUtil.encrypt(dto.getMedicalHistory()));
         }
         donor.setDonorStatus("正常");
+        donor.setDeleted(0);
 
         // 4. 保存档案
         save(donor);
@@ -77,6 +90,18 @@ public class DonorServiceImpl extends ServiceImpl<DonorMapper, Donor> implements
         }
         if (dto.getDonorStatus() != null) {
             donor.setDonorStatus(dto.getDonorStatus());
+        }
+        if (dto.getIdCard() != null) {
+            donor.setIdCard(EncryptUtil.encrypt(dto.getIdCard()));
+        }
+        if (dto.getGender() != null) {
+            donor.setGender(dto.getGender());
+        }
+        if (dto.getAge() != null) {
+            donor.setAge(dto.getAge());
+        }
+        if (dto.getAddress() != null) {
+            donor.setAddress(dto.getAddress());
         }
 
         updateById(donor);
@@ -117,9 +142,53 @@ public class DonorServiceImpl extends ServiceImpl<DonorMapper, Donor> implements
     public DonorVO convertToVO(Donor donor) {
         DonorVO vo = new DonorVO();
         BeanUtils.copyProperties(donor, vo);
-        // 身份证脱敏
-        String idCard = EncryptUtil.decrypt(donor.getIdCard());
-        vo.setIdCardMask(idCard.substring(0, 6) + "********" + idCard.substring(14));
+        if (donor.getIdCard() != null && !donor.getIdCard().isEmpty()) {
+            try {
+                String idCard = EncryptUtil.decrypt(donor.getIdCard());
+                if (idCard != null && idCard.length() >= 18) {
+                    vo.setIdCardMask(idCard.substring(0, 6) + "********" + idCard.substring(14));
+                }
+            } catch (Exception e) {
+                vo.setIdCardMask("**********");
+            }
+        }
+        
+        DonateStats stats = getDonateStats(donor.getId());
+        vo.setDonateCount(stats.getDonateCount());
+        vo.setTotalDonateAmount(stats.getTotalAmount());
+        
+        List<BloodCollection> records = getDonateRecords(donor.getId());
+        vo.setDonateRecords(records.stream().map(r -> {
+            DonorVO.DonateRecord dr = new DonorVO.DonateRecord();
+            dr.setId(r.getId());
+            dr.setDonateType(r.getDonateType());
+            dr.setDonateAmount(r.getDonateAmount());
+            dr.setInitialScreenResult(r.getInitialScreenResult());
+            if (r.getCollectionTime() != null) {
+                dr.setDonateDate(r.getCollectionTime().toLocalDate());
+            }
+            return dr;
+        }).collect(Collectors.toList()));
+        
         return vo;
+    }
+
+    @Override
+    public List<BloodCollection> getDonateRecords(Long donorId) {
+        LambdaQueryWrapper<BloodCollection> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(BloodCollection::getDonorId, donorId);
+        wrapper.orderByDesc(BloodCollection::getCollectionTime);
+        return bloodCollectionService.list(wrapper);
+    }
+
+    @Override
+    public DonateStats getDonateStats(Long donorId) {
+        DonateStats stats = new DonateStats();
+        List<BloodCollection> records = getDonateRecords(donorId);
+        stats.setDonateCount(records.size());
+        stats.setTotalAmount(records.stream()
+                .mapToInt(BloodCollection::getDonateAmount)
+                .sum());
+        return stats;
     }
 }

@@ -16,12 +16,14 @@ import com.sdut.blood.mapper.AppointmentMapper;
 import com.sdut.blood.service.AppointmentService;
 import com.sdut.blood.service.BloodActivityService;
 import com.sdut.blood.service.DonorService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 
 @Service
+@Slf4j
 public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appointment> implements AppointmentService {
 
     @Resource
@@ -36,9 +38,20 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         Long userId = SecurityUtil.getCurrentUserId();
 
         // 1. 校验活动是否存在且可预约
+        log.info("预约提交 - activityId: {}, type: {}", dto.getActivityId(), dto.getActivityId() != null ? dto.getActivityId().getClass().getName() : "null");
         BloodActivity activity = bloodActivityService.getById(dto.getActivityId());
-        if (activity == null || !"未开始".equals(activity.getStatus())) {
-            throw new BusinessException("该活动不可预约");
+        log.info("查询到的活动: {}", activity);
+        if (activity == null) {
+            throw new BusinessException("该活动不存在");
+        }
+        
+        // 检查活动日期是否已过期
+        if (activity.getActivityDate().isBefore(java.time.LocalDate.now())) {
+            throw new BusinessException("该活动已过期，无法预约");
+        }
+        
+        if ("已结束".equals(activity.getStatus())) {
+            throw new BusinessException("该活动已结束，无法预约");
         }
 
         // 2. 校验重复预约
@@ -111,5 +124,30 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
         Long userId = SecurityUtil.getCurrentUserId();
         Page<AppointmentVO> page = new Page<>(pageNum, pageSize);
         return baseMapper.selectUserAppointmentPage(page, userId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void cancelAppointmentById(Long id) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Appointment appointment = getById(id);
+        if (appointment == null) {
+            throw new BusinessException("预约记录不存在");
+        }
+        if (!appointment.getUserId().equals(userId)) {
+            throw new BusinessException("无权取消他人预约");
+        }
+        if (!"待参加".equals(appointment.getStatus())) {
+            throw new BusinessException("该预约已生效，无法取消");
+        }
+        BloodActivity activity = bloodActivityService.getById(appointment.getActivityId());
+        LocalDateTime activityStartTime = activity.getActivityDate().atTime(8, 0);
+        if (!DateUtil.canCancelAppointment(activityStartTime)) {
+            throw new BusinessException("距活动开始不足24小时，无法取消");
+        }
+        bloodActivityService.increaseQuota(appointment.getActivityId(), appointment.getTimeSlot());
+        appointment.setStatus("已取消");
+        appointment.setCancelTime(LocalDateTime.now());
+        updateById(appointment);
     }
 }

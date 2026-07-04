@@ -9,17 +9,21 @@
         <result column="id_card" property="idCard"/>
         <result column="blood_type" property="bloodType"/>
         <result column="phone" property="phone"/>
+        <result column="gender" property="gender"/>
+        <result column="age" property="age"/>
+        <result column="address" property="address"/>
         <result column="medical_history" property="medicalHistory"/>
         <result column="donor_status" property="donorStatus"/>
         <result column="last_donate_date" property="lastDonateDate"/>
+        <result column="attention_flag" property="attentionFlag"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
         <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, user_id, name, id_card, blood_type, phone, medical_history, donor_status,
-        last_donate_date, create_time, update_time, deleted
+        id, user_id, name, id_card, blood_type, phone, gender, age, address,
+        medical_history, donor_status, last_donate_date, attention_flag, create_time, update_time, deleted
     </sql>
 
     <!-- 根据身份证号查询 -->

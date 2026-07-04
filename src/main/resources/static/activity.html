@@ -320,11 +320,34 @@
         let totalPages = 1;
         let statusFilter = '';
 
-        async function fetchData(url) {
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getHeaders() {
+            const token = getToken();
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+            return headers;
+        }
+
+        async function fetchData(url, options = {}) {
             try {
-                const response = await fetch(API_BASE + url);
-                const result = await response.json();
-                return result.data;
+                const response = await fetch(API_BASE + url, {
+                    headers: getHeaders(),
+                    ...options
+                });
+
+                if (response.status === 401) {
+                    alert('登录已过期，请重新登录');
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                    return null;
+                }
+
+                return await response.json();
             } catch (error) {
                 console.error('Fetch error:', error);
                 return null;
@@ -428,7 +451,8 @@
             if (confirm('确定要删除这个活动吗？')) {
                 try {
                     const response = await fetch(API_BASE + `/activity/delete/${id}`, {
-                        method: 'DELETE'
+                        method: 'DELETE',
+                        headers: getHeaders()
                     });
                     const result = await response.json();
                     if (result.code === 200) {
@@ -461,9 +485,7 @@
                 
                 const response = await fetch(API_BASE + url, {
                     method: method,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: getHeaders(),
                     body: JSON.stringify(activity)
                 });
                 

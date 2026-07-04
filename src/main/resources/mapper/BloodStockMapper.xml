@@ -42,4 +42,26 @@
         ORDER BY expire_date ASC
     </select>
 
+    <!-- 按日期统计入库量 -->
+    <select id="selectDailyStockIn" resultType="map">
+        SELECT DATE(create_time) as date, blood_type, SUM(blood_amount) as in_amount
+        FROM blood_stock
+        WHERE create_time &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+          AND status IN ('正常', '临期', '已出库')
+          AND deleted = 0
+        GROUP BY DATE(create_time), blood_type
+        ORDER BY date DESC
+    </select>
+
+    <!-- 按日期统计出库量 -->
+    <select id="selectDailyStockOut" resultType="map">
+        SELECT DATE(update_time) as date, blood_type, SUM(blood_amount) as out_amount
+        FROM blood_stock
+        WHERE status = '已出库'
+          AND update_time &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+          AND deleted = 0
+        GROUP BY DATE(update_time), blood_type
+        ORDER BY date DESC
+    </select>
+
 </mapper>

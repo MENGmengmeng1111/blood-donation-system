@@ -25,7 +25,7 @@ CREATE TABLE `sys_user`  (
 DROP TABLE IF EXISTS `donor`;
 CREATE TABLE `donor`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '献血者档案ID',
-  `user_id` bigint NULL DEFAULT NULL COMMENT '关联用户账号ID',
+  `user_id` bigint NOT NULL COMMENT '关联用户账号ID',
   `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '姓名',
   `id_card` varchar(18) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '身份证号（加密存储）',
   `blood_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '血型：A型/B型/O型/AB型',
@@ -33,12 +33,13 @@ CREATE TABLE `donor`  (
   `medical_history` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '病史（加密存储）',
   `donor_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '正常' COMMENT '献血者状态：正常/暂缓/永久淘汰',
   `last_donate_date` date NULL DEFAULT NULL COMMENT '最近一次献血日期',
+  `attention_flag` tinyint NOT NULL DEFAULT 0 COMMENT '是否重点关注：0-否，1-是',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `user_id`(`user_id`) USING BTREE,
-  CONSTRAINT `donor_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT
+  UNIQUE INDEX `uk_user_id`(`user_id`) USING BTREE,
+  CONSTRAINT `donor_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '献血者档案表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -116,7 +117,7 @@ CREATE TABLE `blood_stock`  (
   `blood_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '血型',
   `blood_amount` int NOT NULL COMMENT '血量ml',
   `expire_date` date NOT NULL COMMENT '血液有效期',
-  `stock_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '正常' COMMENT '库存状态：正常/临期/已过期/已出库',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '正常' COMMENT '库存状态：正常/临期/已过期/已出库',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '入库时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
@@ -130,23 +131,25 @@ CREATE TABLE `blood_stock`  (
 -- ----------------------------
 DROP TABLE IF EXISTS `blood_test`;
 CREATE TABLE `blood_test`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '检测记录ID',
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '检验记录ID',
   `collection_id` bigint NOT NULL COMMENT '关联采血记录ID',
-  `test_item` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '检测项目',
-  `test_result` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '检测结果',
-  `judge_result` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '待判定' COMMENT '判定结果：合格/不合格/待判定',
-  `test_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '检测时间',
+  `donor_id` bigint NOT NULL COMMENT '献血者档案ID',
+  `recheck_result` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '复检详细结果',
+  `blood_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '待检验' COMMENT '血液状态：待检验/合格/不合格/已入库',
+  `unqualified_reason` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '不合格原因',
   `judge_time` datetime NULL DEFAULT NULL COMMENT '判定时间',
-  `operator_id` bigint NOT NULL COMMENT '操作管理员ID',
+  `operator_id` bigint NOT NULL COMMENT '判定管理员ID',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `collection_id`(`collection_id`) USING BTREE,
+  UNIQUE INDEX `uk_collection_id`(`collection_id`) USING BTREE,
+  INDEX `donor_id`(`donor_id`) USING BTREE,
   INDEX `operator_id`(`operator_id`) USING BTREE,
   CONSTRAINT `blood_test_ibfk_1` FOREIGN KEY (`collection_id`) REFERENCES `blood_collection` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-  CONSTRAINT `blood_test_ibfk_2` FOREIGN KEY (`operator_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '血液检测记录表' ROW_FORMAT = Dynamic;
+  CONSTRAINT `blood_test_ibfk_2` FOREIGN KEY (`donor_id`) REFERENCES `donor` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `blood_test_ibfk_3` FOREIGN KEY (`operator_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '血液检验记录表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for stock_threshold
@@ -155,11 +158,9 @@ DROP TABLE IF EXISTS `stock_threshold`;
 CREATE TABLE `stock_threshold`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '阈值ID',
   `blood_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '血型',
-  `warning_threshold` int NOT NULL DEFAULT 5000 COMMENT '预警阈值(ml)',
-  `critical_threshold` int NOT NULL DEFAULT 2000 COMMENT '紧急阈值(ml)',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `threshold_value` int NOT NULL DEFAULT 5000 COMMENT '安全库存阈值（ml）',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  `update_by` bigint NULL DEFAULT NULL COMMENT '更新人ID',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_blood_type`(`blood_type`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '库存阈值配置表' ROW_FORMAT = Dynamic;
@@ -172,18 +173,13 @@ CREATE TABLE `operation_log`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '日志ID',
   `operator_id` bigint NULL DEFAULT NULL COMMENT '操作人ID',
   `operator_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '操作人姓名',
-  `module` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '操作模块',
-  `operation` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '操作类型',
-  `description` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '操作描述',
-  `request_params` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '请求参数',
-  `response_result` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '响应结果',
+  `operation_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '操作类型：新增/修改/删除/导出等',
+  `operation_content` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '操作内容详情',
+  `operation_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
   `ip_address` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT 'IP地址',
-  `status` tinyint NOT NULL DEFAULT 1 COMMENT '操作状态：1-成功 0-失败',
-  `error_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '错误信息',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `operator_id`(`operator_id`) USING BTREE,
-  INDEX `create_time`(`create_time`) USING BTREE
+  INDEX `operation_time`(`operation_time`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '操作日志表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -194,10 +190,10 @@ INSERT INTO `sys_user` (`id`, `username`, `password`, `real_name`, `role`, `stat
 (2, 'superadmin', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '超级管理员', 'ROLE_SUPER_ADMIN', 0, NOW(), NOW(), 0),
 (3, 'donor001', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '张三', 'ROLE_DONOR', 0, NOW(), NOW(), 0);
 
-INSERT INTO `stock_threshold` (`blood_type`, `warning_threshold`, `critical_threshold`) VALUES
-('A型', 5000, 2000),
-('B型', 5000, 2000),
-('O型', 5000, 2000),
-('AB型', 5000, 2000);
+INSERT INTO `stock_threshold` (`blood_type`, `threshold_value`) VALUES
+('A型', 5000),
+('B型', 5000),
+('O型', 5000),
+('AB型', 5000);
 
 SET FOREIGN_KEY_CHECKS = 1;

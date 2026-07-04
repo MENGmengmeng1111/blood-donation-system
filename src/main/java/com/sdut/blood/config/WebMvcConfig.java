@@ -3,6 +3,7 @@ package com.sdut.blood.config;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.math.BigInteger;
 
 /**
  * Web MVC 全局配置
@@ -51,6 +53,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 new LocalDateDeserializer(DateTimeFormatter.ofPattern(DATE_PATTERN)));
         
         objectMapper.registerModule(javaTimeModule);
+        
+        // 将Long类型序列化为String，避免JavaScript精度丢失（雪花算法ID超过2^53-1）
+        SimpleModule simpleModule = new SimpleModule();
+        simpleModule.addSerializer(Long.class, new com.fasterxml.jackson.databind.ser.std.ToStringSerializer(Long.class));
+        simpleModule.addSerializer(Long.TYPE, new com.fasterxml.jackson.databind.ser.std.ToStringSerializer(Long.TYPE));
+        objectMapper.registerModule(simpleModule);
+        
         // 关闭日期转时间戳
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         // 忽略未知属性，避免前端传多余字段报错

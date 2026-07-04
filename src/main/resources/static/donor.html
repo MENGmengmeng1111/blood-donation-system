@@ -3,475 +3,524 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>献血者管理 - 献血管理系统</title>
+    <title>献血管理系统 - 用户中心</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Microsoft YaHei', sans-serif;
-            background-color: #f5f5f5;
-        }
-        .header {
-            background: linear-gradient(135deg, #e53935 0%, #d32f2f 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .nav {
-            background: #333;
-            padding: 10px;
-            text-align: center;
-        }
-        .nav a {
-            color: white;
-            text-decoration: none;
-            margin: 0 20px;
-            font-size: 16px;
-            padding: 8px 16px;
-            border-radius: 4px;
-            transition: background 0.3s;
-        }
-        .nav a:hover {
-            background: #555;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        }
-        .card h2 {
-            color: #333;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e53935;
-        }
-        .btn {
-            background: #e53935;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-            margin-right: 10px;
-        }
-        .btn:hover {
-            background: #d32f2f;
-        }
-        .btn-primary {
-            background: #1976d2;
-        }
-        .btn-success {
-            background: #388e3c;
-        }
-        .btn-danger {
-            background: #d32f2f;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        table th, table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #333;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal-content .close {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #999;
-        }
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        .status-normal {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-        .status-suspend {
-            background: #fff3e0;
-            color: #e65100;
-        }
-        .status-expired {
-            background: #fce4ec;
-            color: #c2185b;
-        }
-        .pagination {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .pagination a {
-            display: inline-block;
-            padding: 8px 16px;
-            margin: 0 4px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            text-decoration: none;
-            color: #333;
-        }
-        .pagination a.active {
-            background: #e53935;
-            color: white;
-            border-color: #e53935;
-        }
-        .message {
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-        }
-        .message.success {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-        .message.error {
-            background: #fce4ec;
-            color: #c2185b;
-        }
-        .search-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f5f5f5; }
+        .header { background: linear-gradient(135deg, #e53935 0%, #d32f2f 100%); color: white; padding: 18px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 22px; }
+        .header .user-info { font-size: 14px; }
+        .header .user-info span { margin-right: 20px; }
+        .header .btn-logout { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 16px; border-radius: 4px; cursor: pointer; }
+        .sidebar { width: 200px; background: #2c3e50; min-height: calc(100vh - 60px); position: fixed; top: 60px; left: 0; padding-top: 20px; }
+        .sidebar a { display: block; color: #ecf0f1; padding: 12px 20px; text-decoration: none; transition: background 0.3s; font-size: 14px; }
+        .sidebar a:hover { background: #34495e; }
+        .sidebar a.active { background: #e53935; }
+        .main-content { margin-left: 200px; padding: 25px; }
+        .card { background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .card h2 { color: #333; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e53935; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-card:nth-child(2) { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-card:nth-child(3) { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .stat-value { font-size: 32px; font-weight: bold; }
+        .stat-label { font-size: 13px; opacity: 0.9; margin-top: 5px; }
+        .btn { background: #e53935; color: white; border: none; padding: 8px 18px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn:hover { background: #d32f2f; }
+        .btn-primary { background: #1976d2; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table th, table td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        table th { background: #f8f9fa; font-weight: 600; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; }
+        .status-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+        .status-pending { background: #fff3e0; color: #e65100; }
+        .status-active { background: #e3f2fd; color: #1565c0; }
+        .status-completed { background: #e8f5e9; color: #2e7d32; }
+        .status-canceled { background: #fce4ec; color: #c2185b; }
+        .info-row { display: flex; margin-bottom: 15px; }
+        .info-row label { width: 120px; font-weight: 500; color: #666; }
+        .info-row span { flex: 1; color: #333; }
+        .chat-box { border: 1px solid #ddd; border-radius: 8px; height: 400px; overflow-y: auto; padding: 15px; margin-bottom: 15px; }
+        .chat-message { margin-bottom: 15px; }
+        .chat-message.user { text-align: right; }
+        .chat-message.bot { text-align: left; }
+        .chat-bubble { display: inline-block; padding: 10px 15px; border-radius: 15px; max-width: 70%; }
+        .chat-message.user .chat-bubble { background: #e53935; color: white; }
+        .chat-message.bot .chat-bubble { background: #f0f0f0; color: #333; }
+        .chat-input { display: flex; gap: 10px; }
+        .chat-input input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🩸 献血管理系统</h1>
-    </div>
-    
-    <div class="nav">
-        <a href="index.html">首页</a>
-        <a href="activity.html">活动管理</a>
-        <a href="appointment.html">预约管理</a>
-        <a href="donor.html">献血者管理</a>
-        <a href="collection.html">采血记录</a>
-        <a href="stock.html">库存管理</a>
-    </div>
-
-    <div class="container">
-        <div class="card">
-            <h2>👥 献血者管理</h2>
-            <button class="btn btn-primary" onclick="openAddModal()">+ 新增献血者</button>
-            
-            <div class="search-bar">
-                <input type="text" id="bloodTypeFilter" placeholder="按血型筛选...">
-                <button class="btn" onclick="loadDonors()">搜索</button>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>姓名</th>
-                        <th>血型</th>
-                        <th>电话</th>
-                        <th>身份证号</th>
-                        <th>状态</th>
-                        <th>最近献血日期</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="donorTable">
-                    <tr>
-                        <td colspan="8" style="text-align: center; color: #999;">加载中...</td>
-                    </tr>
-                </tbody>
-            </table>
-            <div class="pagination" id="pagination"></div>
+        <h1>🩸 献血管理系统 - 用户中心</h1>
+        <div class="user-info">
+            <span id="user-name">用户</span>
+            <button class="btn-logout" onclick="logout()">退出登录</button>
         </div>
     </div>
 
-    <div class="modal" id="donorModal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h3 id="modalTitle">新增献血者</h3>
-            <div id="message"></div>
-            <form id="donorForm">
-                <input type="hidden" id="donorId">
-                <div class="form-group">
-                    <label>姓名</label>
-                    <input type="text" id="name" required>
+    <div class="sidebar">
+        <a href="donor.html" class="active">首页</a>
+        <a href="#appointment" onclick="showTab('appointment')">预约管理</a>
+        <a href="#my-appointments" onclick="showTab('my-appointments')">我的预约</a>
+        <a href="#profile" onclick="showTab('profile')">个人档案</a>
+        <a href="#history" onclick="showTab('history')">献血记录</a>
+        <a href="#ai-chat" onclick="showTab('ai-chat')">智能咨询</a>
+    </div>
+
+    <div class="main-content">
+        <div id="home" class="tab-content">
+            <div class="card">
+                <h2>欢迎回来！</h2>
+                <p style="color:#666;">感谢您参与无偿献血，您的爱心将帮助更多需要的人。</p>
+                <div class="stats-grid" style="margin-top:20px;">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-donations">0</div>
+                        <div class="stat-label">累计献血次数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-amount">0</div>
+                        <div class="stat-label">累计献血量(ml)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="pending-appointments">0</div>
+                        <div class="stat-label">待参加预约</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>身份证号</label>
-                    <input type="text" id="idCard" required>
+            </div>
+
+            <div class="card">
+                <h2>🎯 近期活动</h2>
+                <table>
+                    <thead><tr><th>活动名称</th><th>地点</th><th>日期</th><th>状态</th><th>剩余名额</th><th>操作</th></tr></thead>
+                    <tbody id="home-activity-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="appointment" class="tab-content" style="display:none;">
+            <div class="card">
+                <h2>预约献血</h2>
+                <form id="appointment-form">
+                    <div class="form-group">
+                        <label>选择活动</label>
+                        <select id="appointment-activity" onchange="loadActivityDetails()"></select>
+                    </div>
+                    <div class="form-group" id="activity-details" style="display:none;">
+                        <p>活动地点：<span id="activity-location"></span></p>
+                        <p>活动日期：<span id="activity-date"></span></p>
+                    </div>
+                    <div class="form-group">
+                        <label>预约时段</label>
+                        <select id="appointment-slot">
+                            <option value="上午">上午</option>
+                            <option value="下午">下午</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn" onclick="submitAppointment()">提交预约</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>可预约活动列表</h2>
+                <table>
+                    <thead><tr><th>活动名称</th><th>地点</th><th>日期</th><th>上午剩余</th><th>下午剩余</th><th>操作</th></tr></thead>
+                    <tbody id="available-activity-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="my-appointments" class="tab-content" style="display:none;">
+            <div class="card">
+                <h2>我的预约</h2>
+                <table>
+                    <thead><tr><th>活动名称</th><th>地点</th><th>日期</th><th>时段</th><th>状态</th><th>预约时间</th><th>操作</th></tr></thead>
+                    <tbody id="my-appointment-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="profile" class="tab-content" style="display:none;">
+            <div class="card">
+                <h2>个人档案</h2>
+                
+                <div id="profile-view">
+                    <div class="info-row"><label>姓名：</label><span id="profile-name">-</span></div>
+                    <div class="info-row"><label>身份证：</label><span id="profile-idcard">-</span></div>
+                    <div class="info-row"><label>血型：</label><span id="profile-bloodtype">-</span></div>
+                    <div class="info-row"><label>性别：</label><span id="profile-gender">-</span></div>
+                    <div class="info-row"><label>年龄：</label><span id="profile-age">-</span></div>
+                    <div class="info-row"><label>联系电话：</label><span id="profile-phone">-</span></div>
+                    <div class="info-row"><label>地址：</label><span id="profile-address">-</span></div>
+                    <div class="info-row"><label>献血状态：</label><span id="profile-status">-</span></div>
+                    <div class="info-row"><label>上次献血：</label><span id="profile-lastdonate">-</span></div>
+                    <button class="btn btn-primary" style="margin-top:20px;" onclick="checkEligibility()">校验献血资格</button>
+                    <button class="btn" style="margin-top:20px;margin-left:10px;" onclick="showEditProfile()">编辑档案</button>
                 </div>
-                <div class="form-group">
-                    <label>血型</label>
-                    <select id="bloodType" required>
-                        <option value="A型">A型</option>
-                        <option value="B型">B型</option>
-                        <option value="O型">O型</option>
-                        <option value="AB型">AB型</option>
-                    </select>
+
+                <div id="profile-edit" style="display:none;">
+                    <form id="profile-form">
+                        <div class="form-group"><label>姓名</label><input type="text" id="edit-name" required></div>
+                        <div class="form-group"><label>身份证号</label><input type="text" id="edit-idcard" required></div>
+                        <div class="form-group"><label>血型</label>
+                            <select id="edit-bloodtype">
+                                <option value="A型">A型</option>
+                                <option value="B型">B型</option>
+                                <option value="O型">O型</option>
+                                <option value="AB型">AB型</option>
+                                <option value="A型(RH阳性)">A型(RH阳性)</option>
+                                <option value="B型(RH阳性)">B型(RH阳性)</option>
+                                <option value="O型(RH阳性)">O型(RH阳性)</option>
+                                <option value="AB型(RH阳性)">AB型(RH阳性)</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>性别</label>
+                            <select id="edit-gender">
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>年龄</label><input type="number" id="edit-age" required></div>
+                        <div class="form-group"><label>联系电话</label><input type="tel" id="edit-phone" required></div>
+                        <div class="form-group"><label>地址</label><input type="text" id="edit-address"></div>
+                        <button type="button" class="btn" onclick="saveProfile()">保存档案</button>
+                        <button type="button" class="btn btn-primary" onclick="cancelEditProfile()" style="margin-left:10px;">取消</button>
+                    </form>
                 </div>
-                <div class="form-group">
-                    <label>联系电话</label>
-                    <input type="text" id="phone" required>
+            </div>
+        </div>
+
+        <div id="history" class="tab-content" style="display:none;">
+            <div class="card">
+                <h2>历史献血记录</h2>
+                <table>
+                    <thead><tr><th>献血日期</th><th>献血量(ml)</th><th>献血类型</th><th>初筛结果</th><th>检验结果</th></tr></thead>
+                    <tbody id="history-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="ai-chat" class="tab-content" style="display:none;">
+            <div class="card">
+                <h2>智能咨询助手</h2>
+                <div class="chat-box" id="chat-box">
+                    <div class="chat-message bot">
+                        <div class="chat-bubble">您好！我是献血智能助手，有什么可以帮您的吗？</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>病史</label>
-                    <textarea id="medicalHistory"></textarea>
+                <div class="chat-input">
+                    <input type="text" id="chat-input" placeholder="输入您的问题..." onkeypress="handleChatKey(event)">
+                    <button class="btn" onclick="sendChat()">发送</button>
                 </div>
-                <div class="form-group">
-                    <label>状态</label>
-                    <select id="donorStatus">
-                        <option value="正常">正常</option>
-                        <option value="暂缓">暂缓</option>
-                        <option value="永久淘汰">永久淘汰</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-success" style="margin-top: 20px; width: 100%;">保存</button>
-            </form>
+            </div>
         </div>
     </div>
 
     <script>
         const API_BASE = '/api';
-        let currentPage = 1;
-        let totalPages = 1;
-        let bloodTypeFilter = '';
 
-        async function fetchData(url) {
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getHeaders() {
+            const token = getToken();
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+            return headers;
+        }
+
+        async function fetchData(url, options = {}) {
             try {
-                const response = await fetch(API_BASE + url);
-                const result = await response.json();
-                return result.data;
-            } catch (error) {
-                return null;
-            }
-        }
-
-        async function loadDonors(page = 1) {
-            currentPage = page;
-            let url = `/donor/list?pageNum=${page}&pageSize=10`;
-            if (bloodTypeFilter) {
-                url += `&bloodType=${bloodTypeFilter}`;
-            }
-            const data = await fetchData(url);
-            
-            const tbody = document.getElementById('donorTable');
-            if (!data || data.records.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999;">暂无数据</td></tr>';
-                document.getElementById('pagination').innerHTML = '';
-                return;
-            }
-
-            totalPages = data.pages;
-            tbody.innerHTML = data.records.map(donor => `
-                <tr>
-                    <td>${donor.id}</td>
-                    <td>${donor.name}</td>
-                    <td>${donor.bloodType}</td>
-                    <td>${donor.phone}</td>
-                    <td>${maskIdCard(donor.idCard)}</td>
-                    <td><span class="status-badge ${getStatusClass(donor.donorStatus)}">${donor.donorStatus}</span></td>
-                    <td>${donor.lastDonateDate || '-'}</td>
-                    <td>
-                        <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" onclick="openEditModal(${donor.id})">编辑</button>
-                    </td>
-                </tr>
-            `).join('');
-
-            renderPagination();
-        }
-
-        function maskIdCard(idCard) {
-            if (!idCard) return '-';
-            return idCard.substring(0, 4) + '**********' + idCard.substring(14);
-        }
-
-        function renderPagination() {
-            const pagination = document.getElementById('pagination');
-            if (totalPages <= 1) {
-                pagination.innerHTML = '';
-                return;
-            }
-
-            let html = `<a href="#" onclick="loadDonors(1)">首页</a>`;
-            if (currentPage > 1) {
-                html += `<a href="#" onclick="loadDonors(${currentPage - 1})">上一页</a>`;
-            }
-            for (let i = 1; i <= totalPages; i++) {
-                html += `<a href="#" onclick="loadDonors(${i})" ${i === currentPage ? 'class="active"' : ''}>${i}</a>`;
-            }
-            if (currentPage < totalPages) {
-                html += `<a href="#" onclick="loadDonors(${currentPage + 1})">下一页</a>`;
-            }
-            html += `<a href="#" onclick="loadDonors(${totalPages})">末页</a>`;
-            pagination.innerHTML = html;
-        }
-
-        function openAddModal() {
-            document.getElementById('modalTitle').textContent = '新增献血者';
-            document.getElementById('donorId').value = '';
-            document.getElementById('name').value = '';
-            document.getElementById('idCard').value = '';
-            document.getElementById('bloodType').value = 'A型';
-            document.getElementById('phone').value = '';
-            document.getElementById('medicalHistory').value = '';
-            document.getElementById('donorStatus').value = '正常';
-            document.getElementById('message').innerHTML = '';
-            document.getElementById('donorModal').style.display = 'flex';
-        }
-
-        function openEditModal(id) {
-            fetchData(`/donor/${id}`).then(result => {
-                const donor = result;
-                if (donor) {
-                    document.getElementById('modalTitle').textContent = '编辑献血者';
-                    document.getElementById('donorId').value = donor.id;
-                    document.getElementById('name').value = donor.name;
-                    document.getElementById('idCard').value = donor.idCard || '';
-                    document.getElementById('bloodType').value = donor.bloodType;
-                    document.getElementById('phone').value = donor.phone;
-                    document.getElementById('medicalHistory').value = donor.medicalHistory || '';
-                    document.getElementById('donorStatus').value = donor.donorStatus;
-                    document.getElementById('message').innerHTML = '';
-                    document.getElementById('donorModal').style.display = 'flex';
-                }
-            });
-        }
-
-        function closeModal() {
-            document.getElementById('donorModal').style.display = 'none';
-        }
-
-        document.getElementById('donorForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const id = document.getElementById('donorId').value;
-            const isEdit = !!id;
-            
-            const donorData = isEdit ? {
-                id: parseInt(id),
-                name: document.getElementById('name').value,
-                bloodType: document.getElementById('bloodType').value,
-                phone: document.getElementById('phone').value,
-                medicalHistory: document.getElementById('medicalHistory').value,
-                donorStatus: document.getElementById('donorStatus').value
-            } : {
-                name: document.getElementById('name').value,
-                idCard: document.getElementById('idCard').value,
-                bloodType: document.getElementById('bloodType').value,
-                phone: document.getElementById('phone').value,
-                medicalHistory: document.getElementById('medicalHistory').value,
-                donorStatus: document.getElementById('donorStatus').value
-            };
-
-            try {
-                const url = isEdit ? '/donor/update' : '/donor/add';
-                const method = isEdit ? 'PUT' : 'POST';
-                
                 const response = await fetch(API_BASE + url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(donorData)
+                    headers: getHeaders(),
+                    ...options
                 });
                 
-                const result = await response.json();
-                
-                if (result.code === 200) {
-                    document.getElementById('message').innerHTML = '<div class="message success">保存成功</div>';
-                    setTimeout(() => {
-                        closeModal();
-                        loadDonors(currentPage);
-                    }, 1000);
-                } else {
-                    document.getElementById('message').innerHTML = `<div class="message error">${result.msg}</div>`;
+                if (response.status === 401) {
+                    alert('登录已过期，请重新登录');
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                    return null;
                 }
-            } catch (error) {
-                document.getElementById('message').innerHTML = '<div class="message error">保存失败</div>';
+                
+                return await response.json();
+            } catch (e) { 
+                console.error(e); 
+                return null; 
             }
-        });
+        }
 
-        document.getElementById('bloodTypeFilter').addEventListener('input', (e) => {
-            bloodTypeFilter = e.target.value;
-        });
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.getElementById(tabId).style.display = 'block';
+            document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+            
+            if (tabId === 'appointment') loadAvailableActivities();
+            if (tabId === 'my-appointments') loadMyAppointments();
+            if (tabId === 'profile') loadProfile();
+            if (tabId === 'history') loadHistory();
+            if (tabId === 'home') loadHome();
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        async function loadHome() {
+            const activities = await fetchData('/activity/available');
+            const tbody = document.getElementById('home-activity-body');
+            if (!activities?.data?.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">暂无活动</td></tr>';
+                return;
+            }
+            tbody.innerHTML = activities.data.slice(0, 5).map(a => `
+                <tr>
+                    <td>${a.activityName}</td>
+                    <td>${a.location}</td>
+                    <td>${a.activityDate}</td>
+                    <td><span class="status-badge ${getStatusClass(a.status)}">${a.status}</span></td>
+                    <td>上午:${a.morningRemaining}/下午:${a.afternoonRemaining}</td>
+                    <td><button class="btn btn-primary" onclick="showTab('appointment')">预约</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadAvailableActivities() {
+            const activities = await fetchData('/activity/available');
+            const select = document.getElementById('appointment-activity');
+            const tbody = document.getElementById('available-activity-body');
+            
+            select.innerHTML = '<option value="">请选择活动</option>';
+            if (!activities?.data?.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">暂无可预约活动</td></tr>';
+                return;
+            }
+            
+            activities.data.forEach(a => {
+                select.innerHTML += `<option value="${String(a.id)}" data-location="${a.location}" data-date="${a.activityDate}">${a.activityName}</option>`;
+            });
+            
+            tbody.innerHTML = activities.data.map(a => `
+                <tr>
+                    <td>${a.activityName}</td>
+                    <td>${a.location}</td>
+                    <td>${a.activityDate}</td>
+                    <td>${a.morningRemaining}</td>
+                    <td>${a.afternoonRemaining}</td>
+                    <td><button class="btn btn-primary" onclick="selectActivity('${String(a.id)}')">预约</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function loadActivityDetails() {
+            const select = document.getElementById('appointment-activity');
+            const option = select.options[select.selectedIndex];
+            if (option.value) {
+                document.getElementById('activity-location').textContent = option.getAttribute('data-location');
+                document.getElementById('activity-date').textContent = option.getAttribute('data-date');
+                document.getElementById('activity-details').style.display = 'block';
+            } else {
+                document.getElementById('activity-details').style.display = 'none';
+            }
+        }
+
+        function selectActivity(activityId) {
+            document.getElementById('appointment-activity').value = activityId;
+            loadActivityDetails();
+        }
+
+        async function submitAppointment() {
+            const activityId = document.getElementById('appointment-activity').value;
+            const timeSlot = document.getElementById('appointment-slot').value;
+            
+            if (!activityId) {
+                alert('请选择活动');
+                return;
+            }
+            
+            const result = await fetchData('/appointment/submit', {
+                method: 'POST',
+                body: JSON.stringify({ activityId: parseInt(activityId), timeSlot })
+            });
+            
+            if (result && result.code === 200) {
+                alert('预约成功！');
+                showTab('my-appointments');
+            } else {
+                alert(result?.msg || '预约失败，请重试');
+            }
+        }
+
+        async function loadMyAppointments() {
+            const result = await fetchData('/appointment/my/list?pageNum=1&pageSize=20');
+            const tbody = document.getElementById('my-appointment-body');
+            
+            if (!result?.data?.records?.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">暂无预约</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = result.data.records.map(a => `
+                <tr>
+                    <td>${a.activityName || '活动' + a.activityId}</td>
+                    <td>${a.location || '-'}</td>
+                    <td>${a.activityDate || '-'}</td>
+                    <td>${a.timeSlot}</td>
+                    <td><span class="status-badge ${getStatusClass(a.status)}">${a.status}</span></td>
+                    <td>${a.appointmentTime?.split(' ')[0]}</td>
+                    <td>${a.status === '待参加' ? '<button class="btn btn-danger" onclick="cancelAppointment(' + a.appointmentId + ')">取消预约</button>' : '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function cancelAppointment(id) {
+            if (confirm('确定取消该预约吗？')) {
+                await fetch(API_BASE + '/appointment/cancel/' + id, { method: 'PUT', headers: getHeaders() });
+                loadMyAppointments();
+            }
+        }
+
+        async function loadProfile() {
+            const result = await fetchData('/donor/my');
+            if (result?.data) {
+                const d = result.data;
+                document.getElementById('profile-name').textContent = d.name || '-';
+                document.getElementById('profile-idcard').textContent = d.idCardMask || '-';
+                document.getElementById('profile-bloodtype').textContent = d.bloodType || '-';
+                document.getElementById('profile-gender').textContent = d.gender || '-';
+                document.getElementById('profile-age').textContent = d.age || '-';
+                document.getElementById('profile-phone').textContent = d.phone || '-';
+                document.getElementById('profile-address').textContent = d.address || '-';
+                document.getElementById('profile-status').textContent = d.donorStatus || '-';
+                document.getElementById('profile-lastdonate').textContent = d.lastDonateDate || '从未献血';
+                
+                document.getElementById('edit-name').value = d.name || '';
+                document.getElementById('edit-idcard').value = d.idCard || '';
+                document.getElementById('edit-bloodtype').value = d.bloodType || 'A';
+                document.getElementById('edit-gender').value = d.gender || '男';
+                document.getElementById('edit-age').value = d.age || '';
+                document.getElementById('edit-phone').value = d.phone || '';
+                document.getElementById('edit-address').value = d.address || '';
+            } else {
+                document.getElementById('profile-view').style.display = 'none';
+                document.getElementById('profile-edit').style.display = 'block';
+            }
+        }
+
+        function showEditProfile() {
+            document.getElementById('profile-view').style.display = 'none';
+            document.getElementById('profile-edit').style.display = 'block';
+        }
+
+        function cancelEditProfile() {
+            document.getElementById('profile-edit').style.display = 'none';
+            document.getElementById('profile-view').style.display = 'block';
+        }
+
+        async function saveProfile() {
+            const name = document.getElementById('edit-name').value;
+            const idCard = document.getElementById('edit-idcard').value;
+            const bloodType = document.getElementById('edit-bloodtype').value;
+            const gender = document.getElementById('edit-gender').value;
+            const age = document.getElementById('edit-age').value;
+            const phone = document.getElementById('edit-phone').value;
+            const address = document.getElementById('edit-address').value;
+            
+            if (!name || !idCard || !age || !phone) {
+                alert('请填写必填项');
+                return;
+            }
+            
+            const result = await fetchData('/donor/my', {
+                method: 'POST',
+                body: JSON.stringify({ name, idCard, bloodType, gender, age: parseInt(age), phone, address })
+            });
+            
+            if (result && result.code === 200) {
+                alert('档案保存成功！');
+                cancelEditProfile();
+                loadProfile();
+            } else {
+                alert(result?.msg || '保存失败');
+            }
+        }
+
+        async function checkEligibility() {
+            const result = await fetchData('/donor/check-eligibility');
+            alert(result?.msg || '校验完成');
+        }
+
+        async function loadHistory() {
+            const result = await fetchData('/collection/my');
+            const tbody = document.getElementById('history-body');
+            
+            if (!result?.data?.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">暂无献血记录</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = result.data.map(c => `
+                <tr>
+                    <td>${c.collectionTime?.split(' ')[0]}</td>
+                    <td>${c.donateAmount}</td>
+                    <td>${c.donateType}</td>
+                    <td>${c.initialScreenResult}</td>
+                    <td>${c.bloodStatus || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function sendChat() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML += `<div class="chat-message user"><div class="chat-bubble">${message}</div></div>`;
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+            
+            try {
+                const response = await fetch(API_BASE + '/ai/chat', {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ question: message })
+                });
+                const result = await response.json();
+                chatBox.innerHTML += `<div class="chat-message bot"><div class="chat-bubble">${result?.data?.answer || '抱歉，我无法回答这个问题。'}</div></div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (e) {
+                chatBox.innerHTML += `<div class="chat-message bot"><div class="chat-bubble">网络错误，请稍后重试</div></div>`;
+            }
+        }
+
+        function handleChatKey(e) {
+            if (e.key === 'Enter') sendChat();
+        }
 
         function getStatusClass(status) {
             switch(status) {
-                case '正常':
-                    return 'status-normal';
-                case '暂缓':
-                    return 'status-suspend';
-                case '永久淘汰':
-                    return 'status-expired';
-                default:
-                    return 'status-normal';
+                case '未开始': case '待参加': return 'status-pending';
+                case '进行中': return 'status-active';
+                case '已完成': case '正常': return 'status-completed';
+                case '已取消': case '已失效': return 'status-canceled';
+                default: return 'status-pending';
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadDonors();
+            if (!getToken()) window.location.href = 'index.html';
+            loadHome();
         });
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('donorModal')) {
-                closeModal();
-            }
-        }
     </script>
 </body>
 </html>

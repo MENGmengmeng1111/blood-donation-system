@@ -25,4 +25,9 @@ public interface AppointmentService extends IService<com.sdut.blood.domain.entit
      * 分页查询我的预约列表
      */
     IPage<AppointmentVO> listMyAppointments(Integer pageNum, Integer pageSize);
+
+    /**
+     * 根据ID取消预约
+     */
+    void cancelAppointmentById(Long id);
 }

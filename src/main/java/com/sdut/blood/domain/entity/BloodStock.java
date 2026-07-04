@@ -44,6 +44,11 @@ public class BloodStock {
      */
     private String status;
 
+    /**
+     * 预警阈值（ml）
+     */
+    private Integer alertThreshold;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;

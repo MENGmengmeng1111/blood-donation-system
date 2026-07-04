@@ -24,4 +24,12 @@ public class DonorUpdateDTO {
     private String medicalHistory;
 
     private String donorStatus;
+
+    private String idCard;
+
+    private String gender;
+
+    private Integer age;
+
+    private String address;
 }
