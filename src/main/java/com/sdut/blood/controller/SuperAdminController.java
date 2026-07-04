@@ -17,7 +17,7 @@ import javax.annotation.Resource;
  */
 @RestController
 @RequestMapping("/api/super-admin")
-@PreAuthorize("hasRole('ROLE_SUPER_ADMIN')")
+@PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN')")
 public class SuperAdminController {
 
     @Resource

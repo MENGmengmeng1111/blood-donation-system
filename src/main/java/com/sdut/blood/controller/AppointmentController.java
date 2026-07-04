@@ -19,7 +19,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/appointment")
-@PreAuthorize("hasRole('ROLE_DONOR')")
+@PreAuthorize("hasAuthority('ROLE_DONOR')")
 public class AppointmentController {
 
     @Resource

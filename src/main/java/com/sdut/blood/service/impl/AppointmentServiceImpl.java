@@ -33,7 +33,7 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void submitAppointment(AppointmentSubmitDTO dto) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = SecurityUtil.requireCurrentUserId();
 
         // 1. 校验活动是否存在且可预约
         BloodActivity activity = bloodActivityService.getById(dto.getActivityId());
@@ -74,7 +74,7 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void cancelAppointment(AppointmentCancelDTO dto) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = SecurityUtil.requireCurrentUserId();
 
         // 1. 校验预约记录存在且属于当前用户
         Appointment appointment = getById(dto.getAppointmentId());
@@ -108,7 +108,7 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
 
     @Override
     public IPage<AppointmentVO> listMyAppointments(Integer pageNum, Integer pageSize) {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = SecurityUtil.requireCurrentUserId();
         Page<AppointmentVO> page = new Page<>(pageNum, pageSize);
         return baseMapper.selectUserAppointmentPage(page, userId);
     }

@@ -34,7 +34,7 @@ public class SysUserController {
      */
     @GetMapping("/info")
     public Result<SysUser> getCurrentUserInfo() {
-        Long userId = SecurityUtil.getCurrentUserId();
+        Long userId = SecurityUtil.requireCurrentUserId();
         SysUser user = sysUserService.getById(userId);
         user.setPassword(null); // 密码脱敏，不返回前端
         return Result.success(user);
