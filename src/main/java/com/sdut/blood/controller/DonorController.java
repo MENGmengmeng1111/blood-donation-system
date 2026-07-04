@@ -18,7 +18,7 @@ import javax.validation.Valid;
  */
 @RestController
 @RequestMapping("/api/donor")
-@PreAuthorize("hasRole('ROLE_ADMIN')")
+@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class DonorController {
 
     @Resource
@@ -43,17 +43,21 @@ public class DonorController {
     }
 
     /**
-     * 分页查询档案列表（支持按血型筛选）
+     * 分页查询档案列表（支持按血型、献血状态筛选）
      */
     @GetMapping("/list")
     public Result<Page<Donor>> listDonors(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) String bloodType) {
+            @RequestParam(required = false) String bloodType,
+            @RequestParam(required = false) String donorStatus) {
         Page<Donor> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Donor> wrapper = new LambdaQueryWrapper<>();
         if (bloodType != null && !bloodType.trim().isEmpty()) {
             wrapper.eq(Donor::getBloodType, bloodType);
+        }
+        if (donorStatus != null && !donorStatus.trim().isEmpty()) {
+            wrapper.eq(Donor::getDonorStatus, donorStatus);
         }
         wrapper.orderByDesc(Donor::getCreateTime);
         donorService.page(page, wrapper);
@@ -68,5 +72,14 @@ public class DonorController {
         Donor donor = donorService.getById(id);
         DonorVO vo = donorService.convertToVO(donor);
         return Result.success(vo);
+    }
+
+    /**
+     * 删除献血者档案（UC14）
+     */
+    @DeleteMapping("/delete/{id}")
+    public Result<Void> deleteDonor(@PathVariable Long id) {
+        donorService.removeById(id);
+        return Result.success();
     }
 }

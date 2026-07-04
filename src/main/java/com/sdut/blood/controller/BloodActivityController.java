@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sdut.blood.common.result.Result;
 import com.sdut.blood.domain.entity.BloodActivity;
+import com.sdut.blood.domain.vo.RecruitmentVO;
 import com.sdut.blood.service.BloodActivityService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class BloodActivityController {
      * 新增献血活动
      */
     @PostMapping("/add")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public Result<Void> addActivity(@RequestBody BloodActivity activity) {
         activity.setStatus("未开始");
         activity.setMorningRemaining(activity.getMorningQuota());
@@ -39,7 +40,7 @@ public class BloodActivityController {
      * 修改献血活动
      */
     @PutMapping("/update")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public Result<Void> updateActivity(@RequestBody BloodActivity activity) {
         BloodActivity existing = bloodActivityService.getById(activity.getId());
         if (existing != null) {
@@ -56,7 +57,7 @@ public class BloodActivityController {
      * 删除献血活动（逻辑删除）
      */
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public Result<Void> deleteActivity(@PathVariable Long id) {
         bloodActivityService.removeById(id);
         return Result.success();
@@ -111,7 +112,7 @@ public class BloodActivityController {
      * 更新活动状态
      */
     @PutMapping("/status/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public Result<Void> updateActivityStatus(@PathVariable Long id, @RequestParam String status) {
         BloodActivity activity = bloodActivityService.getById(id);
         if (activity != null) {
@@ -130,6 +131,18 @@ public class BloodActivityController {
         wrapper.eq(BloodActivity::getActivityDate, LocalDate.now());
         wrapper.eq(BloodActivity::getStatus, "进行中");
         List<BloodActivity> list = bloodActivityService.list(wrapper);
+        return Result.success(list);
+    }
+
+    /**
+     * 智能生成招募名单（UC23）
+     */
+    @GetMapping("/recruitment")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public Result<List<RecruitmentVO>> generateRecruitmentList(
+            @RequestParam(required = false) Long activityId,
+            @RequestParam(required = false) String bloodType) {
+        List<RecruitmentVO> list = bloodActivityService.generateRecruitmentList(activityId, bloodType);
         return Result.success(list);
     }
 }

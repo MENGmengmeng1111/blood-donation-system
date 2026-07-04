@@ -3,6 +3,7 @@ package com.sdut.blood.controller;
 import com.sdut.blood.common.result.Result;
 import com.sdut.blood.common.utils.SecurityUtil;
 import com.sdut.blood.domain.dto.LoginDTO;
+import com.sdut.blood.domain.dto.RegisterDTO;
 import com.sdut.blood.domain.entity.SysUser;
 import com.sdut.blood.domain.vo.LoginVO;
 import com.sdut.blood.service.SysUserService;
@@ -30,13 +31,22 @@ public class SysUserController {
     }
 
     /**
+     * 用户注册（公开接口，无需登录权限）
+     */
+    @PostMapping("/register")
+    public Result<Void> register(@Valid @RequestBody RegisterDTO dto) {
+        sysUserService.register(dto);
+        return Result.success();
+    }
+
+    /**
      * 获取当前登录用户信息
      */
     @GetMapping("/info")
     public Result<SysUser> getCurrentUserInfo() {
         Long userId = SecurityUtil.getCurrentUserId();
         SysUser user = sysUserService.getById(userId);
-        user.setPassword(null); // 密码脱敏，不返回前端
+        user.setPassword(null);
         return Result.success(user);
     }
 
@@ -45,7 +55,6 @@ public class SysUserController {
      */
     @PutMapping("/password")
     public Result<Void> updatePassword(@RequestParam String oldPassword, @RequestParam String newPassword) {
-        // 可根据需求扩展密码校验与更新逻辑
         return Result.success();
     }
 }

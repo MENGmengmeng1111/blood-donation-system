@@ -15,7 +15,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/blood-test")
-@PreAuthorize("hasRole('ROLE_ADMIN')")
+@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class BloodTestController {
 
     @Resource
@@ -46,5 +46,33 @@ public class BloodTestController {
     public Result<BloodTest> getTestDetail(@PathVariable Long id) {
         BloodTest test = bloodTestService.getById(id);
         return Result.success(test);
+    }
+
+    /**
+     * 查询检验记录列表（UC28）
+     */
+    @GetMapping("/list")
+    public Result<List<BloodTest>> listTestRecords(
+            @RequestParam(required = false) Long donorId,
+            @RequestParam(required = false) String bloodStatus) {
+        return bloodTestService.listTestRecords(donorId, bloodStatus);
+    }
+
+    /**
+     * 删除检验记录（UC26）
+     */
+    @DeleteMapping("/delete/{id}")
+    public Result<Void> deleteTestRecord(@PathVariable Long id) {
+        bloodTestService.removeById(id);
+        return Result.success();
+    }
+
+    /**
+     * 修改检验信息（UC27）
+     */
+    @PutMapping("/update")
+    public Result<Void> updateTestRecord(@RequestBody BloodTest bloodTest) {
+        bloodTestService.updateById(bloodTest);
+        return Result.success();
     }
 }

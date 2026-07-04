@@ -8,6 +8,7 @@ import com.sdut.blood.domain.entity.BloodActivity;
 import com.sdut.blood.domain.vo.AppointmentVO;
 import com.sdut.blood.service.AppointmentService;
 import com.sdut.blood.service.BloodActivityService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
@@ -19,7 +20,8 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/appointment")
-@PreAuthorize("hasRole('ROLE_DONOR')")
+@PreAuthorize("hasAuthority('ROLE_DONOR')")
+@Slf4j
 public class AppointmentController {
 
     @Resource
@@ -42,6 +44,15 @@ public class AppointmentController {
      */
     @PostMapping("/submit")
     public Result<Void> submitAppointment(@Valid @RequestBody AppointmentSubmitDTO dto) {
+        log.info("预约请求 - activityId: {}, type: {}, hashCode: {}", 
+                dto.getActivityId(), 
+                dto.getActivityId() != null ? dto.getActivityId().getClass().getName() : "null",
+                dto.getActivityId() != null ? dto.getActivityId().hashCode() : "null");
+        log.info("timeSlot: {}", dto.getTimeSlot());
+        
+        BloodActivity activity = bloodActivityService.getById(dto.getActivityId());
+        log.info("数据库中查询到的活动: {}", activity);
+        
         appointmentService.submitAppointment(dto);
         return Result.success();
     }
@@ -52,6 +63,15 @@ public class AppointmentController {
     @PostMapping("/cancel")
     public Result<Void> cancelAppointment(@Valid @RequestBody AppointmentCancelDTO dto) {
         appointmentService.cancelAppointment(dto);
+        return Result.success();
+    }
+
+    /**
+     * 取消献血预约（简化版）
+     */
+    @PutMapping("/cancel/{id}")
+    public Result<Void> cancelAppointmentById(@PathVariable Long id) {
+        appointmentService.cancelAppointmentById(id);
         return Result.success();
     }
 

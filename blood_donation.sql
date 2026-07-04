@@ -1,66 +1,21 @@
+/*
+ Navicat Premium Data Transfer
+
+ Source Server         : localhost_3306
+ Source Server Type    : MySQL
+ Source Server Version : 80044
+ Source Host           : localhost:3306
+ Source Schema         : blood_donation
+
+ Target Server Type    : MySQL
+ Target Server Version : 80044
+ File Encoding         : 65001
+
+ Date: 02/07/2026 22:45:58
+*/
+
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
-
--- ----------------------------
--- Table structure for sys_user
--- ----------------------------
-DROP TABLE IF EXISTS `sys_user`;
-CREATE TABLE `sys_user`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '登录用户名',
-  `password` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '登录密码（BCrypt加密）',
-  `real_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '真实姓名',
-  `role` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色：ROLE_DONOR/ROLE_ADMIN/ROLE_SUPER_ADMIN',
-  `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0-正常 1-禁用',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uk_username`(`username`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户账号表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for donor
--- ----------------------------
-DROP TABLE IF EXISTS `donor`;
-CREATE TABLE `donor`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '献血者档案ID',
-  `user_id` bigint NOT NULL COMMENT '关联用户账号ID',
-  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '姓名',
-  `id_card` varchar(18) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '身份证号（加密存储）',
-  `blood_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '血型：A型/B型/O型/AB型',
-  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '联系电话',
-  `medical_history` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '病史（加密存储）',
-  `donor_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '正常' COMMENT '献血者状态：正常/暂缓/永久淘汰',
-  `last_donate_date` date NULL DEFAULT NULL COMMENT '最近一次献血日期',
-  `attention_flag` tinyint NOT NULL DEFAULT 0 COMMENT '是否重点关注：0-否，1-是',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uk_user_id`(`user_id`) USING BTREE,
-  CONSTRAINT `donor_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '献血者档案表' ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for blood_activity
--- ----------------------------
-DROP TABLE IF EXISTS `blood_activity`;
-CREATE TABLE `blood_activity`  (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '活动主键ID',
-  `activity_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '活动名称',
-  `location` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '活动地点',
-  `activity_date` date NOT NULL COMMENT '活动开展日期',
-  `morning_quota` int NOT NULL DEFAULT 0 COMMENT '上午总名额',
-  `afternoon_quota` int NOT NULL DEFAULT 0 COMMENT '下午总名额',
-  `morning_remaining` int NOT NULL DEFAULT 0 COMMENT '上午剩余名额',
-  `afternoon_remaining` int NOT NULL DEFAULT 0 COMMENT '下午剩余名额',
-  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '未开始' COMMENT '状态：未开始/进行中/已结束',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '献血招募活动表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for appointment
@@ -83,6 +38,34 @@ CREATE TABLE `appointment`  (
   CONSTRAINT `appointment_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `appointment_ibfk_2` FOREIGN KEY (`activity_id`) REFERENCES `blood_activity` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '献血预约记录表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of appointment
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for blood_activity
+-- ----------------------------
+DROP TABLE IF EXISTS `blood_activity`;
+CREATE TABLE `blood_activity`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '活动主键ID',
+  `activity_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '活动名称',
+  `location` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '活动地点',
+  `activity_date` date NOT NULL COMMENT '活动开展日期',
+  `morning_quota` int NOT NULL DEFAULT 0 COMMENT '上午总名额',
+  `afternoon_quota` int NOT NULL DEFAULT 0 COMMENT '下午总名额',
+  `morning_remaining` int NOT NULL DEFAULT 0 COMMENT '上午剩余名额',
+  `afternoon_remaining` int NOT NULL DEFAULT 0 COMMENT '下午剩余名额',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '未开始' COMMENT '状态：未开始/进行中/已结束',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '献血招募活动表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of blood_activity
+-- ----------------------------
 
 -- ----------------------------
 -- Table structure for blood_collection
@@ -108,6 +91,10 @@ CREATE TABLE `blood_collection`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '采血记录表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
+-- Records of blood_collection
+-- ----------------------------
+
+-- ----------------------------
 -- Table structure for blood_stock
 -- ----------------------------
 DROP TABLE IF EXISTS `blood_stock`;
@@ -124,7 +111,11 @@ CREATE TABLE `blood_stock`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_collection_id`(`collection_id`) USING BTREE,
   CONSTRAINT `blood_stock_ibfk_1` FOREIGN KEY (`collection_id`) REFERENCES `blood_collection` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '血液库存表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '血液库存明细表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of blood_stock
+-- ----------------------------
 
 -- ----------------------------
 -- Table structure for blood_test
@@ -152,6 +143,36 @@ CREATE TABLE `blood_test`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '血液检验记录表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
+-- Records of blood_test
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for donor
+-- ----------------------------
+DROP TABLE IF EXISTS `donor`;
+CREATE TABLE `donor`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '档案主键ID',
+  `user_id` bigint NOT NULL COMMENT '关联用户ID（外键）',
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '献血者姓名',
+  `id_card` varchar(18) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '加密存储身份证号',
+  `blood_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '血型：A型/B型/O型/AB型',
+  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '联系电话',
+  `medical_history` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '病史（加密）',
+  `donor_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '正常' COMMENT '献血状态：正常/暂缓/永久淘汰',
+  `last_donate_date` date NULL DEFAULT NULL COMMENT '上次献血日期',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_user_id`(`user_id`) USING BTREE,
+  CONSTRAINT `donor_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '献血者档案表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of donor
+-- ----------------------------
+
+-- ----------------------------
 -- Table structure for stock_threshold
 -- ----------------------------
 DROP TABLE IF EXISTS `stock_threshold`;
@@ -164,6 +185,15 @@ CREATE TABLE `stock_threshold`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_blood_type`(`blood_type`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '库存阈值配置表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of stock_threshold
+-- ----------------------------
+INSERT INTO `stock_threshold` (`blood_type`, `threshold_value`) VALUES
+('A型', 5000),
+('B型', 5000),
+('O型', 5000),
+('AB型', 5000);
 
 -- ----------------------------
 -- Table structure for operation_log
@@ -183,17 +213,15 @@ CREATE TABLE `operation_log`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '操作日志表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Insert default data
+-- Records of operation_log
+-- ----------------------------
+
+-- ----------------------------
+-- Records of sys_user
 -- ----------------------------
 INSERT INTO `sys_user` (`id`, `username`, `password`, `real_name`, `role`, `status`, `create_time`, `update_time`, `deleted`) VALUES
 (1, 'admin', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '管理员', 'ROLE_ADMIN', 0, NOW(), NOW(), 0),
 (2, 'superadmin', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '超级管理员', 'ROLE_SUPER_ADMIN', 0, NOW(), NOW(), 0),
 (3, 'donor001', '$2a$10$N9qo8uLOickgx2ZMRZoMye.IjzqAKL9xL5jvMFVdNJHvGCgTq/VEq', '张三', 'ROLE_DONOR', 0, NOW(), NOW(), 0);
-
-INSERT INTO `stock_threshold` (`blood_type`, `threshold_value`) VALUES
-('A型', 5000),
-('B型', 5000),
-('O型', 5000),
-('AB型', 5000);
 
 SET FOREIGN_KEY_CHECKS = 1;

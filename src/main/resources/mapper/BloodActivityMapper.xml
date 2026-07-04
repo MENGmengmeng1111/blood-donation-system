@@ -22,11 +22,12 @@
         morning_remaining, afternoon_remaining, status, create_time, update_time, deleted
     </sql>
 
-    <!-- 查询可预约的活动（未开始状态） -->
+    <!-- 查询可预约的活动（日期 >= 今天，且未结束） -->
     <select id="selectAvailableActivityList" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM blood_activity
-        WHERE status = '未开始'
+        WHERE activity_date >= CURDATE()
+        AND status != '已结束'
         AND deleted = 0
         ORDER BY activity_date ASC
     </select>

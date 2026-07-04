@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @TableName("blood_activity")
 public class BloodActivity {
 
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**

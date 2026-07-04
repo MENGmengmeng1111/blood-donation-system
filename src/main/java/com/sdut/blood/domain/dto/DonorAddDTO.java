@@ -9,6 +9,8 @@ import javax.validation.constraints.NotBlank;
 @Data
 public class DonorAddDTO {
 
+    private Long userId;
+
     @NotBlank(message = "请填写姓名")
     private String name;
 
@@ -20,6 +22,12 @@ public class DonorAddDTO {
 
     @NotBlank(message = "请填写联系电话")
     private String phone;
+
+    private String gender;
+
+    private Integer age;
+
+    private String address;
 
     /**
      * 病史（非必填）

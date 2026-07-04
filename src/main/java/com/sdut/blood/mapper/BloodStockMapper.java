@@ -19,4 +19,14 @@ public interface BloodStockMapper extends BaseMapper<BloodStock> {
      * 查询指定天数内临期的库存记录
      */
     List<BloodStock> selectNearExpireList(Integer days);
+
+    /**
+     * 按日期统计入库量
+     */
+    List<Map<String, Object>> selectDailyStockIn(Integer days);
+
+    /**
+     * 按日期统计出库量
+     */
+    List<Map<String, Object>> selectDailyStockOut(Integer days);
 }
