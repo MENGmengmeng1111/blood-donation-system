@@ -30,7 +30,7 @@ public class BloodCollectionServiceImpl extends ServiceImpl<BloodCollectionMappe
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addCollectionRecord(CollectionAddDTO dto) {
-        Long operatorId = SecurityUtil.getCurrentUserId();
+        Long operatorId = SecurityUtil.requireCurrentUserId();
 
         // 1. 校验献血者档案是否存在
         Donor donor = donorService.getByIdCard(dto.getIdCard());

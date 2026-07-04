@@ -43,7 +43,7 @@ public class BloodTestServiceImpl extends ServiceImpl<BloodTestMapper, BloodTest
         }
 
         test.setJudgeTime(LocalDateTime.now());
-        test.setOperatorId(SecurityUtil.getCurrentUserId());
+        test.setOperatorId(SecurityUtil.requireCurrentUserId());
         updateById(test);
     }
 
