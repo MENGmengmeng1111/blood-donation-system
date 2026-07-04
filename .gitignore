@@ -40,7 +40,7 @@ build/
 
 ### codex-conf
 .codex_doc_review
-.agent
+.agents
 
 ### other
 src/main/resources/blood_donation.sql
