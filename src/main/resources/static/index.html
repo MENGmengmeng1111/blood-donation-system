@@ -230,6 +230,19 @@
             document.getElementById('message').style.display = 'none';
         }
 
+        function saveSessionAndRedirect(user) {
+            localStorage.setItem('token', user.token);
+            localStorage.setItem('userId', user.userId);
+            localStorage.setItem('username', user.username);
+            localStorage.setItem('role', user.role);
+
+            if (user.role === 'ROLE_SUPER_ADMIN' || user.role === 'ROLE_ADMIN') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'donor.html';
+            }
+        }
+
         async function handleLogin() {
             const username = document.getElementById('login-username').value.trim();
             const password = document.getElementById('login-password').value.trim();
@@ -249,16 +262,7 @@
                 const result = await response.json();
 
                 if (result.code === 200) {
-                    localStorage.setItem('token', result.data.token);
-                    localStorage.setItem('userId', result.data.userId);
-                    localStorage.setItem('username', result.data.username);
-                    localStorage.setItem('role', result.data.role);
-                    
-                    if (result.data.role === 'ROLE_SUPER_ADMIN' || result.data.role === 'ROLE_ADMIN') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'donor.html';
-                    }
+                    saveSessionAndRedirect(result.data);
                 } else {
                     showMessage(result.msg || '登录失败', 'error');
                 }
@@ -298,8 +302,21 @@
                 const result = await response.json();
 
                 if (result.code === 200) {
-                    showMessage('注册成功，请登录', 'success');
-                    setTimeout(() => showTab('login'), 1500);
+                    showMessage('注册成功，正在进入主页...', 'success');
+
+                    const loginResponse = await fetch(API_BASE + '/user/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const loginResult = await loginResponse.json();
+
+                    if (loginResult.code === 200) {
+                        saveSessionAndRedirect(loginResult.data);
+                    } else {
+                        showMessage(loginResult.msg || '注册成功，请登录', 'success');
+                        setTimeout(() => showTab('login'), 1500);
+                    }
                 } else {
                     showMessage(result.msg || '注册失败', 'error');
                 }
