@@ -18,7 +18,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/stock")
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
 public class BloodStockController {
 
     @Resource

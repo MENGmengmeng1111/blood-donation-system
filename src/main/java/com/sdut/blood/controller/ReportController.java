@@ -15,7 +15,7 @@ import javax.validation.Valid;
  */
 @RestController
 @RequestMapping("/api/report")
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
 public class ReportController {
 
     @Resource

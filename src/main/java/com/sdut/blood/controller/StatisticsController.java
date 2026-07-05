@@ -15,7 +15,7 @@ import javax.annotation.Resource;
  */
 @RestController
 @RequestMapping("/api/statistics")
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
 public class StatisticsController {
 
     @Resource
