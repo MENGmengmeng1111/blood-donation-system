@@ -23,6 +23,6 @@ public class AiChatController {
      */
     @PostMapping("/chat")
     public Result<AiChatResponse> chat(@Valid @RequestBody AiChatRequest request) {
-        return aiService.chatForDonor(request.getQuestion());
+        return aiService.chatForDonor(request.getQuestion(), request.getHistory());
     }
 }

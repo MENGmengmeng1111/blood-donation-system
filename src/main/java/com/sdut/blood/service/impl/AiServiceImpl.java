@@ -1,6 +1,7 @@
 package com.sdut.blood.service.impl;
 
 import com.sdut.blood.common.result.Result;
+import com.sdut.blood.domain.dto.AiChatHistoryMessage;
 import com.sdut.blood.domain.vo.AiChatResponse;
 import com.sdut.blood.service.AiDonorContextService;
 import com.sdut.blood.service.AiKnowledgeService;
@@ -56,6 +57,9 @@ public class AiServiceImpl implements AiService {
             - 不做医疗诊断，不替代医生或血站工作人员判断。
             - 只有在涉及健康状况、疾病、用药、检验异常、能否献血等判断时，才提醒“最终以现场医护或血站工作人员判断为准”。
             - 可以使用 Markdown 组织回答，例如加粗重点、使用列表或小标题，但不要输出 HTML。
+            - 你会收到最近几轮对话上下文。用户追问“那我呢”“这个活动呢”“继续”等省略表达时，应结合上下文理解。
+            - 对“我现在还能献血吗”“我什么时候可以献血”“我的记录是否正常”等个性化判断类问题，优先使用 Markdown 结构：**结论**、**依据**、**建议**、**提醒**。
+            - 对预约流程、注意事项、检验说明等知识类问题，可以用更短的列表回答，不必强行套完整结构。
             - 使用简洁、自然、友好的中文回答。
             """;
 
@@ -64,6 +68,10 @@ public class AiServiceImpl implements AiService {
 
     private static final String AI_CALL_FAILED_MESSAGE =
             "AI模型调用失败，当前无法生成回答。请检查网络、API Key、base-url/model 配置或模型服务可用性后重试。";
+
+    private static final int MAX_HISTORY_MESSAGES = 6;
+
+    private static final int MAX_HISTORY_CONTENT_LENGTH = 800;
 
     @Override
     public Result<String> ask(String question) {
@@ -85,6 +93,11 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public Result<AiChatResponse> chatForDonor(String question) {
+        return chatForDonor(question, List.of());
+    }
+
+    @Override
+    public Result<AiChatResponse> chatForDonor(String question, List<AiChatHistoryMessage> history) {
         AiChatResponse response = new AiChatResponse();
         if (question == null || question.trim().isEmpty()) {
             response.setAnswer("请输入您想咨询的问题");
@@ -105,7 +118,7 @@ public class AiServiceImpl implements AiService {
             return Result.error(AI_NOT_CONFIGURED_MESSAGE);
         }
 
-        String answer = callAi(cleanQuestion, knowledge, context);
+        String answer = callAi(cleanQuestion, knowledge, context, history);
         if (answer == null) {
             response.setAnswer(AI_CALL_FAILED_MESSAGE);
             response.setReferences(List.of());
@@ -120,6 +133,10 @@ public class AiServiceImpl implements AiService {
     }
 
     private String callAi(String question, String knowledge, String context) {
+        return callAi(question, knowledge, context, List.of());
+    }
+
+    private String callAi(String question, String knowledge, String context, List<AiChatHistoryMessage> history) {
         if (!isAiConfigured()) {
             return null;
         }
@@ -131,15 +148,9 @@ public class AiServiceImpl implements AiService {
             requestBody.put("model", aiModel);
             
             List<Map<String, String>> messages = new ArrayList<>();
-            Map<String, String> systemMessage = new HashMap<>();
-            systemMessage.put("role", "system");
-            systemMessage.put("content", buildSystemPrompt(knowledge, context));
-            messages.add(systemMessage);
-            
-            Map<String, String> userMessage = new HashMap<>();
-            userMessage.put("role", "user");
-            userMessage.put("content", question.trim());
-            messages.add(userMessage);
+            messages.add(buildMessage("system", buildSystemPrompt(knowledge, context)));
+            messages.addAll(buildHistoryMessages(history));
+            messages.add(buildMessage("user", question.trim()));
             
             requestBody.put("messages", messages);
             requestBody.put("temperature", 0.3);
@@ -174,6 +185,61 @@ public class AiServiceImpl implements AiService {
                 + "\n\n【本地知识库】\n" + (knowledge == null || knowledge.isEmpty() ? "暂无命中知识。" : knowledge)
                 + "\n\n【当前用户系统记录】\n" + (context == null || context.isEmpty() ? "暂无用户上下文。" : context)
                 + "\n\n请直接回答用户问题。必要时可以说“根据系统记录”或“参考系统规则”，但不要在回答末尾固定追加参考列表。";
+    }
+
+    private List<Map<String, String>> buildHistoryMessages(List<AiChatHistoryMessage> history) {
+        List<Map<String, String>> messages = new ArrayList<>();
+        if (history == null || history.isEmpty()) {
+            return messages;
+        }
+
+        int startIndex = Math.max(history.size() - MAX_HISTORY_MESSAGES, 0);
+        for (int i = startIndex; i < history.size(); i++) {
+            AiChatHistoryMessage historyMessage = history.get(i);
+            if (historyMessage == null) {
+                continue;
+            }
+
+            String role = normalizeHistoryRole(historyMessage.getRole());
+            String content = trimHistoryContent(historyMessage.getContent());
+            if (role == null || !StringUtils.hasText(content)) {
+                continue;
+            }
+            messages.add(buildMessage(role, content));
+        }
+        return messages;
+    }
+
+    private String normalizeHistoryRole(String role) {
+        if (!StringUtils.hasText(role)) {
+            return null;
+        }
+        String normalizedRole = role.trim().toLowerCase();
+        if ("user".equals(normalizedRole)) {
+            return "user";
+        }
+        if ("assistant".equals(normalizedRole) || "bot".equals(normalizedRole)) {
+            return "assistant";
+        }
+        return null;
+    }
+
+    private String trimHistoryContent(String content) {
+        if (!StringUtils.hasText(content)) {
+            return "";
+        }
+        String trimmedContent = content.trim();
+        if (trimmedContent.length() <= MAX_HISTORY_CONTENT_LENGTH) {
+            return trimmedContent;
+        }
+        return trimmedContent.substring(0, MAX_HISTORY_CONTENT_LENGTH) + "...";
+    }
+
+    private Map<String, String> buildMessage(String role, String content) {
+        Map<String, String> message = new HashMap<>();
+        message.put("role", role);
+        message.put("content", content);
+        return message;
     }
 
     private boolean isAiConfigured() {
