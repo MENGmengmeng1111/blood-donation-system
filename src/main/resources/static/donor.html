@@ -52,7 +52,6 @@
         .chat-message.user .chat-bubble { background: #e53935; color: white; }
         .chat-message.bot .chat-bubble { background: #f0f0f0; color: #333; }
         .chat-bubble { white-space: pre-wrap; line-height: 1.6; }
-        .chat-references { margin-top: 6px; font-size: 12px; color: #777; }
         .chat-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
         .chat-suggestions button { background: #fff; color: #e53935; border: 1px solid #ffcdd2; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
         .chat-suggestions button:hover { background: #ffebee; }
@@ -544,7 +543,7 @@
                 const result = await response.json();
                 chatBox.lastElementChild.remove();
                 if (result && result.code === 200) {
-                    appendChatMessage('bot', result?.data?.answer || '抱歉，我无法回答这个问题。', result?.data?.references || []);
+                    appendChatMessage('bot', result?.data?.answer || '抱歉，我无法回答这个问题。');
                 } else {
                     appendChatMessage('bot', result?.msg || '抱歉，我无法回答这个问题。');
                 }
@@ -557,12 +556,9 @@
             }
         }
 
-        function appendChatMessage(role, content, references = []) {
+        function appendChatMessage(role, content) {
             const chatBox = document.getElementById('chat-box');
-            const referenceHtml = references.length
-                ? `<div class="chat-references">参考：${references.map(escapeHtml).join('、')}</div>`
-                : '';
-            chatBox.innerHTML += `<div class="chat-message ${role}"><div class="chat-bubble">${escapeHtml(content)}${referenceHtml}</div></div>`;
+            chatBox.innerHTML += `<div class="chat-message ${role}"><div class="chat-bubble">${escapeHtml(content)}</div></div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 

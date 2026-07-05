@@ -7,16 +7,20 @@ import com.sdut.blood.service.AiKnowledgeService;
 import com.sdut.blood.service.AiService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class AiServiceImpl implements AiService {
 
     @Resource
@@ -37,7 +41,28 @@ public class AiServiceImpl implements AiService {
     @Resource
     private AiDonorContextService aiDonorContextService;
 
-    private static final String SYSTEM_PROMPT = "你是献血管理系统的用户侧智能咨询助手。你的职责是结合知识库和系统记录，回答献血者关于预约、献血资格、献血流程、检验结果和献血记录的问题。回答必须遵守：1. 只回答献血管理系统和献血常识相关问题；2. 不做医疗诊断，不替代医生或血站工作人员判断；3. 涉及能否献血、疾病、用药、检验异常时，必须提醒最终以现场医护或血站判断为准；4. 不要编造系统记录中没有的信息；5. 语言简洁、友好、中文回答。";
+    private static final String SYSTEM_PROMPT = """
+            你是献血管理系统的用户侧智能咨询助手。
+            你会收到两类内部参考材料：
+            1. 【本地知识库】：相当于系统内置 skill，用于提供献血流程、预约规则、资格间隔、检验与安全边界等规则。
+            2. 【当前用户系统记录】：从数据库读取的当前登录用户档案、预约记录和献血记录。
+
+            回答时必须遵守：
+            - 只回答献血管理系统、献血流程、预约、献血资格、检验结果和献血记录相关问题。
+            - 优先结合当前用户系统记录；当用户问“我现在还能献血吗”“我什么时候能献血”等个性化问题时，必须基于记录做初步判断。
+            - 本地知识库和系统记录是内部参考，不要机械复述“我已读取你的系统档案”，也不要每次都列出“参考来源”。
+            - 如果系统记录缺失，请明确告诉用户需要先完善个人档案或等待系统产生记录。
+            - 不要编造系统记录中没有的信息；不确定时说明缺少哪些信息。
+            - 不做医疗诊断，不替代医生或血站工作人员判断。
+            - 只有在涉及健康状况、疾病、用药、检验异常、能否献血等判断时，才提醒“最终以现场医护或血站工作人员判断为准”。
+            - 使用简洁、自然、友好的中文回答。
+            """;
+
+    private static final String AI_NOT_CONFIGURED_MESSAGE =
+            "AI模型暂未配置，当前无法调用外部大模型。请在 config/application-ai-secret.yml 中填写 ai.openai.api-key、base-url 和 model 后重启项目。";
+
+    private static final String AI_CALL_FAILED_MESSAGE =
+            "AI模型调用失败，当前无法生成回答。请检查网络、API Key、base-url/model 配置或模型服务可用性后重试。";
 
     @Override
     public Result<String> ask(String question) {
@@ -45,10 +70,14 @@ public class AiServiceImpl implements AiService {
             return Result.success("请输入您想咨询的问题");
         }
 
+        if (!isAiConfigured()) {
+            return Result.error(AI_NOT_CONFIGURED_MESSAGE);
+        }
+
         String knowledge = aiKnowledgeService.searchRelevantKnowledge(question);
         String answer = callAi(question, knowledge, "未读取登录用户上下文。");
         if (answer == null) {
-            answer = getFallbackAnswer(question);
+            return Result.error(AI_CALL_FAILED_MESSAGE);
         }
         return Result.success(answer);
     }
@@ -68,12 +97,19 @@ public class AiServiceImpl implements AiService {
         String context = aiDonorContextService.buildCurrentUserContext();
         List<String> references = aiKnowledgeService.listReferences(cleanQuestion);
 
+        if (!isAiConfigured()) {
+            response.setAnswer(AI_NOT_CONFIGURED_MESSAGE);
+            response.setReferences(List.of());
+            response.setPersonalized(aiDonorContextService.hasCurrentUserContext());
+            return Result.error(AI_NOT_CONFIGURED_MESSAGE);
+        }
+
         String answer = callAi(cleanQuestion, knowledge, context);
         if (answer == null) {
-            answer = getFallbackAnswer(cleanQuestion);
-            if (aiDonorContextService.hasCurrentUserContext()) {
-                answer += "\n\n我已读取你的系统档案、预约和献血记录作为参考；涉及具体能否献血，请以现场医护或血站工作人员判断为准。";
-            }
+            response.setAnswer(AI_CALL_FAILED_MESSAGE);
+            response.setReferences(List.of());
+            response.setPersonalized(aiDonorContextService.hasCurrentUserContext());
+            return Result.error(AI_CALL_FAILED_MESSAGE);
         }
 
         response.setAnswer(answer);
@@ -83,17 +119,17 @@ public class AiServiceImpl implements AiService {
     }
 
     private String callAi(String question, String knowledge, String context) {
-        if (aiApiKey == null || aiApiKey.trim().isEmpty()) {
+        if (!isAiConfigured()) {
             return null;
         }
 
         try {
-            String url = aiBaseUrl + "/chat/completions";
+            String url = buildChatCompletionsUrl();
             
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("model", aiModel);
             
-            java.util.List<Map<String, String>> messages = new java.util.ArrayList<>();
+            List<Map<String, String>> messages = new ArrayList<>();
             Map<String, String> systemMessage = new HashMap<>();
             systemMessage.put("role", "system");
             systemMessage.put("content", buildSystemPrompt(knowledge, context));
@@ -126,6 +162,7 @@ public class AiServiceImpl implements AiService {
                 }
             }
         } catch (Exception e) {
+            log.warn("AI chat completion call failed: {}", e.getMessage());
             return null;
         }
         return null;
@@ -135,40 +172,24 @@ public class AiServiceImpl implements AiService {
         return SYSTEM_PROMPT
                 + "\n\n【本地知识库】\n" + (knowledge == null || knowledge.isEmpty() ? "暂无命中知识。" : knowledge)
                 + "\n\n【当前用户系统记录】\n" + (context == null || context.isEmpty() ? "暂无用户上下文。" : context)
-                + "\n\n回答要求：先直接回答用户问题；如引用系统记录，请说明“根据系统记录”；如引用知识库规则，请说明是参考规则；结尾在涉及健康判断时补充“最终以现场医护或血站判断为准”。";
+                + "\n\n请直接回答用户问题。必要时可以说“根据系统记录”或“参考系统规则”，但不要在回答末尾固定追加参考列表。";
     }
 
-    private String getFallbackAnswer(String question) {
-        question = question.toLowerCase();
-        
-        if (question.contains("流程") || question.contains("步骤")) {
-            return "献血流程：在线预约 -> 现场签到 -> 健康检查 -> 初筛 -> 采血 -> 复检 -> 入库";
-        }
-        if (question.contains("年龄") || question.contains("多大")) {
-            return "献血年龄要求：18-55周岁";
-        }
-        if (question.contains("体重") || question.contains("公斤")) {
-            return "男性体重要求：≥50kg，女性体重要求：≥45kg";
-        }
-        if (question.contains("间隔") || question.contains("多久") || question.contains("下次")) {
-            return "全血献血间隔：不少于6个月；成分血献血间隔：不少于2周";
-        }
-        if (question.contains("检验") || question.contains("检查") || question.contains("项目")) {
-            return "血液检验项目包括：乙肝、丙肝、艾滋病、梅毒、转氨酶等";
-        }
-        if (question.contains("预约") || question.contains("报名") || question.contains("时段")) {
-            return "预约方式：选择活动 -> 选择时段（上午/下午）-> 提交预约";
-        }
-        if (question.contains("库存") || question.contains("预警") || question.contains("阈值")) {
-            return "库存低于安全阈值时系统会自动预警提醒，临期血液会优先使用";
-        }
-        if (question.contains("合格") || question.contains("不合格") || question.contains("判定")) {
-            return "血液合格判定：初筛合格后采血，复检合格后入库；不合格血液会记录原因";
-        }
-        if (question.contains("重点关注") || question.contains("标记")) {
-            return "多次复检异常的献血者会被系统自动标记为\"重点关注\"";
-        }
-        
-        return "欢迎咨询献血管理系统！常见问题：\n1. 献血年龄要求？\n2. 献血间隔多久？\n3. 如何预约献血？\n4. 血液检验有哪些项目？";
+    private boolean isAiConfigured() {
+        return StringUtils.hasText(aiApiKey)
+                && StringUtils.hasText(aiBaseUrl)
+                && StringUtils.hasText(aiModel);
     }
+
+    private String buildChatCompletionsUrl() {
+        String normalizedBaseUrl = aiBaseUrl.trim();
+        while (normalizedBaseUrl.endsWith("/")) {
+            normalizedBaseUrl = normalizedBaseUrl.substring(0, normalizedBaseUrl.length() - 1);
+        }
+        if (normalizedBaseUrl.endsWith("/chat/completions")) {
+            return normalizedBaseUrl;
+        }
+        return normalizedBaseUrl + "/chat/completions";
+    }
+
 }
