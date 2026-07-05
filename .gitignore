@@ -35,5 +35,9 @@ build/
 ### VS Code ###
 .vscode/
 
+### Local AI secrets ###
+config/application-ai-secret.yml
+src/main/resources/application-ai-secret.yml
+
 ### Mac OS ###
 .DS_Store
