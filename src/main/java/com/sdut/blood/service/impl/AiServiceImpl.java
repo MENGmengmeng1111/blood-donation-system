@@ -6,6 +6,7 @@ import com.sdut.blood.domain.vo.AiChatResponse;
 import com.sdut.blood.service.AiDonorContextService;
 import com.sdut.blood.service.AiKnowledgeService;
 import com.sdut.blood.service.AiService;
+import com.sdut.blood.service.AiStreamCallback;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
@@ -23,6 +27,8 @@ import java.util.Map;
 @Service
 @Slf4j
 public class AiServiceImpl implements AiService {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Resource
     private RestTemplate restTemplate;
@@ -132,6 +138,26 @@ public class AiServiceImpl implements AiService {
         return Result.success(response);
     }
 
+    @Override
+    public void streamChatForDonor(String question, List<AiChatHistoryMessage> history, AiStreamCallback callback) {
+        if (callback == null) {
+            return;
+        }
+        if (question == null || question.trim().isEmpty()) {
+            callback.onError("请输入您想咨询的问题");
+            return;
+        }
+        if (!isAiConfigured()) {
+            callback.onError(AI_NOT_CONFIGURED_MESSAGE);
+            return;
+        }
+
+        String cleanQuestion = question.trim();
+        String knowledge = aiKnowledgeService.searchRelevantKnowledge(cleanQuestion);
+        String context = aiDonorContextService.buildCurrentUserContext();
+        streamAi(cleanQuestion, knowledge, context, history, callback);
+    }
+
     private String callAi(String question, String knowledge, String context) {
         return callAi(question, knowledge, context, List.of());
     }
@@ -144,17 +170,7 @@ public class AiServiceImpl implements AiService {
         try {
             String url = buildChatCompletionsUrl();
             
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", aiModel);
-            
-            List<Map<String, String>> messages = new ArrayList<>();
-            messages.add(buildMessage("system", buildSystemPrompt(knowledge, context)));
-            messages.addAll(buildHistoryMessages(history));
-            messages.add(buildMessage("user", question.trim()));
-            
-            requestBody.put("messages", messages);
-            requestBody.put("temperature", 0.3);
-            requestBody.put("max_tokens", 1024);
+            Map<String, Object> requestBody = buildChatRequestBody(question, knowledge, context, history, false);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -165,8 +181,7 @@ public class AiServiceImpl implements AiService {
             ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
             
             if (response.getStatusCode().is2xxSuccessful()) {
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode root = mapper.readTree(response.getBody());
+                JsonNode root = objectMapper.readTree(response.getBody());
                 JsonNode choices = root.get("choices");
                 if (choices != null && choices.isArray() && choices.size() > 0) {
                     JsonNode content = choices.get(0).get("message").get("content");
@@ -178,6 +193,88 @@ public class AiServiceImpl implements AiService {
             return null;
         }
         return null;
+    }
+
+    private void streamAi(String question, String knowledge, String context, List<AiChatHistoryMessage> history,
+                          AiStreamCallback callback) {
+        try {
+            String url = buildChatCompletionsUrl();
+            Map<String, Object> requestBody = buildChatRequestBody(question, knowledge, context, history, true);
+
+            restTemplate.execute(url, HttpMethod.POST, request -> {
+                request.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                request.getHeaders().set("Authorization", "Bearer " + aiApiKey);
+                objectMapper.writeValue(request.getBody(), requestBody);
+            }, response -> {
+                if (!response.getStatusCode().is2xxSuccessful()) {
+                    String errorBody = new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                    log.warn("AI stream call failed, status: {}, body: {}", response.getStatusCode(), errorBody);
+                    callback.onError(AI_CALL_FAILED_MESSAGE);
+                    return null;
+                }
+
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(response.getBody(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (!line.startsWith("data:")) {
+                            continue;
+                        }
+                        String data = line.substring(5).trim();
+                        if (data.isEmpty()) {
+                            continue;
+                        }
+                        if ("[DONE]".equals(data)) {
+                            callback.onComplete();
+                            return null;
+                        }
+                        String content = extractStreamDelta(data);
+                        if (content != null && !content.isEmpty()) {
+                            callback.onToken(content);
+                        }
+                    }
+                }
+                callback.onComplete();
+                return null;
+            });
+        } catch (Exception e) {
+            log.warn("AI stream completion call failed: {}", e.getMessage());
+            callback.onError(AI_CALL_FAILED_MESSAGE);
+        }
+    }
+
+    private Map<String, Object> buildChatRequestBody(String question, String knowledge, String context,
+                                                     List<AiChatHistoryMessage> history, boolean stream) {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", aiModel);
+
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(buildMessage("system", buildSystemPrompt(knowledge, context)));
+        messages.addAll(buildHistoryMessages(history));
+        messages.add(buildMessage("user", question.trim()));
+
+        requestBody.put("messages", messages);
+        requestBody.put("temperature", 0.3);
+        requestBody.put("max_tokens", 1024);
+        if (stream) {
+            requestBody.put("stream", true);
+        }
+        return requestBody;
+    }
+
+    private String extractStreamDelta(String data) {
+        try {
+            JsonNode root = objectMapper.readTree(data);
+            JsonNode choices = root.get("choices");
+            if (choices == null || !choices.isArray() || choices.size() == 0) {
+                return null;
+            }
+            JsonNode content = choices.get(0).path("delta").path("content");
+            return content.isMissingNode() || content.isNull() ? null : content.asText();
+        } catch (Exception e) {
+            log.debug("Ignore invalid AI stream event: {}", data);
+            return null;
+        }
     }
 
     private String buildSystemPrompt(String knowledge, String context) {

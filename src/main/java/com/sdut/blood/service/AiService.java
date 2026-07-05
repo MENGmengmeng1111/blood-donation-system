@@ -25,4 +25,9 @@ public interface AiService {
      * 用户侧智能咨询问答，携带最近多轮上下文
      */
     Result<AiChatResponse> chatForDonor(String question, List<AiChatHistoryMessage> history);
+
+    /**
+     * 用户侧智能咨询问答流式输出，携带最近多轮上下文
+     */
+    void streamChatForDonor(String question, List<AiChatHistoryMessage> history, AiStreamCallback callback);
 }

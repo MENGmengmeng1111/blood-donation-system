@@ -603,11 +603,16 @@
             sendBtn.disabled = true;
             isChatStreaming = true;
             const loadingMessage = appendLoadingMessage();
+            let streamMessage = null;
+            let answer = '';
 
             try {
-                const response = await fetch(API_BASE + '/ai/chat', {
+                const response = await fetch(API_BASE + '/ai/chat/stream', {
                     method: 'POST',
-                    headers: getHeaders(),
+                    headers: {
+                        ...getHeaders(),
+                        'Accept': 'text/event-stream'
+                    },
                     body: JSON.stringify({
                         question: message,
                         history: getRecentChatHistory()
@@ -620,18 +625,29 @@
                     return;
                 }
 
-                const result = await response.json();
+                if (!response.ok || !response.body) {
+                    loadingMessage.remove();
+                    await streamChatMessage('AI流式接口暂时不可用，请稍后重试。');
+                    return;
+                }
+
                 loadingMessage.remove();
-                if (result && result.code === 200) {
-                    const answer = result?.data?.answer || '抱歉，我无法回答这个问题。';
-                    await streamChatMessage(answer);
+                streamMessage = createStreamingBotMessage();
+                answer = await readSseAnswer(response, streamMessage.bubble);
+                if (answer) {
+                    addCopyAction(streamMessage.messageEl, answer);
                     rememberChatTurn(message, answer);
                 } else {
-                    await streamChatMessage(result?.msg || '抱歉，我无法回答这个问题。');
+                    streamMessage.messageEl.remove();
+                    await streamChatMessage('抱歉，我没有收到有效回答。');
                 }
             } catch (e) {
                 loadingMessage.remove();
-                await streamChatMessage('网络错误，请稍后重试。');
+                if (streamMessage?.messageEl) {
+                    streamMessage.messageEl.remove();
+                }
+                const errorMessage = e?.message || '网络错误，请稍后重试。';
+                await streamChatMessage(answer ? answer + '\n\n' + errorMessage : errorMessage);
             } finally {
                 isChatStreaming = false;
                 sendBtn.disabled = false;
@@ -686,6 +702,84 @@
                 </span>`;
             scrollChatToBottom();
             return messageEl;
+        }
+
+        function createStreamingBotMessage() {
+            const messageEl = createChatMessage('bot');
+            const bubble = messageEl.querySelector('.chat-bubble');
+            bubble.classList.add('markdown-body');
+            bubble.innerHTML = '';
+            scrollChatToBottom();
+            return { messageEl, bubble };
+        }
+
+        async function readSseAnswer(response, bubble) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let buffer = '';
+            let answer = '';
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const events = buffer.split(/\r?\n\r?\n/);
+                buffer = events.pop() || '';
+
+                for (const rawEvent of events) {
+                    const event = parseSseEvent(rawEvent);
+                    if (!event.data) continue;
+
+                    if (event.name === 'delta') {
+                        const payload = parseJsonPayload(event.data);
+                        if (payload?.content) {
+                            answer += payload.content;
+                            bubble.innerHTML = renderMarkdown(answer);
+                            scrollChatToBottom();
+                        }
+                    } else if (event.name === 'error') {
+                        const payload = parseJsonPayload(event.data);
+                        throw new Error(payload?.message || 'AI流式接口调用失败');
+                    } else if (event.name === 'done') {
+                        return answer;
+                    }
+                }
+            }
+
+            if (buffer.trim()) {
+                const event = parseSseEvent(buffer);
+                if (event.name === 'delta') {
+                    const payload = parseJsonPayload(event.data);
+                    if (payload?.content) {
+                        answer += payload.content;
+                        bubble.innerHTML = renderMarkdown(answer);
+                    }
+                }
+            }
+            return answer;
+        }
+
+        function parseSseEvent(rawEvent) {
+            const event = { name: 'message', data: '' };
+            const dataLines = [];
+            String(rawEvent || '').split(/\r?\n/).forEach(line => {
+                if (line.startsWith('event:')) {
+                    event.name = line.slice(6).trim();
+                } else if (line.startsWith('data:')) {
+                    dataLines.push(line.slice(5).trimStart());
+                }
+            });
+            event.data = dataLines.join('\n');
+            return event;
+        }
+
+        function parseJsonPayload(data) {
+            try {
+                return JSON.parse(data);
+            } catch (e) {
+                return null;
+            }
         }
 
         async function streamChatMessage(content) {
