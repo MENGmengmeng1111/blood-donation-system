@@ -71,6 +71,18 @@ public class BloodStockController {
     }
 
     /**
+     * 查询库存记录详情
+     */
+    @GetMapping("/{id}")
+    public Result<BloodStock> getStockDetail(@PathVariable Long id) {
+        BloodStock stock = bloodStockService.getById(id);
+        if (stock == null) {
+            return Result.error("库存记录不存在或已删除");
+        }
+        return Result.success(stock);
+    }
+
+    /**
      * 删除库存记录（UC33）
      */
     @DeleteMapping("/delete/{id}")
