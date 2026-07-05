@@ -43,7 +43,7 @@ public class AiConfig {
     public RestTemplate restTemplate() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(10000);
-        requestFactory.setReadTimeout(30000);
+        requestFactory.setReadTimeout(120000);
         return new RestTemplate(requestFactory);
     }
 
