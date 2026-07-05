@@ -1,18 +1,26 @@
 package com.sdut.blood.service.impl;
 
 import com.sdut.blood.common.result.Result;
+import com.sdut.blood.domain.vo.AiChatResponse;
+import com.sdut.blood.service.AiDonorContextService;
+import com.sdut.blood.service.AiKnowledgeService;
 import com.sdut.blood.service.AiService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class AiServiceImpl implements AiService {
 
     @Resource
@@ -27,7 +35,35 @@ public class AiServiceImpl implements AiService {
     @Resource(name = "aiModel")
     private String aiModel;
 
-    private static final String SYSTEM_PROMPT = "你是一个专业的献血管理系统智能助手，负责回答用户关于献血的各种问题。系统基础信息：系统名称为献血管理系统，角色包括普通献血者、管理员、超级管理员。回答范围：1.献血流程：在线预约 -> 现场签到 -> 健康检查 -> 初筛 -> 采血 -> 复检 -> 入库 2.献血条件：年龄18-55周岁，体重男性≥50kg女性≥45kg，全血献血间隔≥6个月，成分血献血间隔≥2周，无传染性疾病无重大病史 3.血液检验：初筛（血红蛋白、血压等）+复检（乙肝、丙肝、艾滋病、梅毒等）4.库存规则：每种血型设置安全阈值，低于阈值自动预警；临期血液优先使用 5.预约方式：选择活动 -> 选择时段（上午/下午）-> 提交预约 -> 查看预约状态。回答要求：语言简洁明了，使用友好亲切的语气，只回答与献血相关的问题，如果问题超出范围，请礼貌地说明无法回答，对于不确定的信息，请说明是参考信息，建议咨询专业医生。请用中文回答。";
+    @Resource
+    private AiKnowledgeService aiKnowledgeService;
+
+    @Resource
+    private AiDonorContextService aiDonorContextService;
+
+    private static final String SYSTEM_PROMPT = """
+            你是献血管理系统的用户侧智能咨询助手。
+            你会收到两类内部参考材料：
+            1. 【本地知识库】：相当于系统内置 skill，用于提供献血流程、预约规则、资格间隔、检验与安全边界等规则。
+            2. 【当前用户系统记录】：从数据库读取的当前登录用户档案、预约记录和献血记录。
+
+            回答时必须遵守：
+            - 只回答献血管理系统、献血流程、预约、献血资格、检验结果和献血记录相关问题。
+            - 优先结合当前用户系统记录；当用户问“我现在还能献血吗”“我什么时候能献血”等个性化问题时，必须基于记录做初步判断。
+            - 本地知识库和系统记录是内部参考，不要机械复述“我已读取你的系统档案”，也不要每次都列出“参考来源”。
+            - 如果系统记录缺失，请明确告诉用户需要先完善个人档案或等待系统产生记录。
+            - 不要编造系统记录中没有的信息；不确定时说明缺少哪些信息。
+            - 不做医疗诊断，不替代医生或血站工作人员判断。
+            - 只有在涉及健康状况、疾病、用药、检验异常、能否献血等判断时，才提醒“最终以现场医护或血站工作人员判断为准”。
+            - 可以使用 Markdown 组织回答，例如加粗重点、使用列表或小标题，但不要输出 HTML。
+            - 使用简洁、自然、友好的中文回答。
+            """;
+
+    private static final String AI_NOT_CONFIGURED_MESSAGE =
+            "AI模型暂未配置，当前无法调用外部大模型。请在 config/application-ai-secret.yml 中填写 ai.openai.api-key、base-url 和 model 后重启项目。";
+
+    private static final String AI_CALL_FAILED_MESSAGE =
+            "AI模型调用失败，当前无法生成回答。请检查网络、API Key、base-url/model 配置或模型服务可用性后重试。";
 
     @Override
     public Result<String> ask(String question) {
@@ -35,29 +71,78 @@ public class AiServiceImpl implements AiService {
             return Result.success("请输入您想咨询的问题");
         }
 
-        if (aiApiKey == null || aiApiKey.trim().isEmpty()) {
-            return Result.success(getFallbackAnswer(question));
+        if (!isAiConfigured()) {
+            return Result.error(AI_NOT_CONFIGURED_MESSAGE);
+        }
+
+        String knowledge = aiKnowledgeService.searchRelevantKnowledge(question);
+        String answer = callAi(question, knowledge, "未读取登录用户上下文。");
+        if (answer == null) {
+            return Result.error(AI_CALL_FAILED_MESSAGE);
+        }
+        return Result.success(answer);
+    }
+
+    @Override
+    public Result<AiChatResponse> chatForDonor(String question) {
+        AiChatResponse response = new AiChatResponse();
+        if (question == null || question.trim().isEmpty()) {
+            response.setAnswer("请输入您想咨询的问题");
+            response.setReferences(List.of());
+            response.setPersonalized(false);
+            return Result.success(response);
+        }
+
+        String cleanQuestion = question.trim();
+        String knowledge = aiKnowledgeService.searchRelevantKnowledge(cleanQuestion);
+        String context = aiDonorContextService.buildCurrentUserContext();
+        List<String> references = aiKnowledgeService.listReferences(cleanQuestion);
+
+        if (!isAiConfigured()) {
+            response.setAnswer(AI_NOT_CONFIGURED_MESSAGE);
+            response.setReferences(List.of());
+            response.setPersonalized(aiDonorContextService.hasCurrentUserContext());
+            return Result.error(AI_NOT_CONFIGURED_MESSAGE);
+        }
+
+        String answer = callAi(cleanQuestion, knowledge, context);
+        if (answer == null) {
+            response.setAnswer(AI_CALL_FAILED_MESSAGE);
+            response.setReferences(List.of());
+            response.setPersonalized(aiDonorContextService.hasCurrentUserContext());
+            return Result.error(AI_CALL_FAILED_MESSAGE);
+        }
+
+        response.setAnswer(answer);
+        response.setReferences(references);
+        response.setPersonalized(aiDonorContextService.hasCurrentUserContext());
+        return Result.success(response);
+    }
+
+    private String callAi(String question, String knowledge, String context) {
+        if (!isAiConfigured()) {
+            return null;
         }
 
         try {
-            String url = aiBaseUrl + "/chat/completions";
+            String url = buildChatCompletionsUrl();
             
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("model", aiModel);
             
-            java.util.List<Map<String, String>> messages = new java.util.ArrayList<>();
+            List<Map<String, String>> messages = new ArrayList<>();
             Map<String, String> systemMessage = new HashMap<>();
             systemMessage.put("role", "system");
-            systemMessage.put("content", SYSTEM_PROMPT);
+            systemMessage.put("content", buildSystemPrompt(knowledge, context));
             messages.add(systemMessage);
             
             Map<String, String> userMessage = new HashMap<>();
             userMessage.put("role", "user");
-            userMessage.put("content", question);
+            userMessage.put("content", question.trim());
             messages.add(userMessage);
             
             requestBody.put("messages", messages);
-            requestBody.put("temperature", 0.7);
+            requestBody.put("temperature", 0.3);
             requestBody.put("max_tokens", 1024);
 
             HttpHeaders headers = new HttpHeaders();
@@ -71,47 +156,41 @@ public class AiServiceImpl implements AiService {
             if (response.getStatusCode().is2xxSuccessful()) {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode root = mapper.readTree(response.getBody());
-                String answer = root.get("choices").get(0).get("message").get("content").asText();
-                return Result.success(answer);
-            } else {
-                return Result.success(getFallbackAnswer(question));
+                JsonNode choices = root.get("choices");
+                if (choices != null && choices.isArray() && choices.size() > 0) {
+                    JsonNode content = choices.get(0).get("message").get("content");
+                    return content == null ? null : content.asText();
+                }
             }
         } catch (Exception e) {
-            return Result.success(getFallbackAnswer(question));
+            log.warn("AI chat completion call failed: {}", e.getMessage());
+            return null;
         }
+        return null;
     }
 
-    private String getFallbackAnswer(String question) {
-        question = question.toLowerCase();
-        
-        if (question.contains("流程") || question.contains("步骤")) {
-            return "献血流程：在线预约 -> 现场签到 -> 健康检查 -> 初筛 -> 采血 -> 复检 -> 入库";
-        }
-        if (question.contains("年龄") || question.contains("多大")) {
-            return "献血年龄要求：18-55周岁";
-        }
-        if (question.contains("体重") || question.contains("公斤")) {
-            return "男性体重要求：≥50kg，女性体重要求：≥45kg";
-        }
-        if (question.contains("间隔") || question.contains("多久") || question.contains("下次")) {
-            return "全血献血间隔：不少于6个月；成分血献血间隔：不少于2周";
-        }
-        if (question.contains("检验") || question.contains("检查") || question.contains("项目")) {
-            return "血液检验项目包括：乙肝、丙肝、艾滋病、梅毒、转氨酶等";
-        }
-        if (question.contains("预约") || question.contains("报名") || question.contains("时段")) {
-            return "预约方式：选择活动 -> 选择时段（上午/下午）-> 提交预约";
-        }
-        if (question.contains("库存") || question.contains("预警") || question.contains("阈值")) {
-            return "库存低于安全阈值时系统会自动预警提醒，临期血液会优先使用";
-        }
-        if (question.contains("合格") || question.contains("不合格") || question.contains("判定")) {
-            return "血液合格判定：初筛合格后采血，复检合格后入库；不合格血液会记录原因";
-        }
-        if (question.contains("重点关注") || question.contains("标记")) {
-            return "多次复检异常的献血者会被系统自动标记为\"重点关注\"";
-        }
-        
-        return "欢迎咨询献血管理系统！常见问题：\n1. 献血年龄要求？\n2. 献血间隔多久？\n3. 如何预约献血？\n4. 血液检验有哪些项目？";
+    private String buildSystemPrompt(String knowledge, String context) {
+        return SYSTEM_PROMPT
+                + "\n\n【本地知识库】\n" + (knowledge == null || knowledge.isEmpty() ? "暂无命中知识。" : knowledge)
+                + "\n\n【当前用户系统记录】\n" + (context == null || context.isEmpty() ? "暂无用户上下文。" : context)
+                + "\n\n请直接回答用户问题。必要时可以说“根据系统记录”或“参考系统规则”，但不要在回答末尾固定追加参考列表。";
     }
+
+    private boolean isAiConfigured() {
+        return StringUtils.hasText(aiApiKey)
+                && StringUtils.hasText(aiBaseUrl)
+                && StringUtils.hasText(aiModel);
+    }
+
+    private String buildChatCompletionsUrl() {
+        String normalizedBaseUrl = aiBaseUrl.trim();
+        while (normalizedBaseUrl.endsWith("/")) {
+            normalizedBaseUrl = normalizedBaseUrl.substring(0, normalizedBaseUrl.length() - 1);
+        }
+        if (normalizedBaseUrl.endsWith("/chat/completions")) {
+            return normalizedBaseUrl;
+        }
+        return normalizedBaseUrl + "/chat/completions";
+    }
+
 }
