@@ -349,7 +349,7 @@
             
             const result = await fetchData('/appointment/submit', {
                 method: 'POST',
-                body: JSON.stringify({ activityId: parseInt(activityId), timeSlot })
+                body: JSON.stringify({ activityId, timeSlot })
             });
             
             if (result && result.code === 200) {
@@ -377,15 +377,40 @@
                     <td>${a.timeSlot}</td>
                     <td><span class="status-badge ${getStatusClass(a.status)}">${a.status}</span></td>
                     <td>${a.appointmentTime?.split(' ')[0]}</td>
-                    <td>${a.status === '待参加' ? '<button class="btn btn-danger" onclick="cancelAppointment(' + a.appointmentId + ')">取消预约</button>' : '-'}</td>
+                    <td>${getAppointmentAction(a)}</td>
                 </tr>
             `).join('');
         }
 
+        function getAppointmentAction(appointment) {
+            if (appointment.status !== '待参加') {
+                return '-';
+            }
+            if (!canCancelAppointment(appointment.activityDate)) {
+                return '<span style="color:#999;">距活动不足24小时</span>';
+            }
+            return `<button class="btn btn-danger" onclick="cancelAppointment('${appointment.appointmentId}')">取消预约</button>`;
+        }
+
+        function canCancelAppointment(activityDate) {
+            if (!activityDate) {
+                return true;
+            }
+            const activityStartTime = new Date(activityDate + 'T08:00:00').getTime();
+            const hoursBeforeStart = (activityStartTime - Date.now()) / (1000 * 60 * 60);
+            return hoursBeforeStart >= 24;
+        }
+
         async function cancelAppointment(id) {
             if (confirm('确定取消该预约吗？')) {
-                await fetch(API_BASE + '/appointment/cancel/' + id, { method: 'PUT', headers: getHeaders() });
-                loadMyAppointments();
+                const result = await fetchData('/appointment/cancel/' + encodeURIComponent(id), { method: 'PUT' });
+                if (result && result.code === 200) {
+                    alert('取消成功');
+                    loadMyAppointments();
+                    loadHome();
+                } else {
+                    alert('取消失败：' + (result?.msg || '未知错误'));
+                }
             }
         }
 
@@ -519,7 +544,12 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             if (!getToken()) window.location.href = 'index.html';
-            loadHome();
+            const initialTab = window.location.hash ? window.location.hash.substring(1) : 'home';
+            if (document.getElementById(initialTab)) {
+                showTab(initialTab);
+            } else {
+                loadHome();
+            }
         });
     </script>
 </body>

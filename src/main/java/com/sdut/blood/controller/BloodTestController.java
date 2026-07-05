@@ -72,7 +72,17 @@ public class BloodTestController {
      */
     @DeleteMapping("/delete/{id}")
     public Result<Void> deleteTestRecord(@PathVariable Long id) {
-        bloodTestService.removeById(id);
+        BloodTest test = bloodTestService.getById(id);
+        if (test == null) {
+            return Result.error("检验记录不存在或已删除");
+        }
+        if ("已入库".equals(test.getBloodStatus())) {
+            return Result.error("血液已入库，无法删除检验记录");
+        }
+        boolean removed = bloodTestService.removeById(id);
+        if (!removed) {
+            return Result.error("删除失败，请刷新后重试");
+        }
         return Result.success();
     }
 
