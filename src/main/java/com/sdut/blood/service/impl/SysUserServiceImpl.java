@@ -23,9 +23,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     public LoginVO login(LoginDTO dto) {
-        log.info("=== 登录请求开始 ===");
-        log.info("输入的用户名: {}", dto.getUsername());
-        log.info("输入的密码: {}", dto.getPassword());
+        log.info("登录请求开始，username: {}", dto.getUsername());
         
         SysUser user = getByUsername(dto.getUsername());
         log.info("查询到的用户: {}", user != null ? "存在(id=" + user.getId() + ",username=" + user.getUsername() + ")" : "不存在");
@@ -40,35 +38,28 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw new BusinessException("账号已被禁用，请联系管理员");
         }
 
-        log.info("数据库中存储的密码: {}", user.getPassword());
-        log.info("密码长度: {}", user.getPassword() != null ? user.getPassword().length() : 0);
-        
         String storedPassword = user.getPassword();
         boolean isBcryptFormat = storedPassword != null && (
             storedPassword.startsWith("$2a$") || 
             storedPassword.startsWith("$2b$") || 
             storedPassword.startsWith("$2y$")
         );
-        log.info("密码是否为BCrypt格式: {}", isBcryptFormat);
         
         boolean passwordMatch = false;
         
         if (isBcryptFormat) {
             passwordMatch = passwordEncoder.matches(dto.getPassword(), storedPassword);
-            log.info("BCrypt密码校验结果: {}", passwordMatch);
         }
         
         if (!passwordMatch) {
             if (dto.getPassword().equals(storedPassword)) {
-                log.info("明文密码匹配，开始自动加密更新...");
                 user.setPassword(passwordEncoder.encode(dto.getPassword()));
                 updateById(user);
-                log.info("密码更新成功");
+                log.info("已完成历史密码格式升级，userId: {}", user.getId());
                 passwordMatch = true;
             } else {
                 try {
                     passwordMatch = passwordEncoder.matches(dto.getPassword(), storedPassword);
-                    log.info("再次尝试BCrypt校验结果: {}", passwordMatch);
                 } catch (Exception e) {
                     log.warn("BCrypt校验异常: {}", e.getMessage());
                 }
