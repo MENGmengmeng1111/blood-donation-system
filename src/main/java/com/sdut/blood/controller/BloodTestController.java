@@ -1,7 +1,9 @@
 package com.sdut.blood.controller;
 
+import com.sdut.blood.common.constants.BloodConstants;
 import com.sdut.blood.common.result.Result;
 import com.sdut.blood.domain.dto.BloodTestJudgeDTO;
+import com.sdut.blood.domain.dto.BloodTestUpdateDTO;
 import com.sdut.blood.domain.entity.BloodTest;
 import com.sdut.blood.service.BloodTestService;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -76,7 +78,7 @@ public class BloodTestController {
         if (test == null) {
             return Result.error("检验记录不存在或已删除");
         }
-        if ("已入库".equals(test.getBloodStatus())) {
+        if (BloodConstants.STATUS_STORED.equals(test.getBloodStatus())) {
             return Result.error("血液已入库，无法删除检验记录");
         }
         boolean removed = bloodTestService.removeById(id);
@@ -90,8 +92,8 @@ public class BloodTestController {
      * 修改检验信息（UC27）
      */
     @PutMapping("/update")
-    public Result<Void> updateTestRecord(@RequestBody BloodTest bloodTest) {
-        bloodTestService.updateById(bloodTest);
+    public Result<Void> updateTestRecord(@Valid @RequestBody BloodTestUpdateDTO dto) {
+        bloodTestService.updateTestRecord(dto);
         return Result.success();
     }
 }

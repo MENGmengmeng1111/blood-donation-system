@@ -2,10 +2,12 @@ package com.sdut.blood.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sdut.blood.common.constants.BloodConstants;
 import com.sdut.blood.common.exception.BusinessException;
 import com.sdut.blood.common.result.Result;
 import com.sdut.blood.common.utils.SecurityUtil;
 import com.sdut.blood.domain.dto.BloodTestJudgeDTO;
+import com.sdut.blood.domain.dto.BloodTestUpdateDTO;
 import com.sdut.blood.domain.entity.BloodTest;
 import com.sdut.blood.mapper.BloodTestMapper;
 import com.sdut.blood.service.BloodTestService;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -38,19 +41,19 @@ public class BloodTestServiceImpl extends ServiceImpl<BloodTestMapper, BloodTest
         }
 
         // 2. 校验状态：已入库不可修改
-        if ("已入库".equals(test.getBloodStatus())) {
+        if (BloodConstants.STATUS_STORED.equals(test.getBloodStatus())) {
             throw new BusinessException("血液已入库，无法修改判定状态");
         }
 
         // 3. 不合格必须填写原因
-        if ("不合格".equals(dto.getBloodStatus())) {
+        if (BloodConstants.STATUS_UNQUALIFIED.equals(dto.getBloodStatus())) {
             if (dto.getUnqualifiedReason() == null || dto.getUnqualifiedReason().trim().isEmpty()) {
                 throw new BusinessException("不合格血液请填写具体原因");
             }
             test.setUnqualifiedReason(dto.getUnqualifiedReason());
-            test.setBloodStatus("不合格");
-        } else if ("合格".equals(dto.getBloodStatus())) {
-            test.setBloodStatus("合格");
+            test.setBloodStatus(BloodConstants.STATUS_UNQUALIFIED);
+        } else if (BloodConstants.STATUS_QUALIFIED.equals(dto.getBloodStatus())) {
+            test.setBloodStatus(BloodConstants.STATUS_QUALIFIED);
         } else {
             throw new BusinessException("请选择血液判定状态");
         }
@@ -69,7 +72,7 @@ public class BloodTestServiceImpl extends ServiceImpl<BloodTestMapper, BloodTest
         }
         updateById(test);
         
-        if ("不合格".equals(dto.getBloodStatus())) {
+        if (BloodConstants.STATUS_UNQUALIFIED.equals(dto.getBloodStatus())) {
             checkAndMarkAttention(test.getDonorId());
         }
     }
@@ -81,7 +84,7 @@ public class BloodTestServiceImpl extends ServiceImpl<BloodTestMapper, BloodTest
         
         LambdaQueryWrapper<BloodTest> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(BloodTest::getDonorId, donorId);
-        wrapper.eq(BloodTest::getBloodStatus, "不合格");
+        wrapper.eq(BloodTest::getBloodStatus, BloodConstants.STATUS_UNQUALIFIED);
         int unqualifiedCount = (int) count(wrapper);
         
         Donor donor = donorService.getById(donorId);
@@ -113,5 +116,53 @@ public class BloodTestServiceImpl extends ServiceImpl<BloodTestMapper, BloodTest
         wrapper.orderByDesc(BloodTest::getCreateTime);
         List<BloodTest> list = list(wrapper);
         return Result.success(list);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateTestRecord(BloodTestUpdateDTO dto) {
+        BloodTest test = getById(dto.getId());
+        if (test == null) {
+            throw new BusinessException("检验记录不存在或已删除");
+        }
+        if (BloodConstants.STATUS_STORED.equals(test.getBloodStatus())) {
+            throw new BusinessException("血液已入库，无法修改检验记录");
+        }
+
+        if (dto.getRecheckResult() != null) {
+            test.setRecheckResult(dto.getRecheckResult());
+        }
+        if (dto.getUnqualifiedReason() != null) {
+            test.setUnqualifiedReason(dto.getUnqualifiedReason());
+        }
+        if (dto.getRemark() != null) {
+            test.setRemark(dto.getRemark());
+        }
+        updateById(test);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateById(BloodTest entity) {
+        if (entity != null && entity.getId() != null) {
+            BloodTest existing = getById(entity.getId());
+            if (existing != null && BloodConstants.STATUS_STORED.equals(existing.getBloodStatus())) {
+                throw new BusinessException("血液已入库，无法修改检验记录");
+            }
+        }
+        return super.updateById(entity);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean removeById(Serializable id) {
+        BloodTest test = getById(id);
+        if (test == null) {
+            return false;
+        }
+        if (BloodConstants.STATUS_STORED.equals(test.getBloodStatus())) {
+            throw new BusinessException("血液已入库，无法删除检验记录");
+        }
+        return super.removeById(id);
     }
 }
