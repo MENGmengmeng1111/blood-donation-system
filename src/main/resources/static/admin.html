@@ -155,7 +155,7 @@
                     <input type="hidden" id="donor-id">
                     <div class="form-group"><label>用户ID（可选）</label><input type="number" id="donor-user-id" placeholder="不填则不关联用户"></div>
                     <div class="form-group"><label>姓名</label><input type="text" id="donor-name" required></div>
-                    <div class="form-group"><label>身份证号</label><input type="text" id="donor-id-card" required></div>
+                    <div class="form-group"><label>身份证号</label><input type="text" id="donor-id-card" maxlength="18" placeholder="新增必填，编辑留空表示不修改"></div>
                     <div class="form-group">
                         <label>血型</label>
                         <select id="donor-blood-type">
@@ -173,7 +173,6 @@
                             <option value="女">女</option>
                         </select>
                     </div>
-                    <div class="form-group"><label>年龄</label><input type="number" id="donor-age"></div>
                     <div class="form-group"><label>地址</label><input type="text" id="donor-address"></div>
                     <div class="form-group"><label>病史</label><textarea id="donor-medical-history" rows="3"></textarea></div>
                     <button type="button" class="btn" onclick="saveDonor()">保存</button>
@@ -418,11 +417,10 @@
             document.getElementById('donor-id').value = d.id;
             document.getElementById('donor-user-id').value = d.userId || '';
             document.getElementById('donor-name').value = d.name || '';
-            document.getElementById('donor-id-card').value = d.idCard || '';
+            document.getElementById('donor-id-card').value = '';
             document.getElementById('donor-blood-type').value = d.bloodType || 'A型';
             document.getElementById('donor-phone').value = d.phone || '';
             document.getElementById('donor-gender').value = d.gender || '';
-            document.getElementById('donor-age').value = d.age || '';
             document.getElementById('donor-address').value = d.address || '';
             document.getElementById('donor-medical-history').value = d.medicalHistory || '';
             showTab('donor-add');
@@ -430,18 +428,24 @@
 
         async function saveDonor() {
             const donorId = document.getElementById('donor-id').value;
+            const idCard = document.getElementById('donor-id-card').value.trim();
             const data = {
                 id: donorId ? parseInt(donorId) : null,
                 userId: parseInt(document.getElementById('donor-user-id').value) || null,
-                name: document.getElementById('donor-name').value,
-                idCard: document.getElementById('donor-id-card').value,
+                name: document.getElementById('donor-name').value.trim(),
                 bloodType: document.getElementById('donor-blood-type').value,
-                phone: document.getElementById('donor-phone').value,
+                phone: document.getElementById('donor-phone').value.trim(),
                 gender: document.getElementById('donor-gender').value || null,
-                age: parseInt(document.getElementById('donor-age').value) || null,
-                address: document.getElementById('donor-address').value || null,
-                medicalHistory: document.getElementById('donor-medical-history').value || null
+                address: document.getElementById('donor-address').value.trim() || null,
+                medicalHistory: document.getElementById('donor-medical-history').value.trim() || null
             };
+            if (!data.name || !data.phone || (!donorId && !idCard)) {
+                alert('请填写必填项');
+                return;
+            }
+            if (idCard) {
+                data.idCard = idCard;
+            }
             const method = donorId ? 'PUT' : 'POST';
             const url = donorId ? '/donor/update' : '/donor/add';
             const result = await fetchData(url, { method, body: JSON.stringify(data) });
@@ -462,7 +466,6 @@
             document.getElementById('donor-blood-type').value = 'A型';
             document.getElementById('donor-phone').value = '';
             document.getElementById('donor-gender').value = '';
-            document.getElementById('donor-age').value = '';
             document.getElementById('donor-address').value = '';
             document.getElementById('donor-medical-history').value = '';
         }

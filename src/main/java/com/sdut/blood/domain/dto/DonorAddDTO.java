@@ -25,8 +25,6 @@ public class DonorAddDTO {
 
     private String gender;
 
-    private Integer age;
-
     private String address;
 
     /**
