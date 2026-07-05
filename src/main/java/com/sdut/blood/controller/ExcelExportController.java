@@ -28,7 +28,7 @@ import java.time.format.DateTimeFormatter;
  */
 @RestController
 @RequestMapping("/api/export")
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
 public class ExcelExportController {
 
     @Resource

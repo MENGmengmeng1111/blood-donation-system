@@ -27,7 +27,7 @@ public class BloodActivityController {
      * 新增献血活动
      */
     @PostMapping("/add")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
     public Result<Void> addActivity(@RequestBody BloodActivity activity) {
         activity.setStatus("未开始");
         activity.setMorningRemaining(activity.getMorningQuota());
@@ -40,7 +40,7 @@ public class BloodActivityController {
      * 修改献血活动
      */
     @PutMapping("/update")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
     public Result<Void> updateActivity(@RequestBody BloodActivity activity) {
         BloodActivity existing = bloodActivityService.getById(activity.getId());
         if (existing != null) {
@@ -57,7 +57,7 @@ public class BloodActivityController {
      * 删除献血活动（逻辑删除）
      */
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
     public Result<Void> deleteActivity(@PathVariable Long id) {
         bloodActivityService.removeById(id);
         return Result.success();
@@ -112,7 +112,7 @@ public class BloodActivityController {
      * 更新活动状态
      */
     @PutMapping("/status/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
     public Result<Void> updateActivityStatus(@PathVariable Long id, @RequestParam String status) {
         BloodActivity activity = bloodActivityService.getById(id);
         if (activity != null) {
@@ -138,7 +138,7 @@ public class BloodActivityController {
      * 智能生成招募名单（UC23）
      */
     @GetMapping("/recruitment")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
     public Result<List<RecruitmentVO>> generateRecruitmentList(
             @RequestParam(required = false) Long activityId,
             @RequestParam(required = false) String bloodType) {
