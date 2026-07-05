@@ -78,6 +78,15 @@ public class DonorServiceImpl extends ServiceImpl<DonorMapper, Donor> implements
         if (dto.getName() == null || dto.getName().trim().isEmpty()) {
             throw new BusinessException("姓名不可为空");
         }
+        if (dto.getIdCard() != null) {
+            if (!IdCardUtil.isValid(dto.getIdCard())) {
+                throw new BusinessException("身份证号格式错误，请核对后填写");
+            }
+            Donor existDonor = getByIdCard(dto.getIdCard());
+            if (existDonor != null && !existDonor.getId().equals(donor.getId())) {
+                throw new BusinessException("该献血者档案已存在，请勿重复录入");
+            }
+        }
 
         // 3. 更新信息
         donor.setName(dto.getName());

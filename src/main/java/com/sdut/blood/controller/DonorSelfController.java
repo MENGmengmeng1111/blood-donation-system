@@ -55,20 +55,11 @@ public class DonorSelfController {
             updateDTO.setGender(dto.getGender());
             updateDTO.setAge(dto.getAge());
             updateDTO.setAddress(dto.getAddress());
+            updateDTO.setMedicalHistory(dto.getMedicalHistory());
             donorService.updateDonor(updateDTO);
         } else {
-            Donor donor = new Donor();
-            donor.setUserId(userId);
-            donor.setName(dto.getName());
-            donor.setIdCard(com.sdut.blood.common.utils.EncryptUtil.encrypt(dto.getIdCard()));
-            donor.setPhone(dto.getPhone());
-            donor.setBloodType(dto.getBloodType());
-            donor.setGender(dto.getGender());
-            donor.setAge(dto.getAge());
-            donor.setAddress(dto.getAddress());
-            donor.setDonorStatus("正常");
-            donor.setDeleted(0);
-            donorService.save(donor);
+            dto.setUserId(userId);
+            donorService.addDonor(dto);
         }
         
         return Result.success();
