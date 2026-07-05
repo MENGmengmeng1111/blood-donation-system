@@ -1,6 +1,9 @@
 package com.sdut.blood.service.impl;
 
 import com.sdut.blood.common.result.Result;
+import com.sdut.blood.domain.vo.AiChatResponse;
+import com.sdut.blood.service.AiDonorContextService;
+import com.sdut.blood.service.AiKnowledgeService;
 import com.sdut.blood.service.AiService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +31,13 @@ public class AiServiceImpl implements AiService {
     @Resource(name = "aiModel")
     private String aiModel;
 
-    private static final String SYSTEM_PROMPT = "你是一个专业的献血管理系统智能助手，负责回答用户关于献血的各种问题。系统基础信息：系统名称为献血管理系统，角色包括普通献血者、管理员、超级管理员。回答范围：1.献血流程：在线预约 -> 现场签到 -> 健康检查 -> 初筛 -> 采血 -> 复检 -> 入库 2.献血条件：年龄18-55周岁，体重男性≥50kg女性≥45kg，全血献血间隔≥6个月，成分血献血间隔≥2周，无传染性疾病无重大病史 3.血液检验：初筛（血红蛋白、血压等）+复检（乙肝、丙肝、艾滋病、梅毒等）4.库存规则：每种血型设置安全阈值，低于阈值自动预警；临期血液优先使用 5.预约方式：选择活动 -> 选择时段（上午/下午）-> 提交预约 -> 查看预约状态。回答要求：语言简洁明了，使用友好亲切的语气，只回答与献血相关的问题，如果问题超出范围，请礼貌地说明无法回答，对于不确定的信息，请说明是参考信息，建议咨询专业医生。请用中文回答。";
+    @Resource
+    private AiKnowledgeService aiKnowledgeService;
+
+    @Resource
+    private AiDonorContextService aiDonorContextService;
+
+    private static final String SYSTEM_PROMPT = "你是献血管理系统的用户侧智能咨询助手。你的职责是结合知识库和系统记录，回答献血者关于预约、献血资格、献血流程、检验结果和献血记录的问题。回答必须遵守：1. 只回答献血管理系统和献血常识相关问题；2. 不做医疗诊断，不替代医生或血站工作人员判断；3. 涉及能否献血、疾病、用药、检验异常时，必须提醒最终以现场医护或血站判断为准；4. 不要编造系统记录中没有的信息；5. 语言简洁、友好、中文回答。";
 
     @Override
     public Result<String> ask(String question) {
@@ -35,8 +45,46 @@ public class AiServiceImpl implements AiService {
             return Result.success("请输入您想咨询的问题");
         }
 
+        String knowledge = aiKnowledgeService.searchRelevantKnowledge(question);
+        String answer = callAi(question, knowledge, "未读取登录用户上下文。");
+        if (answer == null) {
+            answer = getFallbackAnswer(question);
+        }
+        return Result.success(answer);
+    }
+
+    @Override
+    public Result<AiChatResponse> chatForDonor(String question) {
+        AiChatResponse response = new AiChatResponse();
+        if (question == null || question.trim().isEmpty()) {
+            response.setAnswer("请输入您想咨询的问题");
+            response.setReferences(List.of());
+            response.setPersonalized(false);
+            return Result.success(response);
+        }
+
+        String cleanQuestion = question.trim();
+        String knowledge = aiKnowledgeService.searchRelevantKnowledge(cleanQuestion);
+        String context = aiDonorContextService.buildCurrentUserContext();
+        List<String> references = aiKnowledgeService.listReferences(cleanQuestion);
+
+        String answer = callAi(cleanQuestion, knowledge, context);
+        if (answer == null) {
+            answer = getFallbackAnswer(cleanQuestion);
+            if (aiDonorContextService.hasCurrentUserContext()) {
+                answer += "\n\n我已读取你的系统档案、预约和献血记录作为参考；涉及具体能否献血，请以现场医护或血站工作人员判断为准。";
+            }
+        }
+
+        response.setAnswer(answer);
+        response.setReferences(references);
+        response.setPersonalized(aiDonorContextService.hasCurrentUserContext());
+        return Result.success(response);
+    }
+
+    private String callAi(String question, String knowledge, String context) {
         if (aiApiKey == null || aiApiKey.trim().isEmpty()) {
-            return Result.success(getFallbackAnswer(question));
+            return null;
         }
 
         try {
@@ -48,16 +96,16 @@ public class AiServiceImpl implements AiService {
             java.util.List<Map<String, String>> messages = new java.util.ArrayList<>();
             Map<String, String> systemMessage = new HashMap<>();
             systemMessage.put("role", "system");
-            systemMessage.put("content", SYSTEM_PROMPT);
+            systemMessage.put("content", buildSystemPrompt(knowledge, context));
             messages.add(systemMessage);
             
             Map<String, String> userMessage = new HashMap<>();
             userMessage.put("role", "user");
-            userMessage.put("content", question);
+            userMessage.put("content", question.trim());
             messages.add(userMessage);
             
             requestBody.put("messages", messages);
-            requestBody.put("temperature", 0.7);
+            requestBody.put("temperature", 0.3);
             requestBody.put("max_tokens", 1024);
 
             HttpHeaders headers = new HttpHeaders();
@@ -71,14 +119,23 @@ public class AiServiceImpl implements AiService {
             if (response.getStatusCode().is2xxSuccessful()) {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode root = mapper.readTree(response.getBody());
-                String answer = root.get("choices").get(0).get("message").get("content").asText();
-                return Result.success(answer);
-            } else {
-                return Result.success(getFallbackAnswer(question));
+                JsonNode choices = root.get("choices");
+                if (choices != null && choices.isArray() && choices.size() > 0) {
+                    JsonNode content = choices.get(0).get("message").get("content");
+                    return content == null ? null : content.asText();
+                }
             }
         } catch (Exception e) {
-            return Result.success(getFallbackAnswer(question));
+            return null;
         }
+        return null;
+    }
+
+    private String buildSystemPrompt(String knowledge, String context) {
+        return SYSTEM_PROMPT
+                + "\n\n【本地知识库】\n" + (knowledge == null || knowledge.isEmpty() ? "暂无命中知识。" : knowledge)
+                + "\n\n【当前用户系统记录】\n" + (context == null || context.isEmpty() ? "暂无用户上下文。" : context)
+                + "\n\n回答要求：先直接回答用户问题；如引用系统记录，请说明“根据系统记录”；如引用知识库规则，请说明是参考规则；结尾在涉及健康判断时补充“最终以现场医护或血站判断为准”。";
     }
 
     private String getFallbackAnswer(String question) {

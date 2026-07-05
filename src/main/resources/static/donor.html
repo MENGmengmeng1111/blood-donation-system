@@ -51,6 +51,11 @@
         .chat-bubble { display: inline-block; padding: 10px 15px; border-radius: 15px; max-width: 70%; }
         .chat-message.user .chat-bubble { background: #e53935; color: white; }
         .chat-message.bot .chat-bubble { background: #f0f0f0; color: #333; }
+        .chat-bubble { white-space: pre-wrap; line-height: 1.6; }
+        .chat-references { margin-top: 6px; font-size: 12px; color: #777; }
+        .chat-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .chat-suggestions button { background: #fff; color: #e53935; border: 1px solid #ffcdd2; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+        .chat-suggestions button:hover { background: #ffebee; }
         .chat-input { display: flex; gap: 10px; }
         .chat-input input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
     </style>
@@ -208,9 +213,15 @@
                         <div class="chat-bubble">您好！我是献血智能助手，有什么可以帮您的吗？</div>
                     </div>
                 </div>
+                <div class="chat-suggestions">
+                    <button type="button" onclick="askQuickQuestion('根据我的记录，我现在还能献血吗？')">我还能献血吗</button>
+                    <button type="button" onclick="askQuickQuestion('我该如何预约献血活动？')">如何预约</button>
+                    <button type="button" onclick="askQuickQuestion('献血前需要注意什么？')">献血前注意</button>
+                    <button type="button" onclick="askQuickQuestion('我的检验结果代表什么？')">检验结果说明</button>
+                </div>
                 <div class="chat-input">
                     <input type="text" id="chat-input" placeholder="输入您的问题..." onkeypress="handleChatKey(event)">
-                    <button class="btn" onclick="sendChat()">发送</button>
+                    <button class="btn" id="chat-send-btn" onclick="sendChat()">发送</button>
                 </div>
             </div>
         </div>
@@ -507,12 +518,15 @@
 
         async function sendChat() {
             const input = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('chat-send-btn');
             const message = input.value.trim();
             if (!message) return;
             
             const chatBox = document.getElementById('chat-box');
-            chatBox.innerHTML += `<div class="chat-message user"><div class="chat-bubble">${message}</div></div>`;
+            appendChatMessage('user', message);
             input.value = '';
+            sendBtn.disabled = true;
+            appendChatMessage('bot', '正在结合知识库和您的系统记录生成回答...');
             chatBox.scrollTop = chatBox.scrollHeight;
             
             try {
@@ -521,12 +535,49 @@
                     headers: getHeaders(),
                     body: JSON.stringify({ question: message })
                 });
+                if (response.status === 401) {
+                    alert('登录已过期，请重新登录');
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                    return;
+                }
                 const result = await response.json();
-                chatBox.innerHTML += `<div class="chat-message bot"><div class="chat-bubble">${result?.data?.answer || '抱歉，我无法回答这个问题。'}</div></div>`;
+                chatBox.lastElementChild.remove();
+                if (result && result.code === 200) {
+                    appendChatMessage('bot', result?.data?.answer || '抱歉，我无法回答这个问题。', result?.data?.references || []);
+                } else {
+                    appendChatMessage('bot', result?.msg || '抱歉，我无法回答这个问题。');
+                }
                 chatBox.scrollTop = chatBox.scrollHeight;
             } catch (e) {
-                chatBox.innerHTML += `<div class="chat-message bot"><div class="chat-bubble">网络错误，请稍后重试</div></div>`;
+                chatBox.lastElementChild.remove();
+                appendChatMessage('bot', '网络错误，请稍后重试');
+            } finally {
+                sendBtn.disabled = false;
             }
+        }
+
+        function appendChatMessage(role, content, references = []) {
+            const chatBox = document.getElementById('chat-box');
+            const referenceHtml = references.length
+                ? `<div class="chat-references">参考：${references.map(escapeHtml).join('、')}</div>`
+                : '';
+            chatBox.innerHTML += `<div class="chat-message ${role}"><div class="chat-bubble">${escapeHtml(content)}${referenceHtml}</div></div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function askQuickQuestion(question) {
+            document.getElementById('chat-input').value = question;
+            sendChat();
+        }
+
+        function escapeHtml(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function handleChatKey(e) {
