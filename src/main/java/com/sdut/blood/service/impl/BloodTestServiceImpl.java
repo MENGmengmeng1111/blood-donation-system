@@ -55,8 +55,18 @@ public class BloodTestServiceImpl extends ServiceImpl<BloodTestMapper, BloodTest
             throw new BusinessException("请选择血液判定状态");
         }
 
+        if (dto.getRecheckResult() != null) {
+            test.setRecheckResult(dto.getRecheckResult());
+        }
+        if (dto.getRemark() != null) {
+            test.setRemark(dto.getRemark());
+        }
+
         test.setJudgeTime(LocalDateTime.now());
-        test.setOperatorId(SecurityUtil.getCurrentUserId());
+        Long operatorId = SecurityUtil.getCurrentUserId();
+        if (operatorId != null) {
+            test.setOperatorId(operatorId);
+        }
         updateById(test);
         
         if ("不合格".equals(dto.getBloodStatus())) {

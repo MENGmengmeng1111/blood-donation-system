@@ -9,6 +9,7 @@
         <result column="recheck_result" property="recheckResult"/>
         <result column="blood_status" property="bloodStatus"/>
         <result column="unqualified_reason" property="unqualifiedReason"/>
+        <result column="remark" property="remark"/>
         <result column="judge_time" property="judgeTime"/>
         <result column="operator_id" property="operatorId"/>
         <result column="create_time" property="createTime"/>
@@ -17,7 +18,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, collection_id, donor_id, recheck_result, blood_status, unqualified_reason,
+        id, collection_id, donor_id, recheck_result, blood_status, unqualified_reason, remark,
         judge_time, operator_id, create_time, update_time, deleted
     </sql>
 

@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @TableName("blood_stock")
 public class BloodStock {
 
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
@@ -45,9 +45,9 @@ public class BloodStock {
     private String status;
 
     /**
-     * 预警阈值（ml）
+     * 用血单位
      */
-    private Integer alertThreshold;
+    private String outUnit;
 
     private LocalDateTime createTime;
 

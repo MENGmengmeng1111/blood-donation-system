@@ -22,6 +22,11 @@ public class BloodTestJudgeDTO {
     private String unqualifiedReason;
 
     /**
+     * 复检结果
+     */
+    private String recheckResult;
+
+    /**
      * 判定备注
      */
     private String remark;

@@ -40,6 +40,15 @@ public class BloodTestController {
     }
 
     /**
+     * 修改检验信息（PUT方式）
+     */
+    @PutMapping("/judge")
+    public Result<Void> updateJudgeBloodStatus(@Valid @RequestBody BloodTestJudgeDTO dto) {
+        bloodTestService.judgeBloodStatus(dto);
+        return Result.success();
+    }
+
+    /**
      * 查询检验记录详情
      */
     @GetMapping("/{id}")

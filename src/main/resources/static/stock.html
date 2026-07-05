@@ -39,7 +39,7 @@
             background: #555;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 30px auto;
             padding: 0 20px;
         }
@@ -60,12 +60,12 @@
             background: #e53935;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
             transition: background 0.3s;
-            margin-right: 10px;
+            margin-right: 8px;
         }
         .btn:hover {
             background: #d32f2f;
@@ -75,6 +75,12 @@
         }
         .btn-success {
             background: #388e3c;
+        }
+        .btn-warning {
+            background: #ff9800;
+        }
+        .btn-danger {
+            background: #c62828;
         }
         table {
             width: 100%;
@@ -205,6 +211,7 @@
         <a href="appointment.html">预约管理</a>
         <a href="donor.html">献血者管理</a>
         <a href="collection.html">采血记录</a>
+        <a href="test.html">检验管理</a>
         <a href="stock.html">库存管理</a>
     </div>
 
@@ -212,6 +219,8 @@
         <div class="card">
             <h2>📦 库存管理</h2>
             <button class="btn btn-primary" onclick="openAddModal()">+ 登记入库</button>
+            <button class="btn" onclick="loadNearExpire()">查询临期库存</button>
+            <button class="btn" onclick="loadStockList()">查询全部库存</button>
             
             <div class="stats-grid">
                 <div class="stat-card">
@@ -232,25 +241,23 @@
                 </div>
             </div>
 
-            <div style="margin-bottom: 15px;">
-                <button class="btn" onclick="loadNearExpire()">查询临期库存</button>
-            </div>
-
             <table>
                 <thead>
                     <tr>
                         <th>ID</th>
                         <th>采血记录ID</th>
+                        <th>献血者姓名</th>
                         <th>血型</th>
                         <th>血量(ml)</th>
                         <th>有效期</th>
                         <th>库存状态</th>
                         <th>入库时间</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody id="stockTable">
                     <tr>
-                        <td colspan="7" style="text-align: center; color: #999;">加载中...</td>
+                        <td colspan="9" style="text-align: center; color: #999;">请先完成采血和检验，然后通过入库功能添加库存数据</td>
                     </tr>
                 </tbody>
             </table>
@@ -260,37 +267,43 @@
     <div class="modal" id="stockModal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
-            <h3>登记血液入库</h3>
+            <h3 id="modalTitle">登记血液入库</h3>
             <div id="message"></div>
             <form id="stockForm">
+                <input type="hidden" id="stockId">
                 <div class="form-group">
                     <label>采血记录ID</label>
                     <input type="number" id="collectionId" required>
                 </div>
                 <div class="form-group">
-                    <label>血型</label>
-                    <select id="bloodType" required>
-                        <option value="A型">A型</option>
-                        <option value="B型">B型</option>
-                        <option value="O型">O型</option>
-                        <option value="AB型">AB型</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>血量(ml)</label>
-                    <input type="number" id="bloodAmount" required min="0">
-                </div>
-                <div class="form-group">
                     <label>有效期</label>
                     <input type="date" id="expireDate" required>
                 </div>
-                <button type="submit" class="btn btn-success" style="margin-top: 20px; width: 100%;">入库</button>
+                <button type="submit" class="btn btn-success" style="margin-top: 20px; width: 100%;">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="outModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeOutModal()">&times;</span>
+            <h3>血液出库</h3>
+            <div id="outMessage"></div>
+            <form id="outForm">
+                <input type="hidden" id="outStockId">
+                <div class="form-group">
+                    <label>用血单位</label>
+                    <input type="text" id="outUnit" required placeholder="请输入用血单位名称">
+                </div>
+                <button type="submit" class="btn btn-danger" style="margin-top: 20px; width: 100%;">确认出库</button>
             </form>
         </div>
     </div>
 
     <script>
         const API_BASE = '/api';
+        let donorsMap = {};
+        let collectionsMap = {};
 
         async function fetchData(url) {
             try {
@@ -299,6 +312,24 @@
                 return result.data;
             } catch (error) {
                 return null;
+            }
+        }
+
+        async function loadDonors() {
+            const donors = await fetchData('/donor/list');
+            if (donors) {
+                donors.forEach(d => {
+                    donorsMap[d.id] = { name: d.name, bloodType: d.bloodType };
+                });
+            }
+        }
+
+        async function loadCollections() {
+            const data = await fetchData('/collection/list?pageNum=1&pageSize=100');
+            if (data && data.records) {
+                data.records.forEach(c => {
+                    collectionsMap[c.id] = { donateAmount: c.donateAmount, donorId: c.donorId };
+                });
             }
         }
 
@@ -311,15 +342,40 @@
         }
 
         async function loadStockList() {
-            const activities = await fetchData('/activity/all');
+            const stocks = await fetchData('/stock/list');
             const tbody = document.getElementById('stockTable');
             
-            if (!activities) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">暂无数据</td></tr>';
+            if (!stocks || stocks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #999;">请通过入库功能添加库存数据</td></tr>';
                 return;
             }
             
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">请通过入库功能添加库存数据</td></tr>';
+            tbody.innerHTML = stocks.map(stock => {
+                const collection = collectionsMap[stock.collectionId] || {};
+                const donor = donorsMap[collection.donorId] || {};
+                return `
+                <tr>
+                    <td>${stock.id}</td>
+                    <td>${stock.collectionId}</td>
+                    <td>${donor.name || '-'}</td>
+                    <td>${stock.bloodType}</td>
+                    <td>${stock.bloodAmount}</td>
+                    <td>${stock.expireDate}</td>
+                    <td><span class="status-badge ${getStatusClass(stock.status)}">${stock.status}</span></td>
+                    <td>${stock.createTime || '-'}</td>
+                    <td>
+                        ${stock.status === '正常' ? 
+                            `<button class="btn btn-warning" onclick="openEditModal(${stock.id})">修改</button>` : 
+                            ''}
+                        ${stock.status === '正常' || stock.status === '临期' || stock.status === '已过期' ? 
+                            `<button class="btn btn-danger" onclick="openOutModal(${stock.id})">出库</button>` : 
+                            ''}
+                        ${stock.status !== '已出库' ? 
+                            `<button class="btn btn-danger" onclick="deleteStock(${stock.id})">删除</button>` : 
+                            ''}
+                    </td>
+                </tr>
+            `}).join('');
         }
 
         async function loadNearExpire() {
@@ -327,69 +383,34 @@
             const tbody = document.getElementById('stockTable');
             
             if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">暂无临期库存</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #999;">暂无临期库存</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = data.map(stock => `
+            tbody.innerHTML = data.map(stock => {
+                const collection = collectionsMap[stock.collectionId] || {};
+                const donor = donorsMap[collection.donorId] || {};
+                return `
                 <tr>
                     <td>${stock.id}</td>
                     <td>${stock.collectionId}</td>
+                    <td>${donor.name || '-'}</td>
                     <td>${stock.bloodType}</td>
                     <td>${stock.bloodAmount}</td>
                     <td>${stock.expireDate}</td>
-                    <td><span class="status-badge ${getStatusClass(stock.stockStatus)}">${stock.stockStatus}</span></td>
+                    <td><span class="status-badge ${getStatusClass(stock.status)}">${stock.status}</span></td>
                     <td>${stock.createTime || '-'}</td>
+                    <td>
+                        ${stock.status === '正常' ? 
+                            `<button class="btn btn-warning" onclick="openEditModal(${stock.id})">修改</button>` : 
+                            ''}
+                        ${stock.status === '正常' || stock.status === '临期' ? 
+                            `<button class="btn btn-danger" onclick="openOutModal(${stock.id})">出库</button>` : 
+                            ''}
+                    </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
-
-        function openAddModal() {
-            document.getElementById('collectionId').value = '';
-            document.getElementById('bloodType').value = 'A型';
-            document.getElementById('bloodAmount').value = '';
-            document.getElementById('expireDate').value = '';
-            document.getElementById('message').innerHTML = '';
-            document.getElementById('stockModal').style.display = 'flex';
-        }
-
-        function closeModal() {
-            document.getElementById('stockModal').style.display = 'none';
-        }
-
-        document.getElementById('stockForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const stock = {
-                collectionId: parseInt(document.getElementById('collectionId').value),
-                bloodType: document.getElementById('bloodType').value,
-                bloodAmount: parseInt(document.getElementById('bloodAmount').value),
-                expireDate: document.getElementById('expireDate').value
-            };
-
-            try {
-                const response = await fetch(API_BASE + '/stock/in', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(stock)
-                });
-                
-                const result = await response.json();
-                
-                if (result.code === 200) {
-                    document.getElementById('message').innerHTML = '<div class="message success">入库成功</div>';
-                    setTimeout(() => {
-                        closeModal();
-                        loadStockSummary();
-                        loadStockList();
-                    }, 1000);
-                } else {
-                    document.getElementById('message').innerHTML = `<div class="message error">${result.msg}</div>`;
-                }
-            } catch (error) {
-                document.getElementById('message').innerHTML = '<div class="message error">入库失败</div>';
-            }
-        });
 
         function getStatusClass(status) {
             switch(status) {
@@ -406,7 +427,138 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = '登记血液入库';
+            document.getElementById('stockId').value = '';
+            document.getElementById('collectionId').value = '';
+            document.getElementById('expireDate').value = '';
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('stockModal').style.display = 'flex';
+        }
+
+        async function openEditModal(id) {
+            const data = await fetchData(`/stock/list?bloodType=&status=`);
+            const stock = data ? data.find(s => s.id === id) : null;
+            if (!stock) return;
+
+            document.getElementById('modalTitle').textContent = '修改库存信息';
+            document.getElementById('stockId').value = stock.id;
+            document.getElementById('collectionId').value = stock.collectionId;
+            document.getElementById('expireDate').value = stock.expireDate;
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('stockModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('stockModal').style.display = 'none';
+        }
+
+        function openOutModal(id) {
+            document.getElementById('outStockId').value = id;
+            document.getElementById('outUnit').value = '';
+            document.getElementById('outMessage').innerHTML = '';
+            document.getElementById('outModal').style.display = 'flex';
+        }
+
+        function closeOutModal() {
+            document.getElementById('outModal').style.display = 'none';
+        }
+
+        async function deleteStock(id) {
+            if (!confirm('确定要删除这条库存记录吗？')) return;
+            
+            try {
+                const response = await fetch(API_BASE + `/stock/delete/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.code === 200) {
+                    alert('删除成功');
+                    loadStockList();
+                    loadStockSummary();
+                } else {
+                    alert('删除失败: ' + result.msg);
+                }
+            } catch (error) {
+                alert('删除失败');
+            }
+        }
+
+        document.getElementById('stockForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const stockId = document.getElementById('stockId').value;
+            const isEdit = stockId !== '';
+            
+            const stock = isEdit ? {
+                id: parseInt(stockId),
+                collectionId: parseInt(document.getElementById('collectionId').value),
+                expireDate: document.getElementById('expireDate').value
+            } : {
+                collectionId: parseInt(document.getElementById('collectionId').value),
+                expireDate: document.getElementById('expireDate').value
+            };
+
+            try {
+                const url = isEdit ? '/stock/update' : '/stock/in';
+                const method = isEdit ? 'PUT' : 'POST';
+                
+                const response = await fetch(API_BASE + url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stock)
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    document.getElementById('message').innerHTML = '<div class="message success">' + (isEdit ? '修改成功' : '入库成功') + '</div>';
+                    setTimeout(() => {
+                        closeModal();
+                        loadStockSummary();
+                        loadStockList();
+                    }, 1000);
+                } else {
+                    document.getElementById('message').innerHTML = `<div class="message error">${result.msg}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('message').innerHTML = '<div class="message error">' + (isEdit ? '修改失败' : '入库失败') + '</div>';
+            }
+        });
+
+        document.getElementById('outForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const stockId = document.getElementById('outStockId').value;
+            const outUnit = document.getElementById('outUnit').value;
+
+            try {
+                const response = await fetch(API_BASE + `/stock/out/${stockId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ outUnit: outUnit })
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    document.getElementById('outMessage').innerHTML = '<div class="message success">出库成功</div>';
+                    setTimeout(() => {
+                        closeOutModal();
+                        loadStockSummary();
+                        loadStockList();
+                    }, 1000);
+                } else {
+                    document.getElementById('outMessage').innerHTML = `<div class="message error">${result.msg}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('outMessage').innerHTML = '<div class="message error">出库失败</div>';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDonors();
+            await loadCollections();
             loadStockSummary();
             loadStockList();
         });
@@ -414,6 +566,9 @@
         window.onclick = function(event) {
             if (event.target == document.getElementById('stockModal')) {
                 closeModal();
+            }
+            if (event.target == document.getElementById('outModal')) {
+                closeOutModal();
             }
         }
     </script>

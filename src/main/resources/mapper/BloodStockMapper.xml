@@ -9,13 +9,14 @@
         <result column="blood_amount" property="bloodAmount"/>
         <result column="expire_date" property="expireDate"/>
         <result column="status" property="status"/>
+        <result column="out_unit" property="outUnit"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
         <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, collection_id, blood_type, blood_amount, expire_date, status,
+        id, collection_id, blood_type, blood_amount, expire_date, status, out_unit,
         create_time, update_time, deleted
     </sql>
 

@@ -53,4 +53,14 @@ public interface BloodStockService extends IService<BloodStock> {
      * 获取所有血型的库存预警详情
      */
     List<StockWarningVO> getStockWarningDetails();
+
+    /**
+     * 血液出库
+     */
+    void stockOut(Long id, String outUnit);
+
+    /**
+     * 修改库存信息
+     */
+    void updateStock(BloodStock bloodStock);
 }

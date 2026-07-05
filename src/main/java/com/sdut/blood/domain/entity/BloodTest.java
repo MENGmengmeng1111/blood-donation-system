@@ -44,6 +44,11 @@ public class BloodTest {
     private String unqualifiedReason;
 
     /**
+     * 备注
+     */
+    private String remark;
+
+    /**
      * 判定时间
      */
     private LocalDateTime judgeTime;

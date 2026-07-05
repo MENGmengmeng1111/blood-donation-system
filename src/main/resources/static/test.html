@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>采血记录 - 献血管理系统</title>
+    <title>检验管理 - 献血管理系统</title>
     <style>
         * {
             margin: 0;
@@ -105,7 +105,7 @@
             margin-bottom: 5px;
             font-weight: 500;
         }
-        .form-group input, .form-group select {
+        .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -146,31 +146,21 @@
             font-size: 12px;
             font-weight: 500;
         }
-        .status-pass {
+        .status-pending {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .status-qualified {
             background: #e8f5e9;
             color: #2e7d32;
         }
-        .status-fail {
+        .status-unqualified {
             background: #fce4ec;
             color: #c2185b;
         }
-        .pagination {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .pagination a {
-            display: inline-block;
-            padding: 8px 16px;
-            margin: 0 4px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            text-decoration: none;
-            color: #333;
-        }
-        .pagination a.active {
-            background: #e53935;
-            color: white;
-            border-color: #e53935;
+        .status-stocked {
+            background: #e3f2fd;
+            color: #1565c0;
         }
         .message {
             padding: 12px;
@@ -204,74 +194,72 @@
 
     <div class="container">
         <div class="card">
-            <h2>📝 采血记录</h2>
-            <button class="btn btn-primary" onclick="openAddModal()">+ 新增采血记录</button>
+            <h2>🔬 检验管理</h2>
+            <button class="btn btn-primary" onclick="loadPendingList()">待判定列表</button>
+            <button class="btn" onclick="loadAllList()">全部记录</button>
             
             <table>
                 <thead>
                     <tr>
                         <th>ID</th>
+                        <th>采血记录ID</th>
                         <th>献血者姓名</th>
-                        <th>身份证号</th>
                         <th>血型</th>
                         <th>献血量(ml)</th>
-                        <th>献血类型</th>
-                        <th>初筛结果</th>
-                        <th>采血时间</th>
+                        <th>复检结果</th>
+                        <th>血液状态</th>
+                        <th>不合格原因</th>
+                        <th>判定时间</th>
                         <th>操作管理员</th>
                         <th>操作</th>
                     </tr>
                 </thead>
-                <tbody id="collectionTable">
+                <tbody id="testTable">
                     <tr>
-                        <td colspan="10" style="text-align: center; color: #999;">加载中...</td>
+                        <td colspan="11" style="text-align: center; color: #999;">加载中...</td>
                     </tr>
                 </tbody>
             </table>
-            <div class="pagination" id="pagination"></div>
         </div>
     </div>
 
-    <div class="modal" id="collectionModal">
+    <div class="modal" id="judgeModal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
-            <h3 id="modalTitle">新增采血记录</h3>
+            <h3 id="modalTitle">判定血液合格状态</h3>
             <div id="message"></div>
-            <form id="collectionForm">
-                <input type="hidden" id="collectionId">
+            <form id="judgeForm">
+                <input type="hidden" id="testId">
                 <div class="form-group">
-                    <label>献血者身份证号</label>
-                    <input type="text" id="idCard" required placeholder="输入身份证号查询献血者">
-                </div>
-                <div class="form-group">
-                    <label>献血量(ml)</label>
-                    <input type="number" id="donateAmount" required min="0">
-                </div>
-                <div class="form-group">
-                    <label>献血类型</label>
-                    <select id="donateType">
-                        <option value="全血">全血</option>
-                        <option value="成分血">成分血</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>初筛结果</label>
-                    <select id="initialScreenResult">
+                    <label>判定状态</label>
+                    <select id="bloodStatus" required>
+                        <option value="">请选择</option>
                         <option value="合格">合格</option>
                         <option value="不合格">不合格</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-success" style="margin-top: 20px; width: 100%;">保存</button>
+                <div class="form-group" id="reasonGroup" style="display: none;">
+                    <label>不合格原因</label>
+                    <textarea id="unqualifiedReason" rows="3" placeholder="请填写不合格原因"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>复检结果</label>
+                    <textarea id="recheckResult" rows="3" placeholder="请填写复检结果详情"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea id="remark" rows="3" placeholder="请填写备注信息"></textarea>
+                </div>
+                <button type="submit" class="btn btn-success" style="margin-top: 20px; width: 100%;">确认判定</button>
             </form>
         </div>
     </div>
 
     <script>
         const API_BASE = '/api';
-        let currentPage = 1;
-        let totalPages = 1;
         let donorsMap = {};
         let usersMap = {};
+        let collectionsMap = {};
 
         async function fetchData(url) {
             try {
@@ -287,7 +275,7 @@
             const donors = await fetchData('/donor/list');
             if (donors) {
                 donors.forEach(d => {
-                    donorsMap[d.id] = { name: d.name, bloodType: d.bloodType, idCard: d.idCard };
+                    donorsMap[d.id] = { name: d.name, bloodType: d.bloodType };
                 });
             }
         }
@@ -301,103 +289,111 @@
             }
         }
 
-        async function loadCollections(page = 1) {
-            currentPage = page;
-            const data = await fetchData(`/collection/list?pageNum=${page}&pageSize=10`);
+        async function loadCollections() {
+            const data = await fetchData('/collection/list?pageNum=1&pageSize=100');
+            if (data && data.records) {
+                data.records.forEach(c => {
+                    collectionsMap[c.id] = { donateAmount: c.donateAmount, donorId: c.donorId };
+                });
+            }
+        }
+
+        async function loadPendingList() {
+            const data = await fetchData('/blood-test/pending/list');
+            renderTestList(data);
+        }
+
+        async function loadAllList() {
+            const data = await fetchData('/blood-test/list');
+            renderTestList(data);
+        }
+
+        function renderTestList(data) {
+            const tbody = document.getElementById('testTable');
             
-            const tbody = document.getElementById('collectionTable');
-            if (!data || data.records.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: #999;">暂无数据</td></tr>';
-                document.getElementById('pagination').innerHTML = '';
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: #999;">暂无数据</td></tr>';
                 return;
             }
-
-            totalPages = data.pages;
-            tbody.innerHTML = data.records.map(record => {
-                const donor = donorsMap[record.donorId] || {};
-                const operator = usersMap[record.operatorId] || record.operatorId;
+            
+            tbody.innerHTML = data.map(test => {
+                const collection = collectionsMap[test.collectionId] || {};
+                const donor = donorsMap[collection.donorId] || donorsMap[test.donorId] || {};
+                const operator = usersMap[test.operatorId] || test.operatorId;
                 return `
                 <tr>
-                    <td>${record.id}</td>
+                    <td>${test.id}</td>
+                    <td>${test.collectionId}</td>
                     <td>${donor.name || '-'}</td>
-                    <td>${record.donorIdCard || '-'}</td>
                     <td>${donor.bloodType || '-'}</td>
-                    <td>${record.donateAmount}</td>
-                    <td>${record.donateType}</td>
-                    <td><span class="status-badge ${getStatusClass(record.initialScreenResult)}">${record.initialScreenResult}</span></td>
-                    <td>${record.collectionTime || '-'}</td>
+                    <td>${collection.donateAmount || '-'}</td>
+                    <td>${test.recheckResult || '-'}</td>
+                    <td><span class="status-badge ${getStatusClass(test.bloodStatus)}">${test.bloodStatus}</span></td>
+                    <td>${test.unqualifiedReason || '-'}</td>
+                    <td>${test.judgeTime || '-'}</td>
                     <td>${operator}</td>
                     <td>
-                        <button class="btn btn-warning" onclick="openEditModal(${record.id})">修改</button>
-                        <button class="btn btn-danger" onclick="deleteCollection(${record.id})">删除</button>
+                        ${test.bloodStatus !== '已入库' ? 
+                            `<button class="btn btn-warning" onclick="openJudgeModal(${test.id})">${test.bloodStatus === '待检验' ? '判定' : '修改'}</button>` : 
+                            '<span style="color: #999;">已入库</span>'}
+                        ${test.bloodStatus !== '已入库' ? 
+                            `<button class="btn btn-danger" onclick="deleteTest(${test.id})">删除</button>` : 
+                            ''}
                     </td>
                 </tr>
             `}).join('');
-
-            renderPagination();
         }
 
-        function renderPagination() {
-            const pagination = document.getElementById('pagination');
-            if (totalPages <= 1) {
-                pagination.innerHTML = '';
-                return;
+        function getStatusClass(status) {
+            switch(status) {
+                case '待检验':
+                    return 'status-pending';
+                case '合格':
+                    return 'status-qualified';
+                case '不合格':
+                    return 'status-unqualified';
+                case '已入库':
+                    return 'status-stocked';
+                default:
+                    return 'status-pending';
             }
-
-            let html = `<a href="#" onclick="loadCollections(1)">首页</a>`;
-            if (currentPage > 1) {
-                html += `<a href="#" onclick="loadCollections(${currentPage - 1})">上一页</a>`;
-            }
-            for (let i = 1; i <= totalPages; i++) {
-                html += `<a href="#" onclick="loadCollections(${i})" ${i === currentPage ? 'class="active"' : ''}>${i}</a>`;
-            }
-            if (currentPage < totalPages) {
-                html += `<a href="#" onclick="loadCollections(${currentPage + 1})">下一页</a>`;
-            }
-            html += `<a href="#" onclick="loadCollections(${totalPages})">末页</a>`;
-            pagination.innerHTML = html;
         }
 
-        function openAddModal() {
-            document.getElementById('modalTitle').textContent = '新增采血记录';
-            document.getElementById('collectionId').value = '';
-            document.getElementById('idCard').value = '';
-            document.getElementById('donateAmount').value = '';
-            document.getElementById('donateType').value = '全血';
-            document.getElementById('initialScreenResult').value = '合格';
+        async function openJudgeModal(testId) {
+            const data = await fetchData(`/blood-test/${testId}`);
+            
+            document.getElementById('modalTitle').textContent = data && data.bloodStatus !== '待检验' ? '修改检验结果' : '判定血液合格状态';
+            document.getElementById('testId').value = testId;
+            document.getElementById('bloodStatus').value = data ? data.bloodStatus : '';
+            document.getElementById('unqualifiedReason').value = data ? data.unqualifiedReason || '' : '';
+            document.getElementById('recheckResult').value = data ? data.recheckResult || '' : '';
+            document.getElementById('remark').value = data ? data.remark || '' : '';
             document.getElementById('message').innerHTML = '';
-            document.getElementById('collectionModal').style.display = 'flex';
-        }
-
-        async function openEditModal(id) {
-            const data = await fetchData(`/collection/${id}`);
-            if (!data) return;
-
-            document.getElementById('modalTitle').textContent = '修改采血记录';
-            document.getElementById('collectionId').value = data.id;
-            document.getElementById('idCard').value = data.donorIdCard || '';
-            document.getElementById('donateAmount').value = data.donateAmount;
-            document.getElementById('donateType').value = data.donateType;
-            document.getElementById('initialScreenResult').value = data.initialScreenResult;
-            document.getElementById('message').innerHTML = '';
-            document.getElementById('collectionModal').style.display = 'flex';
+            
+            if (data && data.bloodStatus === '不合格') {
+                document.getElementById('reasonGroup').style.display = 'block';
+            } else {
+                document.getElementById('reasonGroup').style.display = 'none';
+            }
+            
+            document.getElementById('judgeModal').style.display = 'flex';
         }
 
         function closeModal() {
-            document.getElementById('collectionModal').style.display = 'none';
+            document.getElementById('judgeModal').style.display = 'none';
         }
 
-        async function deleteCollection(id) {
-            if (!confirm('确定要删除这条采血记录吗？')) return;
+        async function deleteTest(id) {
+            if (!confirm('确定要删除这条检验记录吗？')) return;
             
             try {
-                const response = await fetch(API_BASE + `/collection/delete/${id}`, {
+                const response = await fetch(API_BASE + `/blood-test/delete/${id}`, {
                     method: 'DELETE'
                 });
                 const result = await response.json();
                 if (result.code === 200) {
                     alert('删除成功');
-                    loadCollections(currentPage);
+                    loadPendingList();
                 } else {
                     alert('删除失败: ' + result.msg);
                 }
@@ -406,62 +402,63 @@
             }
         }
 
-        document.getElementById('collectionForm').addEventListener('submit', async (e) => {
+        document.getElementById('bloodStatus').addEventListener('change', function() {
+            if (this.value === '不合格') {
+                document.getElementById('reasonGroup').style.display = 'block';
+            } else {
+                document.getElementById('reasonGroup').style.display = 'none';
+            }
+        });
+
+        document.getElementById('judgeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const collectionId = document.getElementById('collectionId').value;
-            const isEdit = collectionId !== '';
-            
-            const collection = isEdit ? {
-                id: parseInt(collectionId),
-                donateAmount: parseInt(document.getElementById('donateAmount').value),
-                donateType: document.getElementById('donateType').value,
-                initialScreenResult: document.getElementById('initialScreenResult').value
-            } : {
-                idCard: document.getElementById('idCard').value,
-                donateAmount: parseInt(document.getElementById('donateAmount').value),
-                donateType: document.getElementById('donateType').value,
-                initialScreenResult: document.getElementById('initialScreenResult').value
+            const bloodStatus = document.getElementById('bloodStatus').value;
+            if (bloodStatus === '不合格' && !document.getElementById('unqualifiedReason').value.trim()) {
+                document.getElementById('message').innerHTML = '<div class="message error">请填写不合格原因</div>';
+                return;
+            }
+
+            const judgeData = {
+                testId: parseInt(document.getElementById('testId').value),
+                bloodStatus: bloodStatus,
+                unqualifiedReason: document.getElementById('unqualifiedReason').value,
+                recheckResult: document.getElementById('recheckResult').value,
+                remark: document.getElementById('remark').value
             };
 
             try {
-                const url = isEdit ? '/collection/update' : '/collection/add';
-                const method = isEdit ? 'PUT' : 'POST';
-                
-                const response = await fetch(API_BASE + url, {
-                    method: method,
+                const response = await fetch(API_BASE + '/blood-test/judge', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(collection)
+                    body: JSON.stringify(judgeData)
                 });
                 
                 const result = await response.json();
                 
                 if (result.code === 200) {
-                    document.getElementById('message').innerHTML = '<div class="message success">保存成功</div>';
+                    document.getElementById('message').innerHTML = '<div class="message success">判定成功</div>';
                     setTimeout(() => {
                         closeModal();
-                        loadCollections(currentPage);
+                        loadPendingList();
                     }, 1000);
                 } else {
                     document.getElementById('message').innerHTML = `<div class="message error">${result.msg}</div>`;
                 }
             } catch (error) {
-                document.getElementById('message').innerHTML = '<div class="message error">保存失败</div>';
+                document.getElementById('message').innerHTML = '<div class="message error">判定失败</div>';
             }
         });
-
-        function getStatusClass(status) {
-            return status === '合格' ? 'status-pass' : 'status-fail';
-        }
 
         document.addEventListener('DOMContentLoaded', async () => {
             await loadDonors();
             await loadUsers();
-            loadCollections();
+            await loadCollections();
+            loadPendingList();
         });
 
         window.onclick = function(event) {
-            if (event.target == document.getElementById('collectionModal')) {
+            if (event.target == document.getElementById('judgeModal')) {
                 closeModal();
             }
         }

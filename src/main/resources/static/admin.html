@@ -32,6 +32,7 @@
         .btn-primary { background: #1976d2; }
         .btn-primary:hover { background: #1565c0; }
         .btn-success { background: #388e3c; }
+        .btn-warning { background: #ff9800; }
         .btn-danger { background: #d32f2f; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         table th, table td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -40,7 +41,7 @@
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
         .modal-content .close { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; }
         .search-bar { display: flex; gap: 10px; margin-bottom: 15px; }
         .search-bar input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
@@ -52,6 +53,9 @@
         .pagination { text-align: center; margin-top: 20px; }
         .pagination a { display: inline-block; padding: 6px 12px; margin: 0 3px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333; }
         .pagination a.active { background: #e53935; color: white; }
+        .message { padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; }
+        .message.success { background: #e8f5e9; color: #2e7d32; }
+        .message.error { background: #fce4ec; color: #c2185b; }
     </style>
 </head>
 <body>
@@ -83,6 +87,7 @@
             <a href="#collection">采血检验管理</a>
             <div class="sub-menu">
                 <a href="#collection-list" onclick="showTab('collection-list')">采血记录</a>
+                <a href="#collection-add" onclick="showTab('collection-add')">新增采血</a>
                 <a href="#test-list" onclick="showTab('test-list')">检验记录</a>
             </div>
         </div>
@@ -147,7 +152,8 @@
             <div class="card">
                 <h2>新增献血者档案</h2>
                 <form id="donor-form">
-                    <div class="form-group"><label>用户ID</label><input type="number" id="donor-user-id" required></div>
+                    <input type="hidden" id="donor-id">
+                    <div class="form-group"><label>用户ID（可选）</label><input type="number" id="donor-user-id" placeholder="不填则不关联用户"></div>
                     <div class="form-group"><label>姓名</label><input type="text" id="donor-name" required></div>
                     <div class="form-group"><label>身份证号</label><input type="text" id="donor-id-card" required></div>
                     <div class="form-group">
@@ -190,6 +196,7 @@
             <div class="card">
                 <h2>新增献血活动</h2>
                 <form id="activity-form">
+                    <input type="hidden" id="activity-id">
                     <div class="form-group"><label>活动名称</label><input type="text" id="activity-name" required></div>
                     <div class="form-group"><label>活动地点</label><input type="text" id="activity-location" required></div>
                     <div class="form-group"><label>活动日期</label><input type="date" id="activity-date" required></div>
@@ -203,10 +210,47 @@
         <div id="collection-list" class="tab-content" style="display:none;">
             <div class="card">
                 <h2>采血记录列表</h2>
+                <button class="btn btn-primary" onclick="showTab('collection-add')">新增采血记录</button>
                 <table>
-                    <thead><tr><th>献血者</th><th>献血量(ml)</th><th>献血类型</th><th>初筛结果</th><th>采血时间</th><th>操作</th></tr></thead>
+                    <thead><tr><th>献血者姓名</th><th>身份证号</th><th>血型</th><th>献血量(ml)</th><th>献血类型</th><th>初筛结果</th><th>采血时间</th><th>操作</th></tr></thead>
                     <tbody id="collection-table-body"></tbody>
                 </table>
+            </div>
+        </div>
+
+        <div id="collection-add" class="tab-content" style="display:none;">
+            <div class="card">
+                <h2 id="collection-title">新增采血记录</h2>
+                <div id="collection-message"></div>
+                <form id="collection-form">
+                    <input type="hidden" id="collection-id">
+                    <input type="hidden" id="selected-donor-id">
+                    <div class="form-group">
+                        <label>搜索献血者</label>
+                        <input type="text" id="donor-search-input" placeholder="输入姓名搜索" onkeyup="searchDonors()">
+                    </div>
+                    <div id="donor-search-results" style="max-height:200px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;margin-bottom:15px;display:none;">
+                    </div>
+                    <div id="selected-donor-info" style="display:none;margin-bottom:15px;padding:10px;background:#f5f5f5;border-radius:4px;">
+                        <strong>已选择：</strong><span id="selected-donor-name"></span>
+                        <span id="selected-donor-blood-type"></span>
+                        <span id="selected-donor-id-card"></span>
+                    </div>
+                    <div class="form-group"><label>献血量(ml)</label><input type="number" id="collection-amount" required min="0"></div>
+                    <div class="form-group"><label>献血类型</label>
+                        <select id="collection-type">
+                            <option value="全血">全血</option>
+                            <option value="成分血">成分血</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>初筛结果</label>
+                        <select id="collection-result">
+                            <option value="合格">合格</option>
+                            <option value="不合格">不合格</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn" onclick="saveCollection()">保存</button>
+                </form>
             </div>
         </div>
 
@@ -214,7 +258,7 @@
             <div class="card">
                 <h2>检验记录列表</h2>
                 <table>
-                    <thead><tr><th>献血者ID</th><th>复检结果</th><th>血液状态</th><th>不合格原因</th><th>判定时间</th><th>操作</th></tr></thead>
+                    <thead><tr><th>献血者姓名</th><th>血型</th><th>献血量(ml)</th><th>复检结果</th><th>血液状态</th><th>不合格原因</th><th>判定时间</th><th>操作</th></tr></thead>
                     <tbody id="test-table-body"></tbody>
                 </table>
             </div>
@@ -224,7 +268,7 @@
             <div class="card">
                 <h2>库存明细</h2>
                 <table>
-                    <thead><tr><th>血型</th><th>血量(ml)</th><th>有效期</th><th>状态</th><th>入库时间</th><th>操作</th></tr></thead>
+                    <thead><tr><th>献血者姓名</th><th>血型</th><th>血量(ml)</th><th>有效期</th><th>状态</th><th>入库时间</th><th>操作</th></tr></thead>
                     <tbody id="stock-table-body"></tbody>
                 </table>
             </div>
@@ -263,40 +307,54 @@
         </div>
     </div>
 
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3 id="modal-title">编辑</h3>
+            <div id="modal-message"></div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = '/api';
+        let donorsMap = {};
+        let collectionsMap = {};
 
-        function getToken() {
-            return localStorage.getItem('token');
-        }
-
+        function getToken() { return localStorage.getItem('token'); }
         function getHeaders() {
             const token = getToken();
             const headers = { 'Content-Type': 'application/json' };
-            if (token) {
-                headers['Authorization'] = 'Bearer ' + token;
-            }
+            if (token) headers['Authorization'] = 'Bearer ' + token;
             return headers;
         }
 
         async function fetchData(url, options = {}) {
             try {
-                const response = await fetch(API_BASE + url, {
-                    headers: getHeaders(),
-                    ...options
-                });
-                
+                const response = await fetch(API_BASE + url, { headers: getHeaders(), ...options });
                 if (response.status === 401) {
                     alert('登录已过期，请重新登录');
                     localStorage.clear();
                     window.location.href = 'index.html';
                     return null;
                 }
-                
                 return await response.json();
-            } catch (e) { 
-                console.error(e); 
-                return null; 
+            } catch (e) { console.error(e); return null; }
+        }
+
+        async function loadDonorsMap() {
+            const donors = await fetchData('/donor/list?pageNum=1&pageSize=1000');
+            donorsMap = {};
+            if (donors?.data?.records) {
+                donors.data.records.forEach(d => { donorsMap[d.id] = d; });
+            }
+        }
+
+        async function loadCollectionsMap() {
+            const collections = await fetchData('/collection/list?pageNum=1&pageSize=1000');
+            collectionsMap = {};
+            if (collections?.data?.records) {
+                collections.data.records.forEach(c => { collectionsMap[c.id] = c; });
             }
         }
 
@@ -307,23 +365,27 @@
             
             if (tabId === 'donor-list' || tabId === 'donor-add') loadDonorList();
             if (tabId === 'activity-list' || tabId === 'activity-add') loadActivityList();
-            if (tabId === 'collection-list') loadCollectionList();
-            if (tabId === 'test-list') loadTestList();
-            if (tabId === 'stock-list') loadStockList();
+            if (tabId === 'collection-list') { loadDonorsMap(); loadCollectionList(); }
+            if (tabId === 'collection-add') resetCollectionForm();
+            if (tabId === 'test-list') { loadDonorsMap(); loadCollectionsMap(); loadTestList(); }
+            if (tabId === 'stock-list') { loadDonorsMap(); loadStockList(); }
             if (tabId === 'home') loadStats();
             if (tabId === 'report') loadReport();
         }
 
-        function logout() {
-            localStorage.clear();
-            window.location.href = 'index.html';
-        }
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
 
         async function loadStats() {
             const activities = await fetchData('/activity/all');
             const donors = await fetchData('/donor/list?pageNum=1&pageSize=1000');
+            const collections = await fetchData('/collection/list?pageNum=1&pageSize=1000');
+            const stocks = await fetchData('/stock/list');
             document.getElementById('activityCount').textContent = activities?.data?.length || 0;
             document.getElementById('donorCount').textContent = donors?.data?.total || 0;
+            const totalAmount = collections?.data?.records?.reduce((sum, c) => sum + (c.donateAmount || 0), 0) || 0;
+            document.getElementById('collectionCount').textContent = totalAmount;
+            const stockAmount = stocks?.data?.reduce((sum, s) => sum + (s.bloodAmount || 0), 0) || 0;
+            document.getElementById('stockCount').textContent = stockAmount;
         }
 
         async function loadDonorList() {
@@ -341,13 +403,35 @@
                     <td>${d.bloodType}</td>
                     <td>${d.phone}</td>
                     <td><span class="status-badge ${d.donorStatus === '正常' ? 'status-completed' : 'status-pending'}">${d.donorStatus}</span></td>
-                    <td><button class="btn btn-danger" onclick="deleteDonor(${d.id})">删除</button></td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editDonor(${d.id})">修改</button>
+                        <button class="btn btn-danger" onclick="deleteDonor(${d.id})">删除</button>
+                    </td>
                 </tr>
             `).join('');
         }
 
+        async function editDonor(id) {
+            const result = await fetchData('/donor/' + id);
+            if (!result?.data) return;
+            const d = result.data;
+            document.getElementById('donor-id').value = d.id;
+            document.getElementById('donor-user-id').value = d.userId || '';
+            document.getElementById('donor-name').value = d.name || '';
+            document.getElementById('donor-id-card').value = d.idCard || '';
+            document.getElementById('donor-blood-type').value = d.bloodType || 'A型';
+            document.getElementById('donor-phone').value = d.phone || '';
+            document.getElementById('donor-gender').value = d.gender || '';
+            document.getElementById('donor-age').value = d.age || '';
+            document.getElementById('donor-address').value = d.address || '';
+            document.getElementById('donor-medical-history').value = d.medicalHistory || '';
+            showTab('donor-add');
+        }
+
         async function saveDonor() {
+            const donorId = document.getElementById('donor-id').value;
             const data = {
+                id: donorId ? parseInt(donorId) : null,
                 userId: parseInt(document.getElementById('donor-user-id').value) || null,
                 name: document.getElementById('donor-name').value,
                 idCard: document.getElementById('donor-id-card').value,
@@ -358,23 +442,40 @@
                 address: document.getElementById('donor-address').value || null,
                 medicalHistory: document.getElementById('donor-medical-history').value || null
             };
-            await fetch(API_BASE + '/donor/add', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) });
-            showTab('donor-list');
+            const method = donorId ? 'PUT' : 'POST';
+            const url = donorId ? '/donor/update' : '/donor/add';
+            const result = await fetchData(url, { method, body: JSON.stringify(data) });
+            if (result && result.code === 200) {
+                alert('保存成功');
+                resetDonorForm();
+                showTab('donor-list');
+            } else {
+                alert(result?.msg || '保存失败');
+            }
+        }
+
+        function resetDonorForm() {
+            document.getElementById('donor-id').value = '';
+            document.getElementById('donor-user-id').value = '';
+            document.getElementById('donor-name').value = '';
+            document.getElementById('donor-id-card').value = '';
+            document.getElementById('donor-blood-type').value = 'A型';
+            document.getElementById('donor-phone').value = '';
+            document.getElementById('donor-gender').value = '';
+            document.getElementById('donor-age').value = '';
+            document.getElementById('donor-address').value = '';
+            document.getElementById('donor-medical-history').value = '';
         }
 
         async function deleteDonor(id) {
             if (confirm('确定删除该档案吗？')) {
-                try {
-                    const response = await fetch(API_BASE + '/donor/delete/' + id, { method: 'DELETE', headers: getHeaders() });
-                    const result = await response.json();
-                    if (response.ok && result.code === 200) {
-                        alert('删除成功');
-                        loadDonorList();
-                    } else {
-                        alert('删除失败：' + (result.message || '未知错误'));
-                    }
-                } catch (error) {
-                    alert('删除失败：' + error.message);
+                const response = await fetch(API_BASE + '/donor/delete/' + id, { method: 'DELETE', headers: getHeaders() });
+                const result = await response.json();
+                if (response.ok && result.code === 200) {
+                    alert('删除成功');
+                    loadDonorList();
+                } else {
+                    alert('删除失败：' + (result.message || '未知错误'));
                 }
             }
         }
@@ -394,25 +495,46 @@
                     <td><span class="status-badge ${getStatusClass(a.status)}">${a.status}</span></td>
                     <td>${a.morningRemaining}/${a.morningQuota}</td>
                     <td>${a.afternoonRemaining}/${a.afternoonQuota}</td>
-                    <td><button class="btn btn-danger" onclick="deleteActivity(${a.id})">删除</button></td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editActivity(${a.id})">修改</button>
+                        <button class="btn btn-danger" onclick="deleteActivity(${a.id})">删除</button>
+                    </td>
                 </tr>
             `).join('');
         }
 
+        async function editActivity(id) {
+            const result = await fetchData('/activity/' + id);
+            if (!result?.data) return;
+            const a = result.data;
+            document.getElementById('activity-id').value = a.id;
+            document.getElementById('activity-name').value = a.activityName || '';
+            document.getElementById('activity-location').value = a.location || '';
+            document.getElementById('activity-date').value = a.activityDate || '';
+            document.getElementById('activity-morning-quota').value = a.morningQuota || 50;
+            document.getElementById('activity-afternoon-quota').value = a.afternoonQuota || 50;
+            showTab('activity-add');
+        }
+
         async function saveActivity() {
+            const activityId = document.getElementById('activity-id').value;
             const data = {
+                id: activityId ? parseInt(activityId) : null,
                 activityName: document.getElementById('activity-name').value,
                 location: document.getElementById('activity-location').value,
                 activityDate: document.getElementById('activity-date').value,
                 morningQuota: parseInt(document.getElementById('activity-morning-quota').value) || 0,
                 afternoonQuota: parseInt(document.getElementById('activity-afternoon-quota').value) || 0
             };
-            const result = await fetchData('/activity/add', { method: 'POST', body: JSON.stringify(data) });
+            const method = activityId ? 'PUT' : 'POST';
+            const url = activityId ? '/activity/update' : '/activity/add';
+            const result = await fetchData(url, { method, body: JSON.stringify(data) });
             if (result && result.code === 200) {
-                alert('新增成功');
+                alert('保存成功');
+                document.getElementById('activity-id').value = '';
                 showTab('activity-list');
             } else {
-                alert(result?.msg || '新增失败，请重试');
+                alert(result?.msg || '保存失败');
             }
         }
 
@@ -427,38 +549,227 @@
             const result = await fetchData('/collection/list?pageNum=1&pageSize=20');
             const tbody = document.getElementById('collection-table-body');
             if (!result?.data?.records?.length) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">暂无数据</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">暂无数据</td></tr>';
                 return;
             }
-            tbody.innerHTML = result.data.records.map(c => `
+            tbody.innerHTML = result.data.records.map(c => {
+                const donor = donorsMap[c.donorId] || {};
+                return `
                 <tr>
-                    <td>献血者${c.donorId}</td>
+                    <td>${donor.name || '-'}</td>
+                    <td>${c.donorIdCard ? '******' + c.donorIdCard.slice(-4) : '-'}</td>
+                    <td>${donor.bloodType || '-'}</td>
                     <td>${c.donateAmount}</td>
                     <td>${c.donateType}</td>
-                    <td>${c.initialScreenResult}</td>
-                    <td>${c.collectionTime?.split(' ')[0]}</td>
-                    <td></td>
+                    <td><span class="status-badge ${getStatusClass(c.initialScreenResult)}">${c.initialScreenResult}</span></td>
+                    <td>${c.collectionTime?.split(' ')[0] || '-'}</td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editCollection('${c.id}')">修改</button>
+                        <button class="btn btn-danger" onclick="deleteCollection('${c.id}')">删除</button>
+                    </td>
                 </tr>
+            `}).join('');
+        }
+
+        function resetCollectionForm() {
+            document.getElementById('collection-title').textContent = '新增采血记录';
+            document.getElementById('collection-id').value = '';
+            document.getElementById('collection-id-card').value = '';
+            document.getElementById('selected-donor-id').value = '';
+            document.getElementById('donor-search-input').value = '';
+            document.getElementById('donor-search-results').style.display = 'none';
+            document.getElementById('selected-donor-info').style.display = 'none';
+            document.getElementById('collection-amount').value = '';
+            document.getElementById('collection-type').value = '全血';
+            document.getElementById('collection-result').value = '合格';
+            document.getElementById('collection-message').innerHTML = '';
+        }
+
+        async function searchDonors() {
+            const keyword = document.getElementById('donor-search-input').value.trim();
+            const resultsDiv = document.getElementById('donor-search-results');
+            if (!keyword) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            const donors = await fetchData('/donor/list?pageNum=1&pageSize=20');
+            const filtered = donors?.data?.records?.filter(d => 
+                d.name && d.name.includes(keyword)
+            ) || [];
+            if (!filtered.length) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            resultsDiv.innerHTML = filtered.map(d => `
+                <div style="padding:8px;border-bottom:1px solid #eee;cursor:pointer;" 
+                     onclick="selectDonor(${d.id}, '${d.name}', '${d.bloodType || ''}', '${d.idCard || ''}')">
+                    ${d.name} - ${d.bloodType || '未知血型'} - ${d.idCard ? '******' + d.idCard.slice(-4) : '无身份证'}
+                </div>
             `).join('');
+            resultsDiv.style.display = 'block';
+        }
+
+        function selectDonor(id, name, bloodType, idCard) {
+            document.getElementById('selected-donor-id').value = id;
+            document.getElementById('selected-donor-name').textContent = name;
+            document.getElementById('selected-donor-blood-type').textContent = ' - ' + bloodType;
+            document.getElementById('selected-donor-id-card').textContent = ' - ' + (idCard ? '******' + idCard.slice(-4) : '');
+            document.getElementById('selected-donor-info').style.display = 'block';
+            document.getElementById('donor-search-results').style.display = 'none';
+            document.getElementById('donor-search-input').value = '';
+        }
+
+        async function editCollection(id) {
+            const result = await fetchData('/collection/' + id);
+            if (!result?.data) return;
+            const c = result.data;
+            document.getElementById('collection-title').textContent = '修改采血记录';
+            document.getElementById('collection-id').value = c.id;
+            document.getElementById('collection-id-card').value = c.donorIdCard || '';
+            document.getElementById('collection-amount').value = c.donateAmount;
+            document.getElementById('collection-type').value = c.donateType;
+            document.getElementById('collection-result').value = c.initialScreenResult;
+            document.getElementById('collection-message').innerHTML = '';
+            
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.getElementById('collection-add').style.display = 'block';
+        }
+
+        async function saveCollection() {
+            const collectionId = document.getElementById('collection-id').value;
+            const isEdit = collectionId !== '';
+            
+            if (!isEdit) {
+                const donorId = document.getElementById('selected-donor-id').value;
+                if (!donorId) {
+                    alert('请先选择献血者');
+                    return;
+                }
+            }
+            
+            const data = isEdit ? {
+                id: parseInt(collectionId),
+                donateAmount: parseInt(document.getElementById('collection-amount').value),
+                donateType: document.getElementById('collection-type').value,
+                initialScreenResult: document.getElementById('collection-result').value
+            } : {
+                donorId: parseInt(document.getElementById('selected-donor-id').value),
+                donateAmount: parseInt(document.getElementById('collection-amount').value),
+                donateType: document.getElementById('collection-type').value,
+                initialScreenResult: document.getElementById('collection-result').value
+            };
+            const method = isEdit ? 'PUT' : 'POST';
+            const url = isEdit ? '/collection/update' : '/collection/add';
+            const result = await fetchData(url, { method, body: JSON.stringify(data) });
+            if (result && result.code === 200) {
+                document.getElementById('collection-message').innerHTML = '<div class="message success">保存成功</div>';
+                setTimeout(() => {
+                    resetCollectionForm();
+                    showTab('collection-list');
+                }, 1000);
+            } else {
+                document.getElementById('collection-message').innerHTML = `<div class="message error">${result?.msg || '保存失败'}</div>`;
+            }
+        }
+
+        async function deleteCollection(id) {
+            if (confirm('确定删除该采血记录吗？')) {
+                const result = await fetch(API_BASE + '/collection/delete/' + id, { method: 'DELETE', headers: getHeaders() });
+                const data = await result.json();
+                if (result.ok && data.code === 200) {
+                    alert('删除成功');
+                    await loadDonorsMap();
+                    loadCollectionList();
+                } else {
+                    alert('删除失败：' + (data.msg || '未知错误'));
+                }
+            }
         }
 
         async function loadTestList() {
             const result = await fetchData('/blood-test/list');
             const tbody = document.getElementById('test-table-body');
             if (!result?.data?.length) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">暂无数据</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">暂无数据</td></tr>';
                 return;
             }
-            tbody.innerHTML = result.data.map(t => `
+            tbody.innerHTML = result.data.map(t => {
+                const donor = donorsMap[t.donorId] || {};
+                const collection = collectionsMap[t.collectionId] || {};
+                return `
                 <tr>
-                    <td>${t.donorId}</td>
+                    <td>${donor.name || '-'}</td>
+                    <td>${donor.bloodType || '-'}</td>
+                    <td>${collection.donateAmount || '-'}</td>
                     <td>${t.recheckResult || '-'}</td>
                     <td><span class="status-badge ${getStatusClass(t.bloodStatus)}">${t.bloodStatus}</span></td>
                     <td>${t.unqualifiedReason || '-'}</td>
-                    <td>${t.judgeTime || '-'}</td>
-                    <td><button class="btn btn-danger" onclick="deleteTest(${t.id})">删除</button></td>
+                    <td>${t.judgeTime?.split(' ')[0] || '-'}</td>
+                    <td>
+                        ${t.bloodStatus !== '已入库' ? 
+                            `<button class="btn btn-warning" onclick="editTest(${t.id})">修改</button>` : 
+                            '<span style="color:#999;">已入库</span>'}
+                        ${t.bloodStatus !== '已入库' ? 
+                            `<button class="btn btn-danger" onclick="deleteTest(${t.id})">删除</button>` : ''}
+                    </td>
                 </tr>
-            `).join('');
+            `}).join('');
+        }
+
+        async function editTest(id) {
+            const result = await fetchData('/blood-test/' + id);
+            if (!result?.data) return;
+            const t = result.data;
+            const donor = donorsMap[t.donorId] || {};
+            const collection = collectionsMap[t.collectionId] || {};
+            
+            document.getElementById('modal-title').textContent = '修改检验记录';
+            document.getElementById('modal-body').innerHTML = `
+                <form id="test-edit-form">
+                    <input type="hidden" id="test-id" value="${t.id}">
+                    <div class="form-group"><label>献血者</label><input type="text" value="${donor.name || '-'}" disabled></div>
+                    <div class="form-group"><label>血型</label><input type="text" value="${donor.bloodType || '-'}" disabled></div>
+                    <div class="form-group"><label>献血量(ml)</label><input type="text" value="${collection.donateAmount || '-'}" disabled></div>
+                    <div class="form-group"><label>复检结果</label>
+                        <select id="test-recheck-result">
+                            <option value="">请选择</option>
+                            <option value="合格" ${t.recheckResult === '合格' ? 'selected' : ''}>合格</option>
+                            <option value="不合格" ${t.recheckResult === '不合格' ? 'selected' : ''}>不合格</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>血液状态</label>
+                        <select id="test-blood-status">
+                            <option value="待检验" ${t.bloodStatus === '待检验' ? 'selected' : ''}>待检验</option>
+                            <option value="合格" ${t.bloodStatus === '合格' ? 'selected' : ''}>合格</option>
+                            <option value="不合格" ${t.bloodStatus === '不合格' ? 'selected' : ''}>不合格</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>不合格原因</label><input type="text" id="test-reason" value="${t.unqualifiedReason || ''}"></div>
+                    <div class="form-group"><label>备注</label><textarea id="test-remark" rows="3">${t.remark || ''}</textarea></div>
+                    <button type="button" class="btn" onclick="saveTest()">保存</button>
+                </form>
+            `;
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        async function saveTest() {
+            const data = {
+                testId: parseInt(document.getElementById('test-id').value),
+                recheckResult: document.getElementById('test-recheck-result').value,
+                bloodStatus: document.getElementById('test-blood-status').value,
+                unqualifiedReason: document.getElementById('test-reason').value,
+                remark: document.getElementById('test-remark').value
+            };
+            const result = await fetchData('/blood-test/judge', { method: 'PUT', body: JSON.stringify(data) });
+            if (result && result.code === 200) {
+                document.getElementById('modal-message').innerHTML = '<div class="message success">保存成功</div>';
+                setTimeout(() => {
+                    closeModal();
+                    loadTestList();
+                }, 1000);
+            } else {
+                document.getElementById('modal-message').innerHTML = `<div class="message error">${result?.msg || '保存失败'}</div>`;
+            }
         }
 
         async function deleteTest(id) {
@@ -472,19 +783,101 @@
             const result = await fetchData('/stock/list');
             const tbody = document.getElementById('stock-table-body');
             if (!result?.data?.length) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">暂无数据</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">暂无数据</td></tr>';
                 return;
             }
-            tbody.innerHTML = result.data.map(s => `
+            tbody.innerHTML = result.data.map(s => {
+                const collection = collectionsMap[s.collectionId];
+                const donor = collection ? donorsMap[collection.donorId] : {};
+                return `
                 <tr>
+                    <td>${donor.name || '-'}</td>
                     <td>${s.bloodType}</td>
                     <td>${s.bloodAmount}</td>
                     <td>${s.expireDate}</td>
                     <td><span class="status-badge ${getStatusClass(s.status)}">${s.status}</span></td>
-                    <td>${s.createTime?.split(' ')[0]}</td>
-                    <td><button class="btn btn-danger" onclick="deleteStock(${s.id})">删除</button></td>
+                    <td>${s.createTime?.split(' ')[0] || '-'}</td>
+                    <td>
+                        ${s.status === '正常' ? 
+                            `<button class="btn btn-warning" onclick="editStock(${s.id})">修改</button>` : ''}
+                        ${s.status === '正常' || s.status === '临期' || s.status === '已过期' ? 
+                            `<button class="btn btn-primary" onclick="stockOut(${s.id})">出库</button>` : ''}
+                        ${s.status !== '已出库' ? 
+                            `<button class="btn btn-danger" onclick="deleteStock(${s.id})">删除</button>` : ''}
+                    </td>
                 </tr>
-            `).join('');
+            `}).join('');
+        }
+
+        async function editStock(id) {
+            const result = await fetchData('/stock/' + id);
+            if (!result?.data) return;
+            const s = result.data;
+            const collection = collectionsMap[s.collectionId];
+            const donor = collection ? donorsMap[collection.donorId] : {};
+            
+            document.getElementById('modal-title').textContent = '修改库存信息';
+            document.getElementById('modal-body').innerHTML = `
+                <form id="stock-edit-form">
+                    <input type="hidden" id="stock-id" value="${s.id}">
+                    <div class="form-group"><label>献血者</label><input type="text" value="${donor.name || '-'}" disabled></div>
+                    <div class="form-group"><label>血型</label><input type="text" value="${s.bloodType || '-'}" disabled></div>
+                    <div class="form-group"><label>血量(ml)</label><input type="text" value="${s.bloodAmount || '-'}" disabled></div>
+                    <div class="form-group"><label>有效期</label><input type="date" id="stock-expire-date" value="${s.expireDate}"></div>
+                    <button type="button" class="btn" onclick="saveStock()">保存</button>
+                </form>
+            `;
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        async function saveStock() {
+            const data = {
+                id: parseInt(document.getElementById('stock-id').value),
+                expireDate: document.getElementById('stock-expire-date').value
+            };
+            const result = await fetchData('/stock/update', { method: 'PUT', body: JSON.stringify(data) });
+            if (result && result.code === 200) {
+                document.getElementById('modal-message').innerHTML = '<div class="message success">保存成功</div>';
+                setTimeout(() => {
+                    closeModal();
+                    loadStockList();
+                }, 1000);
+            } else {
+                document.getElementById('modal-message').innerHTML = `<div class="message error">${result?.msg || '保存失败'}</div>`;
+            }
+        }
+
+        async function stockOut(id) {
+            const result = await fetchData('/stock/' + id);
+            if (!result?.data) return;
+            const s = result.data;
+            
+            document.getElementById('modal-title').textContent = '血液出库';
+            document.getElementById('modal-body').innerHTML = `
+                <form id="stock-out-form">
+                    <input type="hidden" id="stock-out-id" value="${s.id}">
+                    <div class="form-group"><label>血型</label><input type="text" value="${s.bloodType}" disabled></div>
+                    <div class="form-group"><label>血量(ml)</label><input type="text" value="${s.bloodAmount}" disabled></div>
+                    <div class="form-group"><label>用血单位</label><input type="text" id="stock-out-unit" placeholder="请输入用血单位" required></div>
+                    <button type="button" class="btn" onclick="confirmStockOut()">确认出库</button>
+                </form>
+            `;
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        async function confirmStockOut() {
+            const id = document.getElementById('stock-out-id').value;
+            const outUnit = document.getElementById('stock-out-unit').value;
+            const result = await fetchData('/stock/out/' + id, { method: 'PUT', body: JSON.stringify({ outUnit }) });
+            if (result && result.code === 200) {
+                document.getElementById('modal-message').innerHTML = '<div class="message success">出库成功</div>';
+                setTimeout(() => {
+                    closeModal();
+                    loadStockList();
+                }, 1000);
+            } else {
+                document.getElementById('modal-message').innerHTML = `<div class="message error">${result?.msg || '出库失败'}</div>`;
+            }
         }
 
         async function deleteStock(id) {
@@ -499,8 +892,18 @@
                 collectionId: document.getElementById('stock-collection-id').value,
                 expireDate: document.getElementById('stock-expire-date').value
             };
-            await fetch(API_BASE + '/stock/in', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) });
-            showTab('stock-list');
+            const result = await fetchData('/stock/in', { method: 'POST', body: JSON.stringify(data) });
+            if (result && result.code === 200) {
+                alert('入库成功');
+                showTab('stock-list');
+            } else {
+                alert(result?.msg || '入库失败');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+            document.getElementById('modal-message').innerHTML = '';
         }
 
         async function loadReport() {
@@ -527,6 +930,10 @@
             document.getElementById('user-name').textContent = localStorage.getItem('username') || '管理员';
             loadStats();
         });
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('edit-modal')) closeModal();
+        }
     </script>
 </body>
 </html>

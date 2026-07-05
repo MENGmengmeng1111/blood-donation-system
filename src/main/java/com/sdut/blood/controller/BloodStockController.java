@@ -84,7 +84,17 @@ public class BloodStockController {
      */
     @PutMapping("/update")
     public Result<Void> updateStockInfo(@RequestBody BloodStock bloodStock) {
-        bloodStockService.updateById(bloodStock);
+        bloodStockService.updateStock(bloodStock);
+        return Result.success();
+    }
+
+    /**
+     * 血液出库
+     */
+    @PutMapping("/out/{id}")
+    public Result<Void> stockOut(@PathVariable Long id, @RequestBody java.util.Map<String, String> params) {
+        String outUnit = params.get("outUnit");
+        bloodStockService.stockOut(id, outUnit);
         return Result.success();
     }
 

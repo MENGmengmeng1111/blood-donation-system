@@ -4,15 +4,11 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-/**
- * 新增采血记录入参
- */
 @Data
-public class CollectionAddDTO {
+public class CollectionUpdateDTO {
 
-    private Long donorId;
-
-    private String idCard;
+    @NotNull(message = "请选择待修改的采血记录")
+    private Long id;
 
     @NotNull(message = "请填写献血量")
     private Integer donateAmount;

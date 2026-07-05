@@ -239,4 +239,35 @@ public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodSt
         
         return warningList;
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void stockOut(Long id, String outUnit) {
+        BloodStock stock = getById(id);
+        if (stock == null) {
+            throw new BusinessException("库存记录不存在");
+        }
+        if ("已出库".equals(stock.getStatus())) {
+            throw new BusinessException("该血液已出库");
+        }
+        stock.setStatus("已出库");
+        stock.setOutUnit(outUnit);
+        updateById(stock);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateStock(BloodStock bloodStock) {
+        BloodStock stock = getById(bloodStock.getId());
+        if (stock == null) {
+            throw new BusinessException("库存记录不存在");
+        }
+        if ("已出库".equals(stock.getStatus())) {
+            throw new BusinessException("已出库的记录不能修改");
+        }
+        if (bloodStock.getExpireDate() != null) {
+            stock.setExpireDate(bloodStock.getExpireDate());
+        }
+        updateById(stock);
+    }
 }
