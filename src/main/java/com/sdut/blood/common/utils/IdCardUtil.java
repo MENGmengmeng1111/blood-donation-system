@@ -3,6 +3,7 @@ package com.sdut.blood.common.utils;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.regex.Pattern;
 
 /**
@@ -18,6 +19,10 @@ public class IdCardUtil {
             "^[1-9]\\d{5}(18|19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[\\dXx]$"
     );
 
+    private static final int[] WEIGHTS = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
+
+    private static final char[] CHECK_CODES = {'1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'};
+
     /**
      * 校验身份证号格式是否合法
      *
@@ -28,7 +33,10 @@ public class IdCardUtil {
         if (idCard == null || idCard.trim().length() != 18) {
             return false;
         }
-        return ID_CARD_PATTERN.matcher(idCard.trim()).matches();
+        String cleanIdCard = idCard.trim().toUpperCase();
+        return ID_CARD_PATTERN.matcher(cleanIdCard).matches()
+                && parseBirthDate(cleanIdCard) != null
+                && isValidCheckCode(cleanIdCard);
     }
 
     /**
@@ -72,5 +80,22 @@ public class IdCardUtil {
         char genderChar = idCard.charAt(16);
         int genderNum = Integer.parseInt(String.valueOf(genderChar));
         return genderNum % 2 == 1 ? 1 : 2;
+    }
+
+    private static LocalDate parseBirthDate(String idCard) {
+        try {
+            LocalDate birthDate = LocalDate.parse(idCard.substring(6, 14), DateTimeFormatter.BASIC_ISO_DATE);
+            return birthDate.isAfter(LocalDate.now()) ? null : birthDate;
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private static boolean isValidCheckCode(String idCard) {
+        int sum = 0;
+        for (int i = 0; i < 17; i++) {
+            sum += Character.digit(idCard.charAt(i), 10) * WEIGHTS[i];
+        }
+        return CHECK_CODES[sum % 11] == idCard.charAt(17);
     }
 }

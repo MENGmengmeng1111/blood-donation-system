@@ -29,7 +29,5 @@ public class DonorUpdateDTO {
 
     private String gender;
 
-    private Integer age;
-
     private String address;
 }

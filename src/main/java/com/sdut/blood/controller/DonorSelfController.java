@@ -10,7 +10,6 @@ import com.sdut.blood.service.DonorService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
-import javax.validation.Valid;
 
 /**
  * 献血者个人档案控制器（用户自助查询）
@@ -41,7 +40,7 @@ public class DonorSelfController {
      * 完善/创建个人档案
      */
     @PostMapping("/my")
-    public Result<Void> createOrUpdateProfile(@Valid @RequestBody DonorAddDTO dto) {
+    public Result<Void> createOrUpdateProfile(@RequestBody DonorAddDTO dto) {
         Long userId = SecurityUtil.getCurrentUserId();
         Donor existing = donorService.getByUserId(userId);
         
@@ -53,7 +52,6 @@ public class DonorSelfController {
             updateDTO.setPhone(dto.getPhone());
             updateDTO.setBloodType(dto.getBloodType());
             updateDTO.setGender(dto.getGender());
-            updateDTO.setAge(dto.getAge());
             updateDTO.setAddress(dto.getAddress());
             updateDTO.setMedicalHistory(dto.getMedicalHistory());
             donorService.updateDonor(updateDTO);

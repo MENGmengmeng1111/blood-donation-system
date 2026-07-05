@@ -166,17 +166,13 @@
                 <div id="profile-edit" style="display:none;">
                     <form id="profile-form">
                         <div class="form-group"><label>姓名</label><input type="text" id="edit-name" required></div>
-                        <div class="form-group"><label>身份证号</label><input type="text" id="edit-idcard" required></div>
+                        <div class="form-group"><label>身份证号</label><input type="text" id="edit-idcard" maxlength="18" placeholder="新建必填，修改可留空"></div>
                         <div class="form-group"><label>血型</label>
                             <select id="edit-bloodtype">
                                 <option value="A型">A型</option>
                                 <option value="B型">B型</option>
                                 <option value="O型">O型</option>
                                 <option value="AB型">AB型</option>
-                                <option value="A型(RH阳性)">A型(RH阳性)</option>
-                                <option value="B型(RH阳性)">B型(RH阳性)</option>
-                                <option value="O型(RH阳性)">O型(RH阳性)</option>
-                                <option value="AB型(RH阳性)">AB型(RH阳性)</option>
                             </select>
                         </div>
                         <div class="form-group"><label>性别</label>
@@ -185,7 +181,6 @@
                                 <option value="女">女</option>
                             </select>
                         </div>
-                        <div class="form-group"><label>年龄</label><input type="number" id="edit-age" required></div>
                         <div class="form-group"><label>联系电话</label><input type="tel" id="edit-phone" required></div>
                         <div class="form-group"><label>地址</label><input type="text" id="edit-address"></div>
                         <button type="button" class="btn" onclick="saveProfile()">保存档案</button>
@@ -223,6 +218,7 @@
 
     <script>
         const API_BASE = '/api';
+        let profileExists = false;
 
         function getToken() {
             return localStorage.getItem('token');
@@ -392,6 +388,7 @@
         async function loadProfile() {
             const result = await fetchData('/donor/my');
             if (result?.data) {
+                profileExists = true;
                 const d = result.data;
                 document.getElementById('profile-name').textContent = d.name || '-';
                 document.getElementById('profile-idcard').textContent = d.idCardMask || '-';
@@ -404,13 +401,13 @@
                 document.getElementById('profile-lastdonate').textContent = d.lastDonateDate || '从未献血';
                 
                 document.getElementById('edit-name').value = d.name || '';
-                document.getElementById('edit-idcard').value = d.idCard || '';
-                document.getElementById('edit-bloodtype').value = d.bloodType || 'A';
+                document.getElementById('edit-idcard').value = '';
+                document.getElementById('edit-bloodtype').value = d.bloodType || 'A型';
                 document.getElementById('edit-gender').value = d.gender || '男';
-                document.getElementById('edit-age').value = d.age || '';
                 document.getElementById('edit-phone').value = d.phone || '';
                 document.getElementById('edit-address').value = d.address || '';
             } else {
+                profileExists = false;
                 document.getElementById('profile-view').style.display = 'none';
                 document.getElementById('profile-edit').style.display = 'block';
             }
@@ -427,22 +424,26 @@
         }
 
         async function saveProfile() {
-            const name = document.getElementById('edit-name').value;
-            const idCard = document.getElementById('edit-idcard').value;
+            const name = document.getElementById('edit-name').value.trim();
+            const idCard = document.getElementById('edit-idcard').value.trim();
             const bloodType = document.getElementById('edit-bloodtype').value;
             const gender = document.getElementById('edit-gender').value;
-            const age = document.getElementById('edit-age').value;
-            const phone = document.getElementById('edit-phone').value;
-            const address = document.getElementById('edit-address').value;
+            const phone = document.getElementById('edit-phone').value.trim();
+            const address = document.getElementById('edit-address').value.trim();
             
-            if (!name || !idCard || !age || !phone) {
+            if (!name || !phone || (!profileExists && !idCard)) {
                 alert('请填写必填项');
                 return;
+            }
+
+            const profile = { name, bloodType, gender, phone, address: address || null };
+            if (idCard) {
+                profile.idCard = idCard;
             }
             
             const result = await fetchData('/donor/my', {
                 method: 'POST',
-                body: JSON.stringify({ name, idCard, bloodType, gender, age: parseInt(age), phone, address })
+                body: JSON.stringify(profile)
             });
             
             if (result && result.code === 200) {
