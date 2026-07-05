@@ -148,6 +148,80 @@
         .role-tip strong {
             color: #e53935;
         }
+        .redirect-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(183, 28, 28, 0.94);
+            color: white;
+        }
+        .redirect-overlay.show {
+            display: flex;
+            animation: fadeIn 0.25s ease-out;
+        }
+        .redirect-card {
+            width: min(420px, 100%);
+            padding: 34px 28px;
+            border-radius: 8px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+        }
+        .redirect-card h2 {
+            font-size: 26px;
+            margin-bottom: 12px;
+        }
+        .redirect-card p {
+            font-size: 17px;
+            line-height: 1.7;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .redirect-card span {
+            display: block;
+            opacity: 0.88;
+            font-size: 14px;
+        }
+        .activity-progress {
+            position: relative;
+            width: 300px;
+            height: 68px;
+            margin: 30px auto 0;
+            color: white;
+            overflow: hidden;
+        }
+        .activity-icon {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .activity-icon-fill {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 0;
+            overflow: hidden;
+        }
+        .activity-icon-fill svg {
+            width: 300px;
+            height: 68px;
+            max-width: none;
+        }
+        .redirect-overlay.show .activity-icon-fill {
+            animation: activityReveal 2s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes activityReveal {
+            from { width: 0; }
+            to { width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -160,8 +234,8 @@
             
             <div class="form-section">
                 <div class="tabs">
-                    <div class="tab active" onclick="showTab('login')">登录</div>
-                    <div class="tab" onclick="showTab('register')">注册</div>
+                    <div class="tab active" data-tab="login" onclick="showTab('login')">登录</div>
+                    <div class="tab" data-tab="register" onclick="showTab('register')">注册</div>
                 </div>
 
                 <div id="message" class="message"></div>
@@ -207,12 +281,31 @@
         </div>
     </div>
 
+    <div id="redirect-overlay" class="redirect-overlay" aria-hidden="true">
+        <div class="redirect-card">
+            <h2 id="redirect-title">注册成功</h2>
+            <p>热血汇聚成光，点滴守护生命</p>
+            <span>感谢你加入无偿献血公益行动，正在进入主页...</span>
+            <div class="activity-progress" aria-label="正在跳转">
+                <div class="activity-icon-fill">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="activity-icon" viewBox="0.5 2 15 12" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M6 2a.5.5 0 0 1 .47.33L10 12.036l1.53-4.208A.5.5 0 0 1 12 7.5h3.5a.5.5 0 0 1 0 1h-3.15l-1.88 5.17a.5.5 0 0 1-.94 0L6 3.964 4.47 8.171A.5.5 0 0 1 4 8.5H.5a.5.5 0 0 1 0-1h3.15l1.88-5.17A.5.5 0 0 1 6 2"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = '/api';
+        const REGISTER_REDIRECT_DELAY = 2000;
 
         function showTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+            const activeTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
             
             document.getElementById('login-form').style.display = tabName === 'login' ? 'block' : 'none';
             document.getElementById('register-form').style.display = tabName === 'register' ? 'block' : 'none';
@@ -228,6 +321,38 @@
 
         function hideMessage() {
             document.getElementById('message').style.display = 'none';
+        }
+
+        function showRedirectTransition(targetUrl, title) {
+            const overlay = document.getElementById('redirect-overlay');
+            document.getElementById('redirect-title').textContent = title;
+            overlay.classList.remove('show');
+            void overlay.offsetWidth;
+            overlay.classList.add('show');
+            overlay.setAttribute('aria-hidden', 'false');
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, REGISTER_REDIRECT_DELAY);
+        }
+
+        function saveSessionAndRedirect(user, transitionTitle) {
+            localStorage.setItem('token', user.token);
+            localStorage.setItem('userId', user.userId);
+            localStorage.setItem('username', user.username);
+            localStorage.setItem('role', user.role);
+
+            let targetUrl;
+            if (user.role === 'ROLE_SUPER_ADMIN' || user.role === 'ROLE_ADMIN') {
+                targetUrl = 'admin.html';
+            } else {
+                targetUrl = 'donor.html';
+            }
+
+            if (transitionTitle) {
+                showRedirectTransition(targetUrl, transitionTitle);
+            } else {
+                window.location.href = targetUrl;
+            }
         }
 
         async function handleLogin() {
@@ -249,16 +374,7 @@
                 const result = await response.json();
 
                 if (result.code === 200) {
-                    localStorage.setItem('token', result.data.token);
-                    localStorage.setItem('userId', result.data.userId);
-                    localStorage.setItem('username', result.data.username);
-                    localStorage.setItem('role', result.data.role);
-                    
-                    if (result.data.role === 'ROLE_SUPER_ADMIN' || result.data.role === 'ROLE_ADMIN') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'donor.html';
-                    }
+                    saveSessionAndRedirect(result.data, '登录成功');
                 } else {
                     showMessage(result.msg || '登录失败', 'error');
                 }
@@ -298,8 +414,21 @@
                 const result = await response.json();
 
                 if (result.code === 200) {
-                    showMessage('注册成功，请登录', 'success');
-                    setTimeout(() => showTab('login'), 1500);
+                    showMessage('注册成功，正在进入主页...', 'success');
+
+                    const loginResponse = await fetch(API_BASE + '/user/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const loginResult = await loginResponse.json();
+
+                    if (loginResult.code === 200) {
+                        saveSessionAndRedirect(loginResult.data, '注册成功');
+                    } else {
+                        showMessage(loginResult.msg || '注册成功，请登录', 'success');
+                        setTimeout(() => showTab('login'), 1500);
+                    }
                 } else {
                     showMessage(result.msg || '注册失败', 'error');
                 }
