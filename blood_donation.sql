@@ -11,7 +11,7 @@
  Target Server Version : 80041
  File Encoding         : 65001
 
- Date: 04/07/2026 21:08:05
+ Date: 05/07/2026 16:07:24
 */
 
 SET NAMES utf8mb4;
@@ -67,7 +67,8 @@ CREATE TABLE `blood_activity`  (
 -- ----------------------------
 -- Records of blood_activity
 -- ----------------------------
-INSERT INTO `blood_activity` VALUES (1, '1', '1', '2026-07-05', 50, 50, 49, 50, '未开始', '2026-07-04 18:04:37', '2026-07-04 18:04:37', 0);
+INSERT INTO `blood_activity` VALUES (1, '1', '1', '2026-07-05', 49, 50, 48, 50, '未开始', '2026-07-04 18:04:37', '2026-07-05 11:37:29', 0);
+INSERT INTO `blood_activity` VALUES (2, '1', '1', '2026-07-01', 50, 50, 50, 50, '未开始', '2026-07-04 21:47:48', '2026-07-05 11:37:36', 1);
 
 -- ----------------------------
 -- Table structure for blood_collection
@@ -76,12 +77,12 @@ DROP TABLE IF EXISTS `blood_collection`;
 CREATE TABLE `blood_collection`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '采血记录ID',
   `donor_id` bigint NOT NULL COMMENT '献血者档案ID',
-  `donor_id_card` varchar(18) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '献血者身份证密文',
+  `donor_id_card` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '献血者身份证密文',
   `donate_amount` int NOT NULL COMMENT '献血量(ml/治疗量)',
   `donate_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '献血类型：全血/成分血',
   `initial_screen_result` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '初筛结果：合格/不合格',
   `collection_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '采血时间',
-  `operator_id` bigint NOT NULL COMMENT '操作管理员ID',
+  `operator_id` bigint NULL DEFAULT NULL COMMENT '操作管理员ID',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
@@ -95,6 +96,9 @@ CREATE TABLE `blood_collection`  (
 -- ----------------------------
 -- Records of blood_collection
 -- ----------------------------
+INSERT INTO `blood_collection` VALUES (2073413193044176897, 2, '370781200410283311', 200, '全血', '合格', '2026-07-04 22:26:42', 1, '2026-07-04 22:26:42', '2026-07-04 22:26:42', 0);
+INSERT INTO `blood_collection` VALUES (2073617161636544513, 2, '370781200410283311', 400, '全血', '合格', '2026-07-05 11:57:12', 1, '2026-07-05 11:57:11', '2026-07-05 11:57:11', 0);
+INSERT INTO `blood_collection` VALUES (2073638933392011265, 6, 'TFeQVarQH1cEvNLpFj87/9tlSqoL26kTZwOkbg4fNwg=', 200, '全血', '合格', '2026-07-05 13:23:43', 1, '2026-07-05 13:23:42', '2026-07-05 13:23:42', 0);
 
 -- ----------------------------
 -- Table structure for blood_stock
@@ -107,6 +111,7 @@ CREATE TABLE `blood_stock`  (
   `blood_amount` int NOT NULL COMMENT '血量ml',
   `expire_date` date NOT NULL COMMENT '血液有效期',
   `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '正常' COMMENT '库存状态：正常/临期/已过期/已出库',
+  `out_unit` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '用血单位',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '入库时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
@@ -130,8 +135,9 @@ CREATE TABLE `blood_test`  (
   `recheck_result` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '复检详细结果',
   `blood_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '待检验' COMMENT '血液状态：待检验/合格/不合格/已入库',
   `unqualified_reason` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '不合格原因',
+  `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '备注',
   `judge_time` datetime NULL DEFAULT NULL COMMENT '判定时间',
-  `operator_id` bigint NOT NULL COMMENT '判定管理员ID',
+  `operator_id` bigint NULL DEFAULT NULL COMMENT '判定管理员ID',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
@@ -147,6 +153,9 @@ CREATE TABLE `blood_test`  (
 -- ----------------------------
 -- Records of blood_test
 -- ----------------------------
+INSERT INTO `blood_test` VALUES (2073413193094508545, 2073413193044176897, 2, NULL, '待检验', NULL, NULL, NULL, NULL, '2026-07-04 22:26:42', '2026-07-04 22:26:42', 0);
+INSERT INTO `blood_test` VALUES (2073617161674293249, 2073617161636544513, 2, NULL, '待检验', NULL, NULL, NULL, NULL, '2026-07-05 11:57:11', '2026-07-05 11:57:11', 0);
+INSERT INTO `blood_test` VALUES (2073638933475897345, 2073638933392011265, 6, NULL, '待检验', NULL, NULL, NULL, NULL, '2026-07-05 13:23:42', '2026-07-05 13:23:42', 0);
 
 -- ----------------------------
 -- Table structure for donor
@@ -154,7 +163,7 @@ CREATE TABLE `blood_test`  (
 DROP TABLE IF EXISTS `donor`;
 CREATE TABLE `donor`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '档案主键ID',
-  `user_id` bigint NOT NULL COMMENT '关联用户ID（外键）',
+  `user_id` bigint NULL DEFAULT NULL COMMENT '关联用户ID',
   `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '献血者姓名',
   `id_card` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '身份证号（加密存储）',
   `blood_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '血型：A型/B型/O型/AB型',
@@ -177,8 +186,9 @@ CREATE TABLE `donor`  (
 -- ----------------------------
 -- Records of donor
 -- ----------------------------
-INSERT INTO `donor` VALUES (2, 3, '2', 'IfMJRMsfMqMj3Cwi3dVpxe6jY9XxVAq2p7XhfdrnWCQ=', 'A型', '13530263305', NULL, '正常', NULL, '2026-07-04 18:50:18', '2026-07-04 18:50:18', 0, '男', 1, '2', 0);
+INSERT INTO `donor` VALUES (2, 3, '3', 'TFeQVarQH1cEvNLpFj87/zs9UMkIvVHepWrGrmovRuM=', 'A型', '13465363301', 'q9U8w8aJYr9WTAdbh0MY9w==', '正常', NULL, '2026-07-04 18:50:18', '2026-07-04 18:50:18', 0, '男', 1, '3', 0);
 INSERT INTO `donor` VALUES (3, 1, '1', 'K67cL1djGmDfCc3++I05tu6jY9XxVAq2p7XhfdrnWCQ=', 'A型', '13465363302', 'LCMNVWqc8NRlWX4Dl0fqZA==', '正常', NULL, '2026-07-04 19:03:40', '2026-07-04 19:03:40', 0, '男', 1, '1', 0);
+INSERT INTO `donor` VALUES (6, NULL, '4', 'TFeQVarQH1cEvNLpFj87/9tlSqoL26kTZwOkbg4fNwg=', 'A型', '13465363302', 'RCDAr6v4nY/rkpH0Yy880g==', '正常', NULL, '2026-07-05 11:54:04', '2026-07-05 11:54:04', 0, '男', 4, '4', 0);
 
 -- ----------------------------
 -- Table structure for operation_log
@@ -245,7 +255,7 @@ CREATE TABLE `sys_user`  (
 -- Records of sys_user
 -- ----------------------------
 INSERT INTO `sys_user` VALUES (1, 'admin', '$2a$10$BjIS9y7RP1vdQL/sMuWEQeYKb3tHKwMx7M.KhYVWRLsMzT4OvOija', '管理员', 'ROLE_ADMIN', 0, '2026-07-03 10:35:47', '2026-07-03 11:16:45', 0);
-INSERT INTO `sys_user` VALUES (2, 'superadmin', '123456', '超级管理员', 'ROLE_SUPER_ADMIN', 0, '2026-07-03 10:35:47', '2026-07-03 11:16:56', 0);
+INSERT INTO `sys_user` VALUES (2, 'superadmin', '$2a$10$g75E5/0RPtBhRUhfl5.j3.KqPUs1ohEWHdH7UNFMgYdXjc1amI1Qy', '超级管理员', 'ROLE_SUPER_ADMIN', 0, '2026-07-03 10:35:47', '2026-07-03 11:16:56', 0);
 INSERT INTO `sys_user` VALUES (3, 'donor001', '$2a$10$96VA1mfKlA9HykWBqotDwePic2zY/W07BFFfOGxj5FgYzCC06zR9C', '张三', 'ROLE_DONOR', 0, '2026-07-03 10:35:47', '2026-07-03 11:17:02', 0);
 INSERT INTO `sys_user` VALUES (2073333544196882434, 'admin01', '$2a$10$w2JBk2W/tjUPz61rOiVazeK7vO9zFedooi/phwStsT.sIHNPdB5zK', 'GGBOND', 'ROLE_DONOR', 0, '2026-07-04 17:10:12', '2026-07-04 17:10:12', 0);
 

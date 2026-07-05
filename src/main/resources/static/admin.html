@@ -358,17 +358,17 @@
             }
         }
 
-        function showTab(tabId) {
+        async function showTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
             document.getElementById(tabId).style.display = 'block';
             document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
             
             if (tabId === 'donor-list' || tabId === 'donor-add') loadDonorList();
             if (tabId === 'activity-list' || tabId === 'activity-add') loadActivityList();
-            if (tabId === 'collection-list') { loadDonorsMap(); loadCollectionList(); }
+            if (tabId === 'collection-list') { await loadDonorsMap(); loadCollectionList(); }
             if (tabId === 'collection-add') resetCollectionForm();
-            if (tabId === 'test-list') { loadDonorsMap(); loadCollectionsMap(); loadTestList(); }
-            if (tabId === 'stock-list') { loadDonorsMap(); loadStockList(); }
+            if (tabId === 'test-list') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadTestList(); }
+            if (tabId === 'stock-list') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadStockList(); }
             if (tabId === 'home') loadStats();
             if (tabId === 'report') loadReport();
         }
@@ -574,7 +574,6 @@
         function resetCollectionForm() {
             document.getElementById('collection-title').textContent = '新增采血记录';
             document.getElementById('collection-id').value = '';
-            document.getElementById('collection-id-card').value = '';
             document.getElementById('selected-donor-id').value = '';
             document.getElementById('donor-search-input').value = '';
             document.getElementById('donor-search-results').style.display = 'none';
@@ -602,7 +601,7 @@
             }
             resultsDiv.innerHTML = filtered.map(d => `
                 <div style="padding:8px;border-bottom:1px solid #eee;cursor:pointer;" 
-                     onclick="selectDonor(${d.id}, '${d.name}', '${d.bloodType || ''}', '${d.idCard || ''}')">
+                     onclick="selectDonor('${d.id}', '${d.name}', '${d.bloodType || ''}', '${d.idCard || ''}')">
                     ${d.name} - ${d.bloodType || '未知血型'} - ${d.idCard ? '******' + d.idCard.slice(-4) : '无身份证'}
                 </div>
             `).join('');
@@ -620,12 +619,11 @@
         }
 
         async function editCollection(id) {
-            const result = await fetchData('/collection/' + id);
+            const result = await fetchData('/collection/' + encodeURIComponent(id));
             if (!result?.data) return;
             const c = result.data;
             document.getElementById('collection-title').textContent = '修改采血记录';
             document.getElementById('collection-id').value = c.id;
-            document.getElementById('collection-id-card').value = c.donorIdCard || '';
             document.getElementById('collection-amount').value = c.donateAmount;
             document.getElementById('collection-type').value = c.donateType;
             document.getElementById('collection-result').value = c.initialScreenResult;
@@ -648,12 +646,12 @@
             }
             
             const data = isEdit ? {
-                id: parseInt(collectionId),
+                id: collectionId,
                 donateAmount: parseInt(document.getElementById('collection-amount').value),
                 donateType: document.getElementById('collection-type').value,
                 initialScreenResult: document.getElementById('collection-result').value
             } : {
-                donorId: parseInt(document.getElementById('selected-donor-id').value),
+                donorId: document.getElementById('selected-donor-id').value,
                 donateAmount: parseInt(document.getElementById('collection-amount').value),
                 donateType: document.getElementById('collection-type').value,
                 initialScreenResult: document.getElementById('collection-result').value
@@ -674,14 +672,13 @@
 
         async function deleteCollection(id) {
             if (confirm('确定删除该采血记录吗？')) {
-                const result = await fetch(API_BASE + '/collection/delete/' + id, { method: 'DELETE', headers: getHeaders() });
-                const data = await result.json();
-                if (result.ok && data.code === 200) {
+                const result = await fetchData('/collection/delete/' + encodeURIComponent(id), { method: 'DELETE' });
+                if (result && result.code === 200) {
                     alert('删除成功');
-                    await loadDonorsMap();
+                    await Promise.all([loadDonorsMap(), loadCollectionsMap()]);
                     loadCollectionList();
                 } else {
-                    alert('删除失败：' + (data.msg || '未知错误'));
+                    alert('删除失败：' + (result?.msg || '未知错误'));
                 }
             }
         }
@@ -707,17 +704,17 @@
                     <td>${t.judgeTime?.split(' ')[0] || '-'}</td>
                     <td>
                         ${t.bloodStatus !== '已入库' ? 
-                            `<button class="btn btn-warning" onclick="editTest(${t.id})">修改</button>` : 
+                            `<button class="btn btn-warning" onclick="editTest('${t.id}')">修改</button>` : 
                             '<span style="color:#999;">已入库</span>'}
                         ${t.bloodStatus !== '已入库' ? 
-                            `<button class="btn btn-danger" onclick="deleteTest(${t.id})">删除</button>` : ''}
+                            `<button class="btn btn-danger" onclick="deleteTest('${t.id}')">删除</button>` : ''}
                     </td>
                 </tr>
             `}).join('');
         }
 
         async function editTest(id) {
-            const result = await fetchData('/blood-test/' + id);
+            const result = await fetchData('/blood-test/' + encodeURIComponent(id));
             if (!result?.data) return;
             const t = result.data;
             const donor = donorsMap[t.donorId] || {};
@@ -754,7 +751,7 @@
 
         async function saveTest() {
             const data = {
-                testId: parseInt(document.getElementById('test-id').value),
+                testId: document.getElementById('test-id').value,
                 recheckResult: document.getElementById('test-recheck-result').value,
                 bloodStatus: document.getElementById('test-blood-status').value,
                 unqualifiedReason: document.getElementById('test-reason').value,
@@ -774,8 +771,13 @@
 
         async function deleteTest(id) {
             if (confirm('确定删除该检验记录吗？')) {
-                await fetch(API_BASE + '/blood-test/delete/' + id, { method: 'DELETE', headers: getHeaders() });
-                loadTestList();
+                const result = await fetchData('/blood-test/delete/' + encodeURIComponent(id), { method: 'DELETE' });
+                if (result && result.code === 200) {
+                    alert('删除成功');
+                    loadTestList();
+                } else {
+                    alert('删除失败：' + (result?.msg || '未知错误'));
+                }
             }
         }
 

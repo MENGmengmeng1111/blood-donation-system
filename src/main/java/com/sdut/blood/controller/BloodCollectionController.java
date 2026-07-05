@@ -70,7 +70,14 @@ public class BloodCollectionController {
      */
     @DeleteMapping("/delete/{id}")
     public Result<Void> deleteCollectionRecord(@PathVariable Long id) {
-        bloodCollectionService.removeById(id);
+        BloodCollection collection = bloodCollectionService.getById(id);
+        if (collection == null) {
+            return Result.error("采血记录不存在或已删除");
+        }
+        boolean removed = bloodCollectionService.removeById(id);
+        if (!removed) {
+            return Result.error("删除失败，请刷新后重试");
+        }
         return Result.success();
     }
 
