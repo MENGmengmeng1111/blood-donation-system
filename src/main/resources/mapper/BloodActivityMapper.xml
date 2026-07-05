@@ -32,4 +32,44 @@
         ORDER BY activity_date ASC
     </select>
 
+    <update id="decreaseMorningQuota">
+        UPDATE blood_activity
+        SET morning_remaining = morning_remaining - 1,
+            update_time = NOW()
+        WHERE id = #{activityId}
+        AND activity_date >= CURDATE()
+        AND status != '已结束'
+        AND morning_remaining > 0
+        AND deleted = 0
+    </update>
+
+    <update id="decreaseAfternoonQuota">
+        UPDATE blood_activity
+        SET afternoon_remaining = afternoon_remaining - 1,
+            update_time = NOW()
+        WHERE id = #{activityId}
+        AND activity_date >= CURDATE()
+        AND status != '已结束'
+        AND afternoon_remaining > 0
+        AND deleted = 0
+    </update>
+
+    <update id="increaseMorningQuota">
+        UPDATE blood_activity
+        SET morning_remaining = morning_remaining + 1,
+            update_time = NOW()
+        WHERE id = #{activityId}
+        AND morning_remaining &lt; morning_quota
+        AND deleted = 0
+    </update>
+
+    <update id="increaseAfternoonQuota">
+        UPDATE blood_activity
+        SET afternoon_remaining = afternoon_remaining + 1,
+            update_time = NOW()
+        WHERE id = #{activityId}
+        AND afternoon_remaining &lt; afternoon_quota
+        AND deleted = 0
+    </update>
+
 </mapper>

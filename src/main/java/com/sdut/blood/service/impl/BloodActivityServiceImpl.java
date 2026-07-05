@@ -25,6 +25,10 @@ import java.util.stream.Collectors;
 @Service
 public class BloodActivityServiceImpl extends ServiceImpl<BloodActivityMapper, BloodActivity> implements BloodActivityService {
 
+    private static final String TIME_SLOT_MORNING = "上午";
+
+    private static final String TIME_SLOT_AFTERNOON = "下午";
+
     @Resource
     @Lazy
     private DonorService donorService;
@@ -44,43 +48,38 @@ public class BloodActivityServiceImpl extends ServiceImpl<BloodActivityMapper, B
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean decreaseQuota(Long activityId, String timeSlot) {
-        BloodActivity activity = getById(activityId);
-        if (activity == null) {
-            throw new BusinessException("活动不存在");
+        int affectedRows = updateQuota(activityId, timeSlot, true);
+        if (affectedRows <= 0) {
+            throw new BusinessException("该时段预约人数已满或活动不可预约");
         }
-
-        if ("上午".equals(timeSlot)) {
-            if (activity.getMorningRemaining() <= 0) {
-                throw new BusinessException("该时段预约人数已满，请选择其他时段");
-            }
-            activity.setMorningRemaining(activity.getMorningRemaining() - 1);
-        } else if ("下午".equals(timeSlot)) {
-            if (activity.getAfternoonRemaining() <= 0) {
-                throw new BusinessException("该时段预约人数已满，请选择其他时段");
-            }
-            activity.setAfternoonRemaining(activity.getAfternoonRemaining() - 1);
-        } else {
-            throw new BusinessException("时段参数错误");
-        }
-
-        return updateById(activity);
+        return true;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean increaseQuota(Long activityId, String timeSlot) {
-        BloodActivity activity = getById(activityId);
-        if (activity == null) {
-            return false;
+        int affectedRows = updateQuota(activityId, timeSlot, false);
+        if (affectedRows <= 0) {
+            throw new BusinessException("活动名额恢复失败，请刷新后重试");
         }
+        return true;
+    }
 
-        if ("上午".equals(timeSlot)) {
-            activity.setMorningRemaining(activity.getMorningRemaining() + 1);
-        } else if ("下午".equals(timeSlot)) {
-            activity.setAfternoonRemaining(activity.getAfternoonRemaining() + 1);
+    private int updateQuota(Long activityId, String timeSlot, boolean decrease) {
+        if (activityId == null) {
+            throw new BusinessException("活动ID不能为空");
         }
-
-        return updateById(activity);
+        if (TIME_SLOT_MORNING.equals(timeSlot)) {
+            return decrease
+                    ? baseMapper.decreaseMorningQuota(activityId)
+                    : baseMapper.increaseMorningQuota(activityId);
+        }
+        if (TIME_SLOT_AFTERNOON.equals(timeSlot)) {
+            return decrease
+                    ? baseMapper.decreaseAfternoonQuota(activityId)
+                    : baseMapper.increaseAfternoonQuota(activityId);
+        }
+        throw new BusinessException("时段参数错误");
     }
 
     @Override
