@@ -10,6 +10,10 @@ import java.util.List;
 @Data
 public class AiChatResponse {
 
+    private Long sessionId;
+
+    private String sessionTitle;
+
     private String answer;
 
     private List<String> references;

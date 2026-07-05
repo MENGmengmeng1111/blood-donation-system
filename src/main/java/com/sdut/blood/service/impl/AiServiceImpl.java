@@ -2,7 +2,9 @@ package com.sdut.blood.service.impl;
 
 import com.sdut.blood.common.result.Result;
 import com.sdut.blood.domain.dto.AiChatHistoryMessage;
+import com.sdut.blood.domain.entity.AiChatSession;
 import com.sdut.blood.domain.vo.AiChatResponse;
+import com.sdut.blood.service.AiChatSessionService;
 import com.sdut.blood.service.AiDonorContextService;
 import com.sdut.blood.service.AiKnowledgeService;
 import com.sdut.blood.service.AiService;
@@ -48,6 +50,9 @@ public class AiServiceImpl implements AiService {
     @Resource
     private AiDonorContextService aiDonorContextService;
 
+    @Resource
+    private AiChatSessionService aiChatSessionService;
+
     private static final String SYSTEM_PROMPT = """
             你是献血管理系统的用户侧智能咨询助手。
             你会收到两类内部参考材料：
@@ -75,9 +80,7 @@ public class AiServiceImpl implements AiService {
     private static final String AI_CALL_FAILED_MESSAGE =
             "AI模型调用失败，当前无法生成回答。请检查网络、API Key、base-url/model 配置或模型服务可用性后重试。";
 
-    private static final int MAX_HISTORY_MESSAGES = 6;
-
-    private static final int MAX_HISTORY_CONTENT_LENGTH = 800;
+    private static final int MAX_HISTORY_CONTENT_LENGTH = 4000;
 
     @Override
     public Result<String> ask(String question) {
@@ -104,6 +107,11 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public Result<AiChatResponse> chatForDonor(String question, List<AiChatHistoryMessage> history) {
+        return chatForDonor(null, question, history);
+    }
+
+    @Override
+    public Result<AiChatResponse> chatForDonor(Long sessionId, String question, List<AiChatHistoryMessage> history) {
         AiChatResponse response = new AiChatResponse();
         if (question == null || question.trim().isEmpty()) {
             response.setAnswer("请输入您想咨询的问题");
@@ -124,7 +132,9 @@ public class AiServiceImpl implements AiService {
             return Result.error(AI_NOT_CONFIGURED_MESSAGE);
         }
 
-        String answer = callAi(cleanQuestion, knowledge, context, history);
+        AiChatSession session = aiChatSessionService.prepareCurrentUserSession(sessionId, cleanQuestion);
+        List<AiChatHistoryMessage> promptHistory = aiChatSessionService.resolvePromptHistory(session.getId(), history);
+        String answer = callAi(cleanQuestion, knowledge, context, promptHistory);
         if (answer == null) {
             response.setAnswer(AI_CALL_FAILED_MESSAGE);
             response.setReferences(List.of());
@@ -132,6 +142,9 @@ public class AiServiceImpl implements AiService {
             return Result.error(AI_CALL_FAILED_MESSAGE);
         }
 
+        aiChatSessionService.appendTurn(session.getId(), cleanQuestion, answer);
+        response.setSessionId(session.getId());
+        response.setSessionTitle(session.getTitle());
         response.setAnswer(answer);
         response.setReferences(references);
         response.setPersonalized(aiDonorContextService.hasCurrentUserContext());
@@ -140,6 +153,11 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public void streamChatForDonor(String question, List<AiChatHistoryMessage> history, AiStreamCallback callback) {
+        streamChatForDonor(null, question, history, callback);
+    }
+
+    @Override
+    public void streamChatForDonor(Long sessionId, String question, List<AiChatHistoryMessage> history, AiStreamCallback callback) {
         if (callback == null) {
             return;
         }
@@ -155,7 +173,16 @@ public class AiServiceImpl implements AiService {
         String cleanQuestion = question.trim();
         String knowledge = aiKnowledgeService.searchRelevantKnowledge(cleanQuestion);
         String context = aiDonorContextService.buildCurrentUserContext();
-        streamAi(cleanQuestion, knowledge, context, history, callback);
+        AiChatSession session = aiChatSessionService.prepareCurrentUserSession(sessionId, cleanQuestion);
+        callback.onSession(session.getId(), session.getTitle());
+        List<AiChatHistoryMessage> promptHistory = aiChatSessionService.resolvePromptHistory(session.getId(), history);
+        String answer = streamAi(cleanQuestion, knowledge, context, promptHistory, callback);
+        if (answer != null) {
+            if (StringUtils.hasText(answer)) {
+                aiChatSessionService.appendTurn(session.getId(), cleanQuestion, answer);
+            }
+            callback.onComplete();
+        }
     }
 
     private String callAi(String question, String knowledge, String context) {
@@ -195,8 +222,9 @@ public class AiServiceImpl implements AiService {
         return null;
     }
 
-    private void streamAi(String question, String knowledge, String context, List<AiChatHistoryMessage> history,
-                          AiStreamCallback callback) {
+    private String streamAi(String question, String knowledge, String context, List<AiChatHistoryMessage> history,
+                            AiStreamCallback callback) {
+        StringBuilder answerBuilder = new StringBuilder();
         try {
             String url = buildChatCompletionsUrl();
             Map<String, Object> requestBody = buildChatRequestBody(question, knowledge, context, history, true);
@@ -209,8 +237,7 @@ public class AiServiceImpl implements AiService {
                 if (!response.getStatusCode().is2xxSuccessful()) {
                     String errorBody = new String(response.getBody().readAllBytes(), StandardCharsets.UTF_8);
                     log.warn("AI stream call failed, status: {}, body: {}", response.getStatusCode(), errorBody);
-                    callback.onError(AI_CALL_FAILED_MESSAGE);
-                    return null;
+                    throw new IllegalStateException("AI stream call failed");
                 }
 
                 try (BufferedReader reader = new BufferedReader(
@@ -225,21 +252,22 @@ public class AiServiceImpl implements AiService {
                             continue;
                         }
                         if ("[DONE]".equals(data)) {
-                            callback.onComplete();
                             return null;
                         }
                         String content = extractStreamDelta(data);
                         if (content != null && !content.isEmpty()) {
+                            answerBuilder.append(content);
                             callback.onToken(content);
                         }
                     }
                 }
-                callback.onComplete();
                 return null;
             });
+            return answerBuilder.toString();
         } catch (Exception e) {
             log.warn("AI stream completion call failed: {}", e.getMessage());
             callback.onError(AI_CALL_FAILED_MESSAGE);
+            return null;
         }
     }
 
@@ -290,8 +318,7 @@ public class AiServiceImpl implements AiService {
             return messages;
         }
 
-        int startIndex = Math.max(history.size() - MAX_HISTORY_MESSAGES, 0);
-        for (int i = startIndex; i < history.size(); i++) {
+        for (int i = 0; i < history.size(); i++) {
             AiChatHistoryMessage historyMessage = history.get(i);
             if (historyMessage == null) {
                 continue;

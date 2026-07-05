@@ -13,6 +13,11 @@ import java.util.List;
 @Data
 public class AiChatRequest {
 
+    /**
+     * 当前对话会话ID，为空时由后端自动创建新会话
+     */
+    private Long sessionId;
+
     @NotBlank(message = "请输入咨询问题")
     private String question;
 

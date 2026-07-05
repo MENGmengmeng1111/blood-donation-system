@@ -6,6 +6,11 @@ package com.sdut.blood.service;
 public interface AiStreamCallback {
 
     /**
+     * 当前流式回答所属会话
+     */
+    void onSession(Long sessionId, String title);
+
+    /**
      * 收到一段模型增量内容
      */
     void onToken(String content);

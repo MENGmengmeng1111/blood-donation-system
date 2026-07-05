@@ -3,6 +3,8 @@ package com.sdut.blood.controller;
 import com.sdut.blood.common.result.Result;
 import com.sdut.blood.domain.dto.AiChatRequest;
 import com.sdut.blood.domain.vo.AiChatResponse;
+import com.sdut.blood.domain.vo.AiChatSessionVO;
+import com.sdut.blood.service.AiChatSessionService;
 import com.sdut.blood.service.AiService;
 import com.sdut.blood.service.AiStreamCallback;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +16,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.Map;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -27,6 +30,9 @@ public class AiChatController {
     private AiService aiService;
 
     @Resource
+    private AiChatSessionService aiChatSessionService;
+
+    @Resource
     private ObjectMapper objectMapper;
 
     /**
@@ -34,7 +40,32 @@ public class AiChatController {
      */
     @PostMapping("/chat")
     public Result<AiChatResponse> chat(@Valid @RequestBody AiChatRequest request) {
-        return aiService.chatForDonor(request.getQuestion(), request.getHistory());
+        return aiService.chatForDonor(request.getSessionId(), request.getQuestion(), request.getHistory());
+    }
+
+    /**
+     * 查询我的AI对话会话列表
+     */
+    @GetMapping("/session/list")
+    public Result<List<AiChatSessionVO>> listSessions() {
+        return Result.success(aiChatSessionService.listMySessions());
+    }
+
+    /**
+     * 查询单个AI对话会话详情
+     */
+    @GetMapping("/session/{id}")
+    public Result<AiChatSessionVO> getSession(@PathVariable Long id) {
+        return Result.success(aiChatSessionService.getMySession(id));
+    }
+
+    /**
+     * 删除AI对话会话
+     */
+    @DeleteMapping("/session/{id}")
+    public Result<Void> deleteSession(@PathVariable Long id) {
+        aiChatSessionService.deleteMySession(id);
+        return Result.success();
     }
 
     /**
@@ -48,9 +79,15 @@ public class AiChatController {
             SecurityContextHolder.setContext(securityContext);
             try {
                 aiService.streamChatForDonor(
+                        request.getSessionId(),
                         request.getQuestion(),
                         request.getHistory(),
                         new AiStreamCallback() {
+                            @Override
+                            public void onSession(Long sessionId, String title) {
+                                sendEvent(emitter, "session", Map.of("sessionId", sessionId, "title", title));
+                            }
+
                             @Override
                             public void onToken(String content) {
                                 sendEvent(emitter, "delta", Map.of("content", content));
@@ -69,6 +106,9 @@ public class AiChatController {
                             }
                         }
                 );
+            } catch (Exception e) {
+                sendEvent(emitter, "error", Map.of("message", e.getMessage() == null ? "AI流式接口调用失败" : e.getMessage()));
+                emitter.complete();
             } finally {
                 SecurityContextHolder.clearContext();
             }

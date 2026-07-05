@@ -18,6 +18,6 @@ public class AiChatHistoryMessage {
     /**
      * 历史消息内容
      */
-    @Size(max = 1000, message = "历史消息内容过长")
+    @Size(max = 10000, message = "历史消息内容过长")
     private String content;
 }

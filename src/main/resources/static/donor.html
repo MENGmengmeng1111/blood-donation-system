@@ -45,6 +45,25 @@
         .info-row label { width: 120px; font-weight: 500; color: #666; }
         .info-row span { flex: 1; color: #333; }
         .ai-card { padding: 0; overflow: hidden; background: #f7f8fb; border: 1px solid #e5e7eb; }
+        .ai-workspace { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: calc(100vh - 135px); transition: grid-template-columns 0.28s ease; }
+        .ai-card.history-collapsed .ai-workspace { grid-template-columns: 42px minmax(0, 1fr); }
+        .ai-history-sidebar { background: #fff; border-right: 1px solid #eceff3; min-width: 0; overflow: hidden; transition: opacity 0.2s ease; }
+        .ai-card.history-collapsed .ai-history-sidebar { opacity: 0.92; }
+        .ai-history-header { height: 64px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid #eceff3; }
+        .ai-history-toggle, .ai-history-new, .ai-history-delete { border: 1px solid #e2e5ea; background: #fff; color: #5f6673; cursor: pointer; border-radius: 8px; }
+        .ai-history-toggle { width: 32px; height: 32px; flex: 0 0 auto; }
+        .ai-history-new { flex: 1; height: 32px; font-size: 13px; white-space: nowrap; }
+        .ai-history-new:hover, .ai-history-toggle:hover, .ai-history-delete:hover { background: #fff5f5; color: #d32f2f; border-color: #ffcdd2; }
+        .ai-history-list { padding: 10px; max-height: calc(100vh - 220px); overflow-y: auto; }
+        .ai-history-empty { color: #8a93a3; font-size: 13px; padding: 12px 6px; line-height: 1.5; }
+        .ai-history-item { display: flex; align-items: center; gap: 6px; width: 100%; margin-bottom: 6px; padding: 8px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; color: #374151; background: transparent; text-align: left; }
+        .ai-history-item:hover { background: #f8fafc; border-color: #e7ebf0; }
+        .ai-history-item.active { background: #fff5f5; border-color: #ffcdd2; color: #b42318; }
+        .ai-history-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+        .ai-history-delete { width: 26px; height: 26px; line-height: 1; opacity: 0; flex: 0 0 auto; }
+        .ai-history-item:hover .ai-history-delete, .ai-history-item.active .ai-history-delete { opacity: 1; }
+        .ai-card.history-collapsed .ai-history-new, .ai-card.history-collapsed .ai-history-list { display: none; }
+        .ai-card.history-collapsed .ai-history-header { padding: 0 5px; justify-content: center; }
         .ai-chat-shell { min-height: calc(100vh - 135px); display: flex; flex-direction: column; background: #f7f8fb; }
         .ai-chat-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px; background: #fff; border-bottom: 1px solid #eceff3; }
         .ai-title-wrap { display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -102,6 +121,8 @@
         .chat-send:hover { background: #d32f2f; }
         .chat-send:disabled { background: #c8cdd5; cursor: not-allowed; }
         @media (max-width: 768px) {
+            .ai-workspace { grid-template-columns: 210px minmax(0, 1fr); }
+            .ai-card.history-collapsed .ai-workspace { grid-template-columns: 38px minmax(0, 1fr); }
             .ai-chat-shell { min-height: calc(100vh - 110px); }
             .ai-chat-header { align-items: flex-start; flex-direction: column; padding: 16px; }
             .chat-box { padding: 20px 14px; min-height: 460px; max-height: none; }
@@ -257,8 +278,18 @@
         </div>
 
         <div id="ai-chat" class="tab-content" style="display:none;">
-            <div class="card ai-card">
-                <div class="ai-chat-shell">
+            <div class="card ai-card" id="ai-card">
+                <div class="ai-workspace">
+                    <aside class="ai-history-sidebar">
+                        <div class="ai-history-header">
+                            <button type="button" class="ai-history-toggle" onclick="toggleAiHistory()" title="展开/收起">☰</button>
+                            <button type="button" class="ai-history-new" onclick="startNewChat()">新对话</button>
+                        </div>
+                        <div class="ai-history-list" id="ai-history-list">
+                            <div class="ai-history-empty">暂无对话历史</div>
+                        </div>
+                    </aside>
+                    <div class="ai-chat-shell">
                     <div class="ai-chat-header">
                         <div class="ai-title-wrap">
                             <div class="ai-avatar">AI</div>
@@ -292,6 +323,7 @@
                             <button class="chat-send" id="chat-send-btn" onclick="sendChat()" title="发送">↑</button>
                         </div>
                     </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -301,6 +333,8 @@
         const API_BASE = '/api';
         let profileExists = false;
         let isChatStreaming = false;
+        let currentSessionId = null;
+        let chatSessions = [];
         let chatHistory = [];
         const MAX_CHAT_HISTORY = 6;
 
@@ -348,6 +382,7 @@
             if (tabId === 'profile') loadProfile();
             if (tabId === 'history') loadHistory();
             if (tabId === 'home') loadHome();
+            if (tabId === 'ai-chat') loadChatSessions();
         }
 
         function logout() {
@@ -614,6 +649,7 @@
                         'Accept': 'text/event-stream'
                     },
                     body: JSON.stringify({
+                        sessionId: currentSessionId,
                         question: message,
                         history: getRecentChatHistory()
                     })
@@ -637,6 +673,7 @@
                 if (answer) {
                     addCopyAction(streamMessage.messageEl, answer);
                     rememberChatTurn(message, answer);
+                    loadChatSessions();
                 } else {
                     streamMessage.messageEl.remove();
                     await streamChatMessage('抱歉，我没有收到有效回答。');
@@ -731,7 +768,13 @@
                     const event = parseSseEvent(rawEvent);
                     if (!event.data) continue;
 
-                    if (event.name === 'delta') {
+                    if (event.name === 'session') {
+                        const payload = parseJsonPayload(event.data);
+                        if (payload?.sessionId) {
+                            currentSessionId = payload.sessionId;
+                            upsertChatSession(payload.sessionId, payload.title || '新的对话');
+                        }
+                    } else if (event.name === 'delta') {
                         const payload = parseJsonPayload(event.data);
                         if (payload?.content) {
                             answer += payload.content;
@@ -811,6 +854,108 @@
             return 3;
         }
 
+        async function loadChatSessions() {
+            const result = await fetchData('/ai/session/list');
+            chatSessions = result?.data || [];
+            renderChatSessions();
+        }
+
+        function renderChatSessions() {
+            const list = document.getElementById('ai-history-list');
+            if (!list) return;
+            if (!chatSessions.length) {
+                list.innerHTML = '<div class="ai-history-empty">暂无对话历史</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            chatSessions.forEach(session => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'ai-history-item' + (String(session.id) === String(currentSessionId) ? ' active' : '');
+                item.onclick = () => selectChatSession(session.id);
+
+                const title = document.createElement('span');
+                title.className = 'ai-history-title';
+                title.textContent = session.title || '新的对话';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'ai-history-delete';
+                deleteBtn.textContent = '×';
+                deleteBtn.title = '删除对话';
+                deleteBtn.onclick = event => deleteChatSession(session.id, event);
+
+                item.appendChild(title);
+                item.appendChild(deleteBtn);
+                list.appendChild(item);
+            });
+        }
+
+        async function selectChatSession(sessionId) {
+            if (isChatStreaming || !sessionId) return;
+            const result = await fetchData('/ai/session/' + encodeURIComponent(sessionId));
+            if (!result?.data) return;
+
+            currentSessionId = result.data.id;
+            chatHistory = result.data.messages || [];
+            renderChatMessages(chatHistory);
+            renderChatSessions();
+        }
+
+        function renderChatMessages(messages) {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = '';
+            if (!messages?.length) {
+                appendChatMessage('bot', '您好！我是献血智能助手，有什么可以帮您的吗？');
+                return;
+            }
+            messages.forEach(message => {
+                appendChatMessage(message.role === 'assistant' ? 'bot' : 'user', message.content || '');
+            });
+        }
+
+        function startNewChat() {
+            if (isChatStreaming) return;
+            currentSessionId = null;
+            chatHistory = [];
+            renderChatMessages([]);
+            renderChatSessions();
+        }
+
+        async function deleteChatSession(sessionId, event) {
+            event.stopPropagation();
+            if (isChatStreaming || !sessionId) return;
+            if (!confirm('确定删除这条对话历史吗？')) return;
+
+            const result = await fetchData('/ai/session/' + encodeURIComponent(sessionId), { method: 'DELETE' });
+            if (result && result.code === 200) {
+                if (String(currentSessionId) === String(sessionId)) {
+                    startNewChat();
+                }
+                loadChatSessions();
+            } else {
+                alert(result?.msg || '删除失败');
+            }
+        }
+
+        function toggleAiHistory() {
+            const card = document.getElementById('ai-card');
+            if (card) {
+                card.classList.toggle('history-collapsed');
+            }
+        }
+
+        function upsertChatSession(sessionId, title) {
+            const existing = chatSessions.find(session => String(session.id) === String(sessionId));
+            if (existing) {
+                existing.title = title || existing.title;
+            } else {
+                chatSessions.unshift({ id: sessionId, title: title || '新的对话' });
+            }
+            renderChatSessions();
+        }
+
         function getRecentChatHistory() {
             return chatHistory.slice(-MAX_CHAT_HISTORY).map(message => ({
                 role: message.role,
@@ -823,15 +968,11 @@
                 { role: 'user', content: String(question || '') },
                 { role: 'assistant', content: String(answer || '') }
             );
-            if (chatHistory.length > MAX_CHAT_HISTORY) {
-                chatHistory = chatHistory.slice(-MAX_CHAT_HISTORY);
-            }
         }
 
         function clearChatContext() {
             if (isChatStreaming) return;
-            chatHistory = [];
-            appendChatMessage('bot', '已清空本轮对话上下文。接下来的问题会作为新的对话开始。');
+            startNewChat();
         }
 
         function addCopyAction(messageEl, content) {
