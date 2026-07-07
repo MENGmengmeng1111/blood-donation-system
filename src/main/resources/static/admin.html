@@ -1711,6 +1711,13 @@ body.legacy-page {
                 <a href="#stock-out" onclick="showTab('stock-out')">血液出库</a>
             </div>
         </div>
+        <div id="super-admin-menu" class="menu-group" style="display:none;">
+            <a href="#super" onclick="toggleMenu(this)">超级权限</a>
+            <div class="sub-menu">
+                <a href="#operation-log" onclick="showTab('operation-log')">操作日志</a>
+                <a href="#user-manage" onclick="showTab('user-manage')">账号管理</a>
+            </div>
+        </div>
         <a href="#report" onclick="showTab('report')">报表统计管理</a>
     </div>
 
@@ -1853,7 +1860,9 @@ body.legacy-page {
                         <th>身份证</th>
                         <th class="sortable" data-sort="bloodType" onclick="toggleSort('donor-table', 'bloodType'); loadDonorList()">血型</th>
                         <th>电话</th>
-                        <th class="sortable" data-sort="donorStatus" onclick="toggleSort('donor-table', 'donorStatus'); loadDonorList()">状态</th>
+                        <th>上次献血时间</th>
+                        <th>上次献血类型</th>
+                        <th>距上次献血</th>
                         <th>操作</th>
                     </tr></thead>
                     <tbody id="donor-table-body"></tbody>
@@ -1864,14 +1873,14 @@ body.legacy-page {
 
         <div id="donor-add" class="tab-content" style="display:none;">
             <div class="card">
-                <h2>新增献血者档案</h2>
-                <form id="donor-form">
-                    <input type="hidden" id="donor-id">
-                    <div class="form-group"><label>用户ID（可选）</label><input type="number" id="donor-user-id" placeholder="不填则不关联用户"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>新增献血者档案</h2>
+                    <button class="btn btn-primary" onclick="showTab('donor-list')">返回列表</button>
+                </div>
+                <div id="donor-add-view">
                     <div class="form-group"><label>姓名</label><input type="text" id="donor-name" required></div>
-                    <div class="form-group"><label>身份证号</label><input type="text" id="donor-id-card" maxlength="18" placeholder="新增必填，编辑留空表示不修改"></div>
-                    <div class="form-group">
-                        <label>血型</label>
+                    <div class="form-group"><label>身份证号</label><input type="text" id="donor-id-card" maxlength="18" placeholder="新增必填"></div>
+                    <div class="form-group"><label>血型</label>
                         <select id="donor-blood-type">
                             <option value="A型">A型</option>
                             <option value="B型">B型</option>
@@ -1879,7 +1888,6 @@ body.legacy-page {
                             <option value="AB型">AB型</option>
                         </select>
                     </div>
-                    <div class="form-group"><label>联系电话</label><input type="text" id="donor-phone" required></div>
                     <div class="form-group"><label>性别</label>
                         <select id="donor-gender">
                             <option value="">请选择</option>
@@ -1887,10 +1895,77 @@ body.legacy-page {
                             <option value="女">女</option>
                         </select>
                     </div>
+                    <div class="form-group"><label>联系电话</label><input type="text" id="donor-phone" required></div>
                     <div class="form-group"><label>地址</label><input type="text" id="donor-address"></div>
                     <div class="form-group"><label>病史</label><textarea id="donor-medical-history" rows="3"></textarea></div>
-                    <button type="button" class="btn" onclick="saveDonor()">保存</button>
-                </form>
+                    <div class="form-group"><label>献血状态</label>
+                        <select id="donor-status">
+                            <option value="正常">正常</option>
+                            <option value="暂缓">暂缓</option>
+                            <option value="永久淘汰">永久淘汰</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn" onclick="saveDonor()">保存档案</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="donor-detail" class="tab-content" style="display:none;">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2 id="detail-title">个人档案详情</h2>
+                    <div id="detail-actions">
+                        <button class="btn btn-primary" onclick="showTab('donor-list')">返回列表</button>
+                        <button class="btn btn-warning" onclick="showDonorEdit()">修改档案</button>
+                    </div>
+                </div>
+                <div id="donor-detail-view">
+                    <div class="info-row"><label>姓名：</label><span id="detail-name">-</span></div>
+                    <div class="info-row"><label>身份证：</label><span id="detail-idcard">-</span></div>
+                    <div class="info-row"><label>血型：</label><span id="detail-bloodtype">-</span></div>
+                    <div class="info-row"><label>性别：</label><span id="detail-gender">-</span></div>
+                    <div class="info-row"><label>年龄：</label><span id="detail-age">-</span></div>
+                    <div class="info-row"><label>联系电话：</label><span id="detail-phone">-</span></div>
+                    <div class="info-row"><label>地址：</label><span id="detail-address">-</span></div>
+                    <div class="info-row"><label>病史：</label><span id="detail-medical-history">-</span></div>
+                    <div class="info-row"><label>献血状态：</label><span id="detail-status">-</span></div>
+                    <div class="info-row"><label>上次献血时间：</label><span id="detail-lastdonate">-</span></div>
+                    <div class="info-row"><label>是否重点关注：</label><span id="detail-attention">-</span></div>
+                </div>
+                <div id="donor-detail-edit" style="display:none;">
+                    <form id="detail-edit-form">
+                        <input type="hidden" id="detail-edit-id">
+                        <div class="form-group"><label>姓名</label><input type="text" id="detail-edit-name" required></div>
+                        <div class="form-group"><label>身份证号</label><input type="text" id="detail-edit-idcard" maxlength="18"></div>
+                        <div class="form-group"><label>血型</label>
+                            <select id="detail-edit-bloodtype">
+                                <option value="A型">A型</option>
+                                <option value="B型">B型</option>
+                                <option value="O型">O型</option>
+                                <option value="AB型">AB型</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>性别</label>
+                            <select id="detail-edit-gender">
+                                <option value="">请选择</option>
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>联系电话</label><input type="text" id="detail-edit-phone" required></div>
+                        <div class="form-group"><label>地址</label><input type="text" id="detail-edit-address"></div>
+                        <div class="form-group"><label>病史</label><textarea id="detail-edit-medical-history" rows="3"></textarea></div>
+                        <div class="form-group"><label>献血状态</label>
+                            <select id="detail-edit-status">
+                                <option value="正常">正常</option>
+                                <option value="暂缓">暂缓</option>
+                                <option value="永久淘汰">永久淘汰</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn" onclick="saveDonorDetail()">保存档案</button>
+                        <button type="button" class="btn btn-secondary" onclick="cancelDonorEdit()">取消</button>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -2091,6 +2166,50 @@ body.legacy-page {
             </div>
         </div>
 
+        <div id="operation-log" class="tab-content" style="display:none;">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>操作日志</h2>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-danger" onclick="clearAllLogs()">清空日志</button>
+                        <button class="btn btn-warning" onclick="loadOperationLogs()">刷新列表</button>
+                    </div>
+                </div>
+                <table id="operation-log-table">
+                    <thead><tr>
+                        <th><input type="checkbox" id="select-all-log" onclick="toggleSelectAllLog()"></th>
+                        <th>操作人</th>
+                        <th>操作类型</th>
+                        <th>操作内容</th>
+                        <th>操作时间</th>
+                        <th>操作IP</th>
+                        <th>操作</th>
+                    </tr></thead>
+                    <tbody id="operation-log-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="user-manage" class="tab-content" style="display:none;">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>账号管理</h2>
+                    <button class="btn btn-primary" onclick="showAddUserModal()">新增账号</button>
+                </div>
+                <table id="user-manage-table">
+                    <thead><tr>
+                        <th>用户名</th>
+                        <th>真实姓名</th>
+                        <th>角色</th>
+                        <th>状态</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr></thead>
+                    <tbody id="user-manage-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div id="report" class="tab-content" style="display:none;">
             <div class="card">
                 <h2>报表统计</h2>
@@ -2238,6 +2357,8 @@ body.legacy-page {
             if (tabId === 'stock-list') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadStockList(); }
             if (tabId === 'stock-in') loadPendingStockList();
             if (tabId === 'stock-out') loadStockOutPendingList();
+            if (tabId === 'operation-log') loadOperationLogs();
+            if (tabId === 'user-manage') loadUserManageList();
             if (tabId === 'home') loadStats();
             if (tabId === 'report') loadReport();
         }
@@ -2336,38 +2457,144 @@ body.legacy-page {
             const result = await fetchData(url);
             const tbody = document.getElementById('donor-table-body');
             if (!result?.data?.records?.length) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">暂无数据</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">暂无数据</td></tr>';
                 return;
             }
-            tbody.innerHTML = result.data.records.map(d => `
+            const donorIds = result.data.records.map(d => d.id);
+            let lastDonateMap = {};
+            if (donorIds.length > 0) {
+                const collectionResult = await fetchData('/collection/list-by-donor-ids?donorIds=' + donorIds.join(','));
+                if (collectionResult?.data) {
+                    collectionResult.data.forEach(c => {
+                        if (!lastDonateMap[c.donorId] || c.collectionTime > lastDonateMap[c.donorId].collectionTime) {
+                            lastDonateMap[c.donorId] = {
+                                donateType: c.donateType,
+                                collectionTime: c.collectionTime
+                            };
+                        }
+                    });
+                }
+            }
+            tbody.innerHTML = result.data.records.map(d => {
+                const lastDonate = lastDonateMap[d.id];
+                const lastDate = lastDonate ? lastDonate.collectionTime.split(' ')[0] : '-';
+                const donateType = lastDonate ? lastDonate.donateType : '-';
+                const daysInfo = calculateDonateDays(lastDonate);
+                return `
                 <tr>
                     <td>${d.name}</td>
-                    <td>${d.idCard ? '******' + d.idCard.slice(-4) : ''}</td>
+                    <td>${d.idCard || '-'}</td>
                     <td>${d.bloodType}</td>
                     <td>${d.phone}</td>
-                    <td><span class="status-badge ${d.donorStatus === '正常' ? 'status-completed' : 'status-pending'}">${d.donorStatus}</span></td>
+                    <td>${lastDate}</td>
+                    <td>${donateType}</td>
+                    <td><span class="badge" style="background-color:${daysInfo.color};color:white;padding:4px 8px;border-radius:10px;">${daysInfo.text}</span></td>
                     <td>
+                        <button class="btn btn-primary" onclick="viewDonorDetail('${d.id}')">查看</button>
                         <button class="btn btn-warning" onclick="editDonor('${d.id}')">修改</button>
                         <button class="btn btn-danger" onclick="deleteDonor('${d.id}')">删除</button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
-        async function editDonor(id) {
+        function calculateDonateDays(lastDonate) {
+            if (!lastDonate || !lastDonate.collectionTime) {
+                return { text: '无记录', color: '#6c757d' };
+            }
+            const lastDate = new Date(lastDonate.collectionTime.split(' ')[0]);
+            const today = new Date();
+            const diffTime = Math.abs(today - lastDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const donateType = lastDonate.donateType;
+            const minDays = donateType === '成分血' ? 14 : 180;
+            const isWithinLimit = diffDays < minDays;
+            const color = isWithinLimit ? '#dc3545' : '#28a745';
+            return { text: diffDays + '天', color: color };
+        }
+
+        let currentDetailDonorId = null;
+
+        async function viewDonorDetail(id) {
+            currentDetailDonorId = id;
             const result = await fetchData('/donor/' + id);
             if (!result?.data) return;
             const d = result.data;
-            document.getElementById('donor-id').value = d.id;
-            document.getElementById('donor-user-id').value = d.userId || '';
-            document.getElementById('donor-name').value = d.name || '';
-            document.getElementById('donor-id-card').value = '';
-            document.getElementById('donor-blood-type').value = d.bloodType || 'A型';
-            document.getElementById('donor-phone').value = d.phone || '';
-            document.getElementById('donor-gender').value = d.gender || '';
-            document.getElementById('donor-address').value = d.address || '';
-            document.getElementById('donor-medical-history').value = d.medicalHistory || '';
-            showTab('donor-add');
+            document.getElementById('detail-name').textContent = d.name || '-';
+            document.getElementById('detail-idcard').textContent = d.idCard || '-';
+            document.getElementById('detail-bloodtype').textContent = d.bloodType || '-';
+            document.getElementById('detail-gender').textContent = d.gender || '-';
+            document.getElementById('detail-age').textContent = d.age || '-';
+            document.getElementById('detail-phone').textContent = d.phone || '-';
+            document.getElementById('detail-address').textContent = d.address || '-';
+            document.getElementById('detail-medical-history').textContent = d.medicalHistory || '-';
+            document.getElementById('detail-status').textContent = d.donorStatus || '-';
+            document.getElementById('detail-lastdonate').textContent = d.lastDonateDate || '-';
+            document.getElementById('detail-attention').textContent = d.attentionFlag === 1 ? '是' : '否';
+            document.getElementById('donor-detail-view').style.display = 'block';
+            document.getElementById('donor-detail-edit').style.display = 'none';
+            document.getElementById('detail-title').textContent = '个人档案详情';
+            document.getElementById('detail-actions').style.display = 'flex';
+            showTab('donor-detail');
+        }
+
+        async function editDonor(id) {
+            currentDetailDonorId = id;
+            const result = await fetchData('/donor/' + id);
+            if (!result?.data) return;
+            const d = result.data;
+            document.getElementById('detail-edit-id').value = d.id;
+            document.getElementById('detail-edit-name').value = d.name || '';
+            document.getElementById('detail-edit-idcard').value = d.idCard || '';
+            document.getElementById('detail-edit-bloodtype').value = d.bloodType || 'A型';
+            document.getElementById('detail-edit-gender').value = d.gender || '';
+            document.getElementById('detail-edit-phone').value = d.phone || '';
+            document.getElementById('detail-edit-address').value = d.address || '';
+            document.getElementById('detail-edit-medical-history').value = d.medicalHistory || '';
+            document.getElementById('detail-edit-status').value = d.donorStatus || '正常';
+            document.getElementById('donor-detail-view').style.display = 'none';
+            document.getElementById('donor-detail-edit').style.display = 'block';
+            document.getElementById('detail-title').textContent = '修改档案';
+            document.getElementById('detail-actions').style.display = 'none';
+            showTab('donor-detail');
+        }
+
+        function showDonorEdit() {
+            editDonor(currentDetailDonorId);
+        }
+
+        async function saveDonorDetail() {
+            const donorId = document.getElementById('detail-edit-id').value;
+            const idCard = document.getElementById('detail-edit-idcard').value.trim();
+            const data = {
+                id: donorId,
+                name: document.getElementById('detail-edit-name').value.trim(),
+                bloodType: document.getElementById('detail-edit-bloodtype').value,
+                phone: document.getElementById('detail-edit-phone').value.trim(),
+                gender: document.getElementById('detail-edit-gender').value || null,
+                address: document.getElementById('detail-edit-address').value.trim() || null,
+                medicalHistory: document.getElementById('detail-edit-medical-history').value.trim() || null,
+                donorStatus: document.getElementById('detail-edit-status').value
+            };
+            if (!data.name || !data.phone) {
+                alert('请填写必填项');
+                return;
+            }
+            if (idCard) {
+                data.idCard = idCard;
+            }
+            const result = await fetchData('/donor/update', { method: 'PUT', body: JSON.stringify(data) });
+            if (result && result.code === 200) {
+                alert('保存成功');
+                viewDonorDetail(donorId);
+                loadDonorList();
+            } else {
+                alert(result?.msg || '保存失败');
+            }
+        }
+
+        function cancelDonorEdit() {
+            viewDonorDetail(currentDetailDonorId);
         }
 
         async function saveDonor() {
@@ -2375,13 +2602,13 @@ body.legacy-page {
             const idCard = document.getElementById('donor-id-card').value.trim();
             const data = {
                 id: donorId ? donorId : null,
-                userId: parseInt(document.getElementById('donor-user-id').value) || null,
                 name: document.getElementById('donor-name').value.trim(),
                 bloodType: document.getElementById('donor-blood-type').value,
                 phone: document.getElementById('donor-phone').value.trim(),
                 gender: document.getElementById('donor-gender').value || null,
                 address: document.getElementById('donor-address').value.trim() || null,
-                medicalHistory: document.getElementById('donor-medical-history').value.trim() || null
+                medicalHistory: document.getElementById('donor-medical-history').value.trim() || null,
+                donorStatus: document.getElementById('donor-status').value
             };
             if (!data.name || !data.phone || (!donorId && !idCard)) {
                 alert('请填写必填项');
@@ -2404,7 +2631,6 @@ body.legacy-page {
 
         function resetDonorForm() {
             document.getElementById('donor-id').value = '';
-            document.getElementById('donor-user-id').value = '';
             document.getElementById('donor-name').value = '';
             document.getElementById('donor-id-card').value = '';
             document.getElementById('donor-blood-type').value = 'A型';
@@ -3064,6 +3290,162 @@ body.legacy-page {
             downloadExcel(API_BASE + '/export/pending-stock-out', '待出库记录.xlsx');
         }
 
+        async function loadOperationLogs() {
+            const result = await fetchData('/log/list');
+            const tbody = document.getElementById('operation-log-table-body');
+            if (!result?.data?.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">暂无操作日志</td></tr>';
+                return;
+            }
+            tbody.innerHTML = result.data.map(item => `
+                <tr>
+                    <td><input type="checkbox" value="${item.id}"></td>
+                    <td>${item.operatorName || '-'}</td>
+                    <td>${item.operationType || '-'}</td>
+                    <td>${item.operationContent || '-'}</td>
+                    <td>${item.operationTime?.split(' ')[0] || '-'}</td>
+                    <td>${item.ipAddress || '-'}</td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteLog(${item.id})">删除</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function deleteLog(id) {
+            if (!confirm('确定要删除这条操作日志吗？')) return;
+            const result = await fetchData('/log/' + id, { method: 'DELETE' });
+            if (result && result.code === 200) {
+                loadOperationLogs();
+            } else {
+                alert('删除失败');
+            }
+        }
+
+        async function clearAllLogs() {
+            if (!confirm('确定要清空所有操作日志吗？此操作不可恢复！')) return;
+            const result = await fetchData('/log/clear', { method: 'DELETE' });
+            if (result && result.code === 200) {
+                loadOperationLogs();
+            } else {
+                alert('清空失败');
+            }
+        }
+
+        function toggleSelectAllLog() {
+            const selectAll = document.getElementById('select-all-log');
+            const checkboxes = document.querySelectorAll('#operation-log-table-body input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        }
+
+        async function loadUserManageList() {
+            const result = await fetchData('/user-manage/list');
+            const tbody = document.getElementById('user-manage-table-body');
+            if (!result?.data?.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">暂无账号记录</td></tr>';
+                return;
+            }
+            tbody.innerHTML = result.data.map(item => `
+                <tr>
+                    <td>${item.username}</td>
+                    <td>${item.realName || '-'}</td>
+                    <td>${item.role === 'ROLE_ADMIN' ? '管理员' : '普通用户'}</td>
+                    <td>${item.status === 0 ? '<span class="status-badge active">正常</span>' : '<span class="status-badge inactive">禁用</span>'}</td>
+                    <td>${item.createTime?.split(' ')[0] || '-'}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="showEditUserModal(${item.id})">编辑</button>
+                        <button class="btn btn-warning btn-sm" onclick="toggleUserStatus(${item.id}, ${item.status})">${item.status === 0 ? '禁用' : '启用'}</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteUser(${item.id})">删除</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showAddUserModal() {
+            document.getElementById('modal-title').textContent = '新增账号';
+            document.getElementById('modal-message').innerHTML = '';
+            document.getElementById('modal-body').innerHTML = `
+                <form id="user-add-form">
+                    <input type="hidden" id="user-id">
+                    <div class="form-group"><label>用户名:</label><input type="text" id="user-username" required></div>
+                    <div class="form-group"><label>密码:</label><input type="password" id="user-password" required></div>
+                    <div class="form-group"><label>真实姓名:</label><input type="text" id="user-realname"></div>
+                    <div class="form-group"><label>角色:</label>
+                        <select id="user-role">
+                            <option value="ROLE_ADMIN">管理员</option>
+                            <option value="ROLE_DONOR">普通用户</option>
+                        </select>
+                    </div>
+                    <div style="margin-top:15px;"><button type="button" class="btn btn-primary" onclick="saveUser()">保存</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button></div>
+                </form>
+            `;
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function showEditUserModal(id) {
+            fetchData('/user-manage/' + id).then(result => {
+                if (!result?.data) return;
+                const user = result.data;
+                document.getElementById('modal-title').textContent = '编辑账号';
+                document.getElementById('modal-message').innerHTML = '';
+                document.getElementById('modal-body').innerHTML = `
+                    <form id="user-edit-form">
+                        <input type="hidden" id="user-id" value="${user.id}">
+                        <div class="form-group"><label>用户名:</label><input type="text" id="user-username" value="${user.username}" required></div>
+                        <div class="form-group"><label>密码(留空不修改):</label><input type="password" id="user-password"></div>
+                        <div class="form-group"><label>真实姓名:</label><input type="text" id="user-realname" value="${user.realName || ''}"></div>
+                        <div class="form-group"><label>角色:</label>
+                            <select id="user-role">
+                                <option value="ROLE_ADMIN" ${user.role === 'ROLE_ADMIN' ? 'selected' : ''}>管理员</option>
+                                <option value="ROLE_DONOR" ${user.role === 'ROLE_DONOR' ? 'selected' : ''}>普通用户</option>
+                            </select>
+                        </div>
+                        <div style="margin-top:15px;"><button type="button" class="btn btn-primary" onclick="saveUser()">保存</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button></div>
+                    </form>
+                `;
+                document.getElementById('edit-modal').style.display = 'flex';
+            });
+        }
+
+        async function saveUser() {
+            const id = document.getElementById('user-id').value;
+            const user = {
+                username: document.getElementById('user-username').value,
+                password: document.getElementById('user-password').value,
+                realName: document.getElementById('user-realname').value,
+                role: document.getElementById('user-role').value
+            };
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? '/user-manage/' + id : '/user-manage';
+            const result = await fetchData(url, { method, body: JSON.stringify(user) });
+            if (result && result.code === 200) {
+                document.getElementById('modal-message').innerHTML = '<div class="message success">保存成功</div>';
+                setTimeout(() => { closeModal(); loadUserManageList(); }, 1000);
+            } else {
+                document.getElementById('modal-message').innerHTML = `<div class="message error">${result?.msg || '保存失败'}</div>`;
+            }
+        }
+
+        async function toggleUserStatus(id, status) {
+            const newStatus = status === 0 ? 1 : 0;
+            const result = await fetchData('/user-manage/' + id + '/status?status=' + newStatus, { method: 'PUT' });
+            if (result && result.code === 200) {
+                loadUserManageList();
+            } else {
+                alert(result?.msg || '操作失败');
+            }
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('确定要删除这个账号吗？')) return;
+            const result = await fetchData('/user-manage/' + id, { method: 'DELETE' });
+            if (result && result.code === 200) {
+                loadUserManageList();
+            } else {
+                alert(result?.msg || '删除失败');
+            }
+        }
+
         function getStatusClass(status) {
             switch(status) {
                 case '未开始': case '待检验': case '待参加': return 'status-pending';
@@ -3077,6 +3459,10 @@ body.legacy-page {
         document.addEventListener('DOMContentLoaded', () => {
             if (!getToken()) window.location.href = 'index.html';
             document.getElementById('user-name').textContent = localStorage.getItem('username') || '管理员';
+            const role = localStorage.getItem('role');
+            if (role === 'ROLE_SUPER_ADMIN') {
+                document.getElementById('super-admin-menu').style.display = 'block';
+            }
             loadStats();
         });
 

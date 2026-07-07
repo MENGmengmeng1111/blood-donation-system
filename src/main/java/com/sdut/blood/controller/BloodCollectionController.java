@@ -122,4 +122,16 @@ public class BloodCollectionController {
         BloodCollection collection = bloodCollectionService.getById(id);
         return Result.success(collection);
     }
+
+    /**
+     * 根据献血者ID列表查询采血记录
+     */
+    @GetMapping("/list-by-donor-ids")
+    public Result<List<BloodCollection>> listByDonorIds(@RequestParam List<Long> donorIds) {
+        LambdaQueryWrapper<BloodCollection> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(BloodCollection::getDonorId, donorIds);
+        wrapper.orderByDesc(BloodCollection::getCollectionTime);
+        List<BloodCollection> list = bloodCollectionService.list(wrapper);
+        return Result.success(list);
+    }
 }

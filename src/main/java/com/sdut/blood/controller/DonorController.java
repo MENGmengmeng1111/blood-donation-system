@@ -3,6 +3,7 @@ package com.sdut.blood.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.sdut.blood.common.result.Result;
+import com.sdut.blood.common.utils.EncryptUtil;
 import com.sdut.blood.domain.dto.DonorAddDTO;
 import com.sdut.blood.domain.dto.DonorUpdateDTO;
 import com.sdut.blood.domain.entity.Donor;
@@ -92,17 +93,44 @@ public class DonorController {
             wrapper.orderByDesc(Donor::getCreateTime);
         }
         donorService.page(page, wrapper);
+        page.getRecords().forEach(donor -> {
+            if (donor.getIdCard() != null && !donor.getIdCard().isEmpty()) {
+                try {
+                    donor.setIdCard(EncryptUtil.decrypt(donor.getIdCard()));
+                } catch (Exception e) {
+                }
+            }
+            if (donor.getMedicalHistory() != null && !donor.getMedicalHistory().isEmpty()) {
+                try {
+                    donor.setMedicalHistory(EncryptUtil.decrypt(donor.getMedicalHistory()));
+                } catch (Exception e) {
+                }
+            }
+        });
         return Result.success(page);
     }
 
     /**
-     * 查询档案详情（身份证脱敏）
+     * 查询档案详情（身份证解密）
      */
     @GetMapping("/{id}")
-    public Result<DonorVO> getDonorDetail(@PathVariable Long id) {
+    public Result<Donor> getDonorDetail(@PathVariable Long id) {
         Donor donor = donorService.getById(id);
-        DonorVO vo = donorService.convertToVO(donor);
-        return Result.success(vo);
+        if (donor != null) {
+            if (donor.getIdCard() != null && !donor.getIdCard().isEmpty()) {
+                try {
+                    donor.setIdCard(EncryptUtil.decrypt(donor.getIdCard()));
+                } catch (Exception e) {
+                }
+            }
+            if (donor.getMedicalHistory() != null && !donor.getMedicalHistory().isEmpty()) {
+                try {
+                    donor.setMedicalHistory(EncryptUtil.decrypt(donor.getMedicalHistory()));
+                } catch (Exception e) {
+                }
+            }
+        }
+        return Result.success(donor);
     }
 
     /**
