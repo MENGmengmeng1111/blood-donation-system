@@ -287,8 +287,11 @@ public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodSt
         if ("已出库".equals(stock.getStatus())) {
             throw new BusinessException("该血液已出库");
         }
+        if (outUnit == null || outUnit.trim().isEmpty()) {
+            throw new BusinessException("请填写用血单位");
+        }
         stock.setStatus("已出库");
-        stock.setOutUnit(outUnit);
+        stock.setOutUnit(outUnit.trim());
         updateById(stock);
     }
 
@@ -311,5 +314,10 @@ public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodSt
     @Override
     public List<com.sdut.blood.domain.vo.PendingStockInVO> listPendingStockIn() {
         return baseMapper.selectPendingStockInList();
+    }
+
+    @Override
+    public List<com.sdut.blood.domain.vo.PendingStockOutVO> listStockOutPending() {
+        return baseMapper.selectStockOutPendingList();
     }
 }

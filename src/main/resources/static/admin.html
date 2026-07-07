@@ -1708,6 +1708,7 @@ body.legacy-page {
             <div class="sub-menu">
                 <a href="#stock-list" onclick="showTab('stock-list')">库存明细</a>
                 <a href="#stock-in" onclick="showTab('stock-in')">血液入库</a>
+                <a href="#stock-out" onclick="showTab('stock-out')">血液出库</a>
             </div>
         </div>
         <a href="#report" onclick="showTab('report')">报表统计管理</a>
@@ -1831,7 +1832,10 @@ body.legacy-page {
 
         <div id="donor-list" class="tab-content" style="display:none;">
             <div class="card">
-                <h2>献血者档案列表</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>献血者档案列表</h2>
+                    <button class="btn btn-primary" onclick="exportDonors()">导出Excel报表</button>
+                </div>
                 <div class="search-bar">
                     <input type="text" id="donor-search" placeholder="搜索姓名..." onkeyup="loadDonorList()">
                     <select id="blood-type-filter" onchange="loadDonorList()">
@@ -1892,8 +1896,13 @@ body.legacy-page {
 
         <div id="activity-list" class="tab-content" style="display:none;">
             <div class="card">
-                <h2>献血活动列表</h2>
-                <button class="btn btn-primary" onclick="showTab('activity-add')">新增活动</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>献血活动列表</h2>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-primary" onclick="showTab('activity-add')">新增活动</button>
+                        <button class="btn btn-primary" onclick="exportActivities()">导出Excel报表</button>
+                    </div>
+                </div>
                 <table id="activity-table">
                     <thead><tr>
                         <th class="sortable" data-sort="activityName" onclick="toggleSort('activity-table', 'activityName'); loadActivityList()">活动名称</th>
@@ -1926,8 +1935,13 @@ body.legacy-page {
 
         <div id="collection-list" class="tab-content" style="display:none;">
             <div class="card">
-                <h2>采血记录列表</h2>
-                <button class="btn btn-primary" onclick="showTab('collection-add')">新增采血记录</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>采血记录列表</h2>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-primary" onclick="showTab('collection-add')">新增采血记录</button>
+                        <button class="btn btn-primary" onclick="exportCollections()">导出Excel报表</button>
+                    </div>
+                </div>
                 <table id="collection-table">
                     <thead><tr>
                         <th>献血者姓名</th>
@@ -1981,7 +1995,10 @@ body.legacy-page {
 
         <div id="test-list" class="tab-content" style="display:none;">
             <div class="card">
-                <h2>检验记录列表</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>检验记录列表</h2>
+                    <button class="btn btn-primary" onclick="exportTests()">导出Excel报表</button>
+                </div>
                 <table id="test-table">
                     <thead><tr>
                         <th>献血者姓名</th>
@@ -2000,7 +2017,10 @@ body.legacy-page {
 
         <div id="stock-list" class="tab-content" style="display:none;">
             <div class="card">
-                <h2>库存明细</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>库存明细</h2>
+                    <button class="btn btn-primary" onclick="exportStocks()">导出Excel报表</button>
+                </div>
                 <table id="stock-table">
                     <thead><tr>
                         <th>献血者姓名</th>
@@ -2018,7 +2038,10 @@ body.legacy-page {
 
         <div id="stock-in" class="tab-content" style="display:none;">
             <div class="card">
-                <h2>血液入库</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>血液入库</h2>
+                    <button class="btn btn-primary" onclick="exportPendingStockIn()">导出Excel报表</button>
+                </div>
                 <p style="color:var(--apple-muted); font-size:14px; margin-bottom:15px;">检验合格的采血记录将自动显示在此列表中，请选择需要入库的记录并填写有效期</p>
                 <table id="pending-stock-table">
                     <thead><tr>
@@ -2036,6 +2059,34 @@ body.legacy-page {
                 <div style="margin-top:20px; display:flex; gap:15px; align-items:center;">
                     <button class="btn btn-primary" onclick="saveStockIn()">确认入库</button>
                     <button class="btn btn-warning" onclick="loadPendingStockList()">刷新列表</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="stock-out" class="tab-content" style="display:none;">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>血液出库</h2>
+                    <button class="btn btn-primary" onclick="exportPendingStockOut()">导出Excel报表</button>
+                </div>
+                <p style="color:var(--apple-muted); font-size:14px; margin-bottom:15px;">选择需要出库的库存记录并填写用血单位后确认出库</p>
+                <table id="pending-out-table">
+                    <thead><tr>
+                        <th><input type="checkbox" id="select-all-out" onclick="toggleSelectAllOut()"></th>
+                        <th>献血者姓名</th>
+                        <th>血型</th>
+                        <th>血量(ml)</th>
+                        <th>献血类型</th>
+                        <th>有效期</th>
+                        <th>库存状态</th>
+                        <th>入库时间</th>
+                        <th>用血单位</th>
+                    </tr></thead>
+                    <tbody id="pending-out-table-body"></tbody>
+                </table>
+                <div style="margin-top:20px; display:flex; gap:15px; align-items:center;">
+                    <button class="btn btn-primary" onclick="confirmBatchStockOut()">确认出库</button>
+                    <button class="btn btn-warning" onclick="loadStockOutPendingList()">刷新列表</button>
                 </div>
             </div>
         </div>
@@ -2186,6 +2237,7 @@ body.legacy-page {
             if (tabId === 'test-list') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadTestList(); }
             if (tabId === 'stock-list') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadStockList(); }
             if (tabId === 'stock-in') loadPendingStockList();
+            if (tabId === 'stock-out') loadStockOutPendingList();
             if (tabId === 'home') loadStats();
             if (tabId === 'report') loadReport();
         }
@@ -2883,6 +2935,69 @@ body.legacy-page {
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
         }
 
+        async function loadStockOutPendingList() {
+            const result = await fetchData('/stock/out-pending');
+            const tbody = document.getElementById('pending-out-table-body');
+            if (!result?.data?.length) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">暂无可出库库存记录</td></tr>';
+                return;
+            }
+            tbody.innerHTML = result.data.map(item => `
+                <tr>
+                    <td><input type="checkbox" value="${item.stockId}"></td>
+                    <td>${item.donorName}</td>
+                    <td>${item.bloodType}</td>
+                    <td>${item.bloodAmount}</td>
+                    <td>${item.donateType}</td>
+                    <td>${item.expireDate}</td>
+                    <td><span class="status-badge ${getStatusClass(item.status)}">${item.status}</span></td>
+                    <td>${item.createTime?.split(' ')[0] || '-'}</td>
+                    <td><input type="text" id="out-unit-${item.stockId}" placeholder="请输入用血单位" style="width:150px;"></td>
+                </tr>
+            `).join('');
+        }
+
+        async function confirmBatchStockOut() {
+            const checkedBoxes = document.querySelectorAll('#pending-out-table-body input[type="checkbox"]:checked');
+            if (checkedBoxes.length === 0) {
+                alert('请至少选择一条库存记录');
+                return;
+            }
+
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const checkbox of checkedBoxes) {
+                const stockId = checkbox.value;
+                const outUnit = document.getElementById('out-unit-' + stockId).value;
+                
+                if (!outUnit) {
+                    alert('请为所有选中的记录填写用血单位');
+                    return;
+                }
+
+                const result = await fetchData('/stock/out/' + stockId, { method: 'PUT', body: JSON.stringify({ outUnit }) });
+                if (result && result.code === 200) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            }
+
+            if (successCount > 0) {
+                alert(`成功出库 ${successCount} 条记录${failCount > 0 ? '，失败 ' + failCount + ' 条' : ''}`);
+                loadStockOutPendingList();
+            } else {
+                alert('出库失败');
+            }
+        }
+
+        function toggleSelectAllOut() {
+            const selectAll = document.getElementById('select-all-out');
+            const checkboxes = document.querySelectorAll('#pending-out-table-body input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        }
+
         function closeModal() {
             document.getElementById('edit-modal').style.display = 'none';
             document.getElementById('modal-message').innerHTML = '';
@@ -2893,8 +3008,60 @@ body.legacy-page {
             document.getElementById('report-donor-count').textContent = donors?.data?.total || 0;
         }
 
+        async function downloadExcel(url, fileName) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+                if (!response.ok) {
+                    alert('导出失败：' + response.statusText);
+                    return;
+                }
+                const blob = await response.blob();
+                const urlObj = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = urlObj;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(urlObj);
+            } catch (error) {
+                alert('导出失败：' + error.message);
+            }
+        }
+
         function exportReport() {
-            window.open(API_BASE + '/report/export?type=all', '_blank');
+            downloadExcel(API_BASE + '/report/export?type=all', '统计报表.xlsx');
+        }
+
+        function exportDonors() {
+            downloadExcel(API_BASE + '/export/donors', '献血者档案.xlsx');
+        }
+
+        function exportActivities() {
+            downloadExcel(API_BASE + '/export/activities', '活动记录.xlsx');
+        }
+
+        function exportCollections() {
+            downloadExcel(API_BASE + '/export/collections', '采血记录.xlsx');
+        }
+
+        function exportTests() {
+            downloadExcel(API_BASE + '/export/tests', '检验记录.xlsx');
+        }
+
+        function exportStocks() {
+            downloadExcel(API_BASE + '/export/stocks', '库存记录.xlsx');
+        }
+
+        function exportPendingStockIn() {
+            downloadExcel(API_BASE + '/export/pending-stock-in', '待入库记录.xlsx');
+        }
+
+        function exportPendingStockOut() {
+            downloadExcel(API_BASE + '/export/pending-stock-out', '待出库记录.xlsx');
         }
 
         function getStatusClass(status) {

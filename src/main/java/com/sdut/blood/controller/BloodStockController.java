@@ -5,6 +5,7 @@ import com.sdut.blood.domain.dto.StockInDTO;
 import com.sdut.blood.domain.entity.BloodStock;
 import com.sdut.blood.domain.vo.BloodStockVO;
 import com.sdut.blood.domain.vo.PendingStockInVO;
+import com.sdut.blood.domain.vo.PendingStockOutVO;
 import com.sdut.blood.domain.vo.StockTrendVO;
 import com.sdut.blood.domain.vo.StockWarningVO;
 import com.sdut.blood.service.BloodStockService;
@@ -31,6 +32,15 @@ public class BloodStockController {
     @GetMapping("/pending")
     public Result<List<PendingStockInVO>> listPendingStockIn() {
         List<PendingStockInVO> list = bloodStockService.listPendingStockIn();
+        return Result.success(list);
+    }
+
+    /**
+     * 查询可出库库存记录列表（状态为正常/临期/已过期的库存）
+     */
+    @GetMapping("/out-pending")
+    public Result<List<PendingStockOutVO>> listStockOutPending() {
+        List<PendingStockOutVO> list = bloodStockService.listStockOutPending();
         return Result.success(list);
     }
 

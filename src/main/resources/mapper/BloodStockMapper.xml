@@ -91,4 +91,27 @@
         ORDER BY bt.judge_time DESC
     </select>
 
+    <!-- 查询可出库库存记录列表（状态为正常/临期/已过期的库存） -->
+    <select id="selectStockOutPendingList" resultType="com.sdut.blood.domain.vo.PendingStockOutVO">
+        SELECT 
+            bs.id AS stockId,
+            bs.collection_id AS collectionId,
+            d.id AS donorId,
+            d.name AS donorName,
+            bs.blood_type AS bloodType,
+            bs.blood_amount AS bloodAmount,
+            bs.expire_date AS expireDate,
+            bs.status AS status,
+            bs.create_time AS createTime,
+            bc.donate_type AS donateType
+        FROM blood_stock bs
+        INNER JOIN blood_collection bc ON bs.collection_id = bc.id
+        INNER JOIN donor d ON bc.donor_id = d.id
+        WHERE bs.status IN ('正常', '临期', '已过期')
+          AND bs.deleted = 0
+          AND bc.deleted = 0
+          AND d.deleted = 0
+        ORDER BY bs.create_time DESC
+    </select>
+
 </mapper>

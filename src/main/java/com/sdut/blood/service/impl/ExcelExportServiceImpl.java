@@ -2,6 +2,7 @@ package com.sdut.blood.service.impl;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
+import com.sdut.blood.domain.entity.BloodActivity;
 import com.sdut.blood.domain.entity.BloodCollection;
 import com.sdut.blood.domain.entity.BloodStock;
 import com.sdut.blood.domain.entity.BloodTest;
@@ -122,6 +123,36 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         return outputStream;
     }
 
+    @Override
+    public ByteArrayOutputStream exportActivities(List<BloodActivity> activities) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        EasyExcel.write(outputStream, ActivityExportDTO.class)
+                .registerWriteHandler(new LongestMatchColumnWidthStyleStrategy())
+                .sheet("活动记录")
+                .doWrite(activities.stream().map(ActivityExportDTO::new).toList());
+        return outputStream;
+    }
+
+    @Override
+    public ByteArrayOutputStream exportPendingStockIn(List<com.sdut.blood.domain.vo.PendingStockInVO> records) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        EasyExcel.write(outputStream, PendingStockInExportDTO.class)
+                .registerWriteHandler(new LongestMatchColumnWidthStyleStrategy())
+                .sheet("待入库记录")
+                .doWrite(records.stream().map(PendingStockInExportDTO::new).toList());
+        return outputStream;
+    }
+
+    @Override
+    public ByteArrayOutputStream exportPendingStockOut(List<com.sdut.blood.domain.vo.PendingStockOutVO> records) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        EasyExcel.write(outputStream, PendingStockOutExportDTO.class)
+                .registerWriteHandler(new LongestMatchColumnWidthStyleStrategy())
+                .sheet("待出库记录")
+                .doWrite(records.stream().map(PendingStockOutExportDTO::new).toList());
+        return outputStream;
+    }
+
     private List<List<Object>> getOverviewData(StatisticsVO statistics) {
         List<List<Object>> data = new ArrayList<>();
         data.add(List.of("统计项", "数值"));
@@ -177,6 +208,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         return rows;
     }
 
+    @lombok.Data
     public static class DonorExportDTO {
         @com.alibaba.excel.annotation.ExcelProperty("姓名")
         private String name;
@@ -207,6 +239,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         }
     }
 
+    @lombok.Data
     public static class CollectionExportDTO {
         @com.alibaba.excel.annotation.ExcelProperty("献血量(ml)")
         private Integer donateAmount;
@@ -225,6 +258,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         }
     }
 
+    @lombok.Data
     public static class TestExportDTO {
         @com.alibaba.excel.annotation.ExcelProperty("复检结果")
         private String recheckResult;
@@ -243,6 +277,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         }
     }
 
+    @lombok.Data
     public static class StockExportDTO {
         @com.alibaba.excel.annotation.ExcelProperty("血型")
         private String bloodType;
@@ -261,6 +296,96 @@ public class ExcelExportServiceImpl implements ExcelExportService {
             this.expireDate = stock.getExpireDate() != null ? stock.getExpireDate().toString() : "";
             this.status = stock.getStatus();
             this.createTime = stock.getCreateTime() != null ? stock.getCreateTime().toString() : "";
+        }
+    }
+
+    @lombok.Data
+    public static class ActivityExportDTO {
+        @com.alibaba.excel.annotation.ExcelProperty("活动名称")
+        private String activityName;
+        @com.alibaba.excel.annotation.ExcelProperty("活动地点")
+        private String location;
+        @com.alibaba.excel.annotation.ExcelProperty("活动日期")
+        private String activityDate;
+        @com.alibaba.excel.annotation.ExcelProperty("上午名额")
+        private Integer morningQuota;
+        @com.alibaba.excel.annotation.ExcelProperty("下午名额")
+        private Integer afternoonQuota;
+        @com.alibaba.excel.annotation.ExcelProperty("上午剩余")
+        private Integer morningRemaining;
+        @com.alibaba.excel.annotation.ExcelProperty("下午剩余")
+        private Integer afternoonRemaining;
+        @com.alibaba.excel.annotation.ExcelProperty("活动状态")
+        private String status;
+        @com.alibaba.excel.annotation.ExcelProperty("创建时间")
+        private String createTime;
+
+        public ActivityExportDTO(BloodActivity activity) {
+            this.activityName = activity.getActivityName();
+            this.location = activity.getLocation();
+            this.activityDate = activity.getActivityDate() != null ? activity.getActivityDate().toString() : "";
+            this.morningQuota = activity.getMorningQuota();
+            this.afternoonQuota = activity.getAfternoonQuota();
+            this.morningRemaining = activity.getMorningRemaining();
+            this.afternoonRemaining = activity.getAfternoonRemaining();
+            this.status = activity.getStatus();
+            this.createTime = activity.getCreateTime() != null ? activity.getCreateTime().toString() : "";
+        }
+    }
+
+    @lombok.Data
+    public static class PendingStockInExportDTO {
+        @com.alibaba.excel.annotation.ExcelProperty("献血者姓名")
+        private String donorName;
+        @com.alibaba.excel.annotation.ExcelProperty("血型")
+        private String bloodType;
+        @com.alibaba.excel.annotation.ExcelProperty("联系电话")
+        private String phone;
+        @com.alibaba.excel.annotation.ExcelProperty("血量(ml)")
+        private Integer donateAmount;
+        @com.alibaba.excel.annotation.ExcelProperty("献血类型")
+        private String donateType;
+        @com.alibaba.excel.annotation.ExcelProperty("采血时间")
+        private String collectionTime;
+        @com.alibaba.excel.annotation.ExcelProperty("检验时间")
+        private String judgeTime;
+
+        public PendingStockInExportDTO(com.sdut.blood.domain.vo.PendingStockInVO vo) {
+            this.donorName = vo.getDonorName();
+            this.bloodType = vo.getBloodType();
+            this.phone = vo.getPhone();
+            this.donateAmount = vo.getDonateAmount();
+            this.donateType = vo.getDonateType();
+            this.collectionTime = vo.getCollectionTime() != null ? vo.getCollectionTime().toString() : "";
+            this.judgeTime = vo.getJudgeTime() != null ? vo.getJudgeTime().toString() : "";
+        }
+    }
+
+    @lombok.Data
+    public static class PendingStockOutExportDTO {
+        @com.alibaba.excel.annotation.ExcelProperty("献血者姓名")
+        private String donorName;
+        @com.alibaba.excel.annotation.ExcelProperty("血型")
+        private String bloodType;
+        @com.alibaba.excel.annotation.ExcelProperty("血量(ml)")
+        private Integer bloodAmount;
+        @com.alibaba.excel.annotation.ExcelProperty("献血类型")
+        private String donateType;
+        @com.alibaba.excel.annotation.ExcelProperty("有效期")
+        private String expireDate;
+        @com.alibaba.excel.annotation.ExcelProperty("库存状态")
+        private String status;
+        @com.alibaba.excel.annotation.ExcelProperty("入库时间")
+        private String createTime;
+
+        public PendingStockOutExportDTO(com.sdut.blood.domain.vo.PendingStockOutVO vo) {
+            this.donorName = vo.getDonorName();
+            this.bloodType = vo.getBloodType();
+            this.bloodAmount = vo.getBloodAmount();
+            this.donateType = vo.getDonateType();
+            this.expireDate = vo.getExpireDate() != null ? vo.getExpireDate().toString() : "";
+            this.status = vo.getStatus();
+            this.createTime = vo.getCreateTime() != null ? vo.getCreateTime().toString() : "";
         }
     }
 }
