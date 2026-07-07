@@ -1,9 +1,12 @@
 package com.sdut.blood.service;
 
+import com.sdut.blood.domain.entity.BloodActivity;
 import com.sdut.blood.domain.entity.BloodCollection;
 import com.sdut.blood.domain.entity.BloodStock;
 import com.sdut.blood.domain.entity.BloodTest;
 import com.sdut.blood.domain.entity.Donor;
+import com.sdut.blood.domain.vo.PendingStockInVO;
+import com.sdut.blood.domain.vo.PendingStockOutVO;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -37,4 +40,19 @@ public interface ExcelExportService {
      * 导出统计报表
      */
     ByteArrayOutputStream exportStatistics();
+
+    /**
+     * 导出活动记录
+     */
+    ByteArrayOutputStream exportActivities(List<BloodActivity> activities);
+
+    /**
+     * 导出待入库记录
+     */
+    ByteArrayOutputStream exportPendingStockIn(List<PendingStockInVO> records);
+
+    /**
+     * 导出待出库记录
+     */
+    ByteArrayOutputStream exportPendingStockOut(List<PendingStockOutVO> records);
 }

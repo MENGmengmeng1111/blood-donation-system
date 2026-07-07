@@ -1,9 +1,11 @@
 package com.sdut.blood.controller;
 
+import com.sdut.blood.domain.entity.BloodActivity;
 import com.sdut.blood.domain.entity.BloodCollection;
 import com.sdut.blood.domain.entity.BloodStock;
 import com.sdut.blood.domain.entity.BloodTest;
 import com.sdut.blood.domain.entity.Donor;
+import com.sdut.blood.service.BloodActivityService;
 import com.sdut.blood.service.BloodCollectionService;
 import com.sdut.blood.service.BloodStockService;
 import com.sdut.blood.service.BloodTestService;
@@ -36,6 +38,9 @@ public class ExcelExportController {
 
     @Resource
     private DonorService donorService;
+
+    @Resource
+    private BloodActivityService bloodActivityService;
 
     @Resource
     private BloodCollectionService bloodCollectionService;
@@ -102,6 +107,42 @@ public class ExcelExportController {
         setExcelResponseHeader(response, "统计报表");
         try (OutputStream outputStream = response.getOutputStream()) {
             var data = excelExportService.exportStatistics();
+            outputStream.write(data.toByteArray());
+        }
+    }
+
+    /**
+     * 导出活动记录
+     */
+    @GetMapping("/activities")
+    public void exportActivities(HttpServletResponse response) throws IOException {
+        setExcelResponseHeader(response, "活动记录");
+        try (OutputStream outputStream = response.getOutputStream()) {
+            var data = excelExportService.exportActivities(bloodActivityService.list());
+            outputStream.write(data.toByteArray());
+        }
+    }
+
+    /**
+     * 导出待入库记录
+     */
+    @GetMapping("/pending-stock-in")
+    public void exportPendingStockIn(HttpServletResponse response) throws IOException {
+        setExcelResponseHeader(response, "待入库记录");
+        try (OutputStream outputStream = response.getOutputStream()) {
+            var data = excelExportService.exportPendingStockIn(bloodStockService.listPendingStockIn());
+            outputStream.write(data.toByteArray());
+        }
+    }
+
+    /**
+     * 导出待出库记录
+     */
+    @GetMapping("/pending-stock-out")
+    public void exportPendingStockOut(HttpServletResponse response) throws IOException {
+        setExcelResponseHeader(response, "待出库记录");
+        try (OutputStream outputStream = response.getOutputStream()) {
+            var data = excelExportService.exportPendingStockOut(bloodStockService.listStockOutPending());
             outputStream.write(data.toByteArray());
         }
     }
