@@ -1743,6 +1743,36 @@ body.legacy-page {
 }
 
 </style>
+<style>
+        .test-chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin: 18px 0 22px;
+        }
+        .test-chart-panel {
+            border: 1px solid var(--apple-border, #e5e5ea);
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 280px;
+            background: rgba(255, 255, 255, 0.72);
+        }
+        .test-chart-panel h3 {
+            margin: 0 0 12px;
+            font-size: 16px;
+            color: var(--apple-ink, #1d1d1f);
+        }
+        .test-chart-panel canvas {
+            width: 100%;
+            height: 220px;
+            display: block;
+        }
+        @media (max-width: 760px) {
+            .test-chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+</style>
 </head>
 <body class="legacy-page test-page">
     <div class="header">
@@ -1764,6 +1794,17 @@ body.legacy-page {
             <h2>🔬 检验管理</h2>
             <button class="btn btn-primary" onclick="loadPendingList()">待判定列表</button>
             <button class="btn" onclick="loadAllList()">全部记录</button>
+
+            <div class="test-chart-grid">
+                <div class="test-chart-panel">
+                    <h3>复检结果占比</h3>
+                    <canvas id="recheckPieChart"></canvas>
+                </div>
+                <div class="test-chart-panel">
+                    <h3>复检结果数量</h3>
+                    <canvas id="recheckBarChart"></canvas>
+                </div>
+            </div>
             
             <table>
                 <thead>
@@ -1811,7 +1852,16 @@ body.legacy-page {
                 </div>
                 <div class="form-group">
                     <label>复检结果</label>
-                    <textarea id="recheckResult" rows="3" placeholder="请填写复检结果详情"></textarea>
+                    <select id="recheckResult">
+                        <option value="">请选择</option>
+                        <option value="合格">合格</option>
+                        <option value="谷丙转氨酶（ALT）超标">谷丙转氨酶（ALT）超标</option>
+                        <option value="血液传染病指标异常">血液传染病指标异常</option>
+                        <option value="白细胞常规指标不合格">白细胞常规指标不合格</option>
+                        <option value="血红蛋白常规指标不合格">血红蛋白常规指标不合格</option>
+                        <option value="血小板计数不合格">血小板计数不合格</option>
+                        <option value="其他">其他</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>备注</label>
@@ -1827,6 +1877,7 @@ body.legacy-page {
         let donorsMap = {};
         let usersMap = {};
         let collectionsMap = {};
+        const CHART_COLORS = ['#0071e3', '#34c759', '#ff9500', '#ff3b30', '#af52de', '#5ac8fa', '#8e8e93'];
 
         async function fetchData(url) {
             try {
@@ -1868,11 +1919,13 @@ body.legacy-page {
         async function loadPendingList() {
             const data = await fetchData('/blood-test/pending/list');
             renderTestList(data);
+            refreshRecheckCharts();
         }
 
         async function loadAllList() {
             const data = await fetchData('/blood-test/list');
             renderTestList(data);
+            renderRecheckCharts(data);
         }
 
         function renderTestList(data) {
@@ -1911,6 +1964,128 @@ body.legacy-page {
             `}).join('');
         }
 
+        async function refreshRecheckCharts() {
+            const allData = await fetchData('/blood-test/list');
+            renderRecheckCharts(allData);
+        }
+
+        function getRecheckCounts(data) {
+            const counts = {};
+            (data || []).forEach(item => {
+                const result = (item.recheckResult || '').trim() || '未填写';
+                counts[result] = (counts[result] || 0) + 1;
+            });
+            return Object.entries(counts).map(([name, value]) => ({ name, value }));
+        }
+
+        function setupCanvas(canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const ratio = window.devicePixelRatio || 1;
+            canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+            canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            return { ctx, width: rect.width, height: rect.height };
+        }
+
+        function renderRecheckCharts(data) {
+            const items = getRecheckCounts(data);
+            drawPieChart(document.getElementById('recheckPieChart'), items);
+            drawBarChart(document.getElementById('recheckBarChart'), items);
+        }
+
+        function drawEmptyChart(ctx, width, height) {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#8e8e93';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('暂无复检结果数据', width / 2, height / 2);
+        }
+
+        function drawPieChart(canvas, items) {
+            if (!canvas) return;
+            const { ctx, width, height } = setupCanvas(canvas);
+            ctx.clearRect(0, 0, width, height);
+            const total = items.reduce((sum, item) => sum + item.value, 0);
+            if (!total) {
+                drawEmptyChart(ctx, width, height);
+                return;
+            }
+
+            const radius = Math.min(width * 0.24, height * 0.36);
+            const cx = width * 0.28;
+            const cy = height * 0.5;
+            let start = -Math.PI / 2;
+            items.forEach((item, index) => {
+                const angle = (item.value / total) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, radius, start, start + angle);
+                ctx.closePath();
+                ctx.fillStyle = CHART_COLORS[index % CHART_COLORS.length];
+                ctx.fill();
+                start += angle;
+            });
+
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            items.forEach((item, index) => {
+                const y = 24 + index * 24;
+                const percent = ((item.value / total) * 100).toFixed(1);
+                ctx.fillStyle = CHART_COLORS[index % CHART_COLORS.length];
+                ctx.fillRect(width * 0.58, y - 6, 12, 12);
+                ctx.fillStyle = '#1d1d1f';
+                ctx.fillText(`${item.name} ${percent}%`, width * 0.58 + 20, y);
+            });
+        }
+
+        function drawBarChart(canvas, items) {
+            if (!canvas) return;
+            const { ctx, width, height } = setupCanvas(canvas);
+            ctx.clearRect(0, 0, width, height);
+            if (!items.length) {
+                drawEmptyChart(ctx, width, height);
+                return;
+            }
+
+            const max = Math.max(...items.map(item => item.value), 1);
+            const left = 42;
+            const right = 18;
+            const top = 18;
+            const bottom = 48;
+            const chartWidth = width - left - right;
+            const chartHeight = height - top - bottom;
+            const barWidth = Math.max(18, chartWidth / items.length * 0.5);
+
+            ctx.strokeStyle = '#d2d2d7';
+            ctx.beginPath();
+            ctx.moveTo(left, top);
+            ctx.lineTo(left, top + chartHeight);
+            ctx.lineTo(left + chartWidth, top + chartHeight);
+            ctx.stroke();
+
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            items.forEach((item, index) => {
+                const slot = chartWidth / items.length;
+                const x = left + slot * index + slot / 2 - barWidth / 2;
+                const barHeight = (item.value / max) * chartHeight;
+                const y = top + chartHeight - barHeight;
+                ctx.fillStyle = CHART_COLORS[index % CHART_COLORS.length];
+                ctx.fillRect(x, y, barWidth, barHeight);
+                ctx.fillStyle = '#1d1d1f';
+                ctx.fillText(item.value, x + barWidth / 2, Math.max(12, y - 8));
+                ctx.save();
+                ctx.translate(x + barWidth / 2, top + chartHeight + 12);
+                ctx.rotate(-Math.PI / 8);
+                ctx.fillStyle = '#6e6e73';
+                ctx.fillText(item.name.length > 8 ? item.name.slice(0, 8) + '…' : item.name, 0, 12);
+                ctx.restore();
+            });
+        }
+
         function getStatusClass(status) {
             switch(status) {
                 case '待检验':
@@ -1942,6 +2117,7 @@ body.legacy-page {
             } else {
                 document.getElementById('reasonGroup').style.display = 'none';
             }
+            syncBloodStatusWithRecheck();
             
             document.getElementById('judgeModal').style.display = 'flex';
         }
@@ -1970,17 +2146,42 @@ body.legacy-page {
         }
 
         document.getElementById('bloodStatus').addEventListener('change', function() {
-            if (this.value === '不合格') {
+            syncBloodStatusWithRecheck();
+        });
+
+        document.getElementById('recheckResult').addEventListener('change', function() {
+            syncBloodStatusWithRecheck();
+        });
+
+        function syncBloodStatusWithRecheck() {
+            const recheckResult = document.getElementById('recheckResult').value.trim();
+            const bloodStatus = document.getElementById('bloodStatus');
+            const qualifiedOption = bloodStatus.querySelector('option[value="合格"]');
+            const mustBeUnqualified = recheckResult && recheckResult !== '合格';
+
+            if (qualifiedOption) {
+                qualifiedOption.disabled = mustBeUnqualified;
+            }
+            if (mustBeUnqualified) {
+                bloodStatus.value = '不合格';
+            }
+
+            if (bloodStatus.value === '不合格') {
                 document.getElementById('reasonGroup').style.display = 'block';
             } else {
                 document.getElementById('reasonGroup').style.display = 'none';
             }
-        });
+        }
 
         document.getElementById('judgeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const bloodStatus = document.getElementById('bloodStatus').value;
+            const recheckResult = document.getElementById('recheckResult').value.trim();
+            if (recheckResult && recheckResult !== '合格' && bloodStatus === '合格') {
+                document.getElementById('message').innerHTML = '<div class="message error">复检结果不是合格时，血液状态只能为不合格</div>';
+                return;
+            }
             if (bloodStatus === '不合格' && !document.getElementById('unqualifiedReason').value.trim()) {
                 document.getElementById('message').innerHTML = '<div class="message error">请填写不合格原因</div>';
                 return;
@@ -1990,7 +2191,7 @@ body.legacy-page {
                 testId: parseInt(document.getElementById('testId').value),
                 bloodStatus: bloodStatus,
                 unqualifiedReason: document.getElementById('unqualifiedReason').value,
-                recheckResult: document.getElementById('recheckResult').value,
+                recheckResult: recheckResult,
                 remark: document.getElementById('remark').value
             };
 
@@ -2008,6 +2209,7 @@ body.legacy-page {
                     setTimeout(() => {
                         closeModal();
                         loadPendingList();
+                        refreshRecheckCharts();
                     }, 1000);
                 } else {
                     document.getElementById('message').innerHTML = `<div class="message error">${result.msg}</div>`;
@@ -2022,7 +2224,10 @@ body.legacy-page {
             await loadUsers();
             await loadCollections();
             loadPendingList();
+            refreshRecheckCharts();
         });
+
+        window.addEventListener('resize', () => refreshRecheckCharts());
 
         window.onclick = function(event) {
             if (event.target == document.getElementById('judgeModal')) {

@@ -94,12 +94,6 @@ public class DonorController {
         }
         donorService.page(page, wrapper);
         page.getRecords().forEach(donor -> {
-            if (donor.getIdCard() != null && !donor.getIdCard().isEmpty()) {
-                try {
-                    donor.setIdCard(EncryptUtil.decrypt(donor.getIdCard()));
-                } catch (Exception e) {
-                }
-            }
             if (donor.getMedicalHistory() != null && !donor.getMedicalHistory().isEmpty()) {
                 try {
                     donor.setMedicalHistory(EncryptUtil.decrypt(donor.getMedicalHistory()));
@@ -117,12 +111,6 @@ public class DonorController {
     public Result<Donor> getDonorDetail(@PathVariable Long id) {
         Donor donor = donorService.getById(id);
         if (donor != null) {
-            if (donor.getIdCard() != null && !donor.getIdCard().isEmpty()) {
-                try {
-                    donor.setIdCard(EncryptUtil.decrypt(donor.getIdCard()));
-                } catch (Exception e) {
-                }
-            }
             if (donor.getMedicalHistory() != null && !donor.getMedicalHistory().isEmpty()) {
                 try {
                     donor.setMedicalHistory(EncryptUtil.decrypt(donor.getMedicalHistory()));

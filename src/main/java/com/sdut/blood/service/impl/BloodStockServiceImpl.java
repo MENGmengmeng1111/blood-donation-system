@@ -2,6 +2,7 @@ package com.sdut.blood.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sdut.blood.common.constants.BloodConstants;
 import com.sdut.blood.common.exception.BusinessException;
 import com.sdut.blood.common.result.Result;
 import com.sdut.blood.domain.dto.StockInDTO;
@@ -14,15 +15,16 @@ import com.sdut.blood.domain.vo.StockTrendVO;
 import com.sdut.blood.domain.vo.StockWarningVO;
 import com.sdut.blood.mapper.BloodStockMapper;
 import com.sdut.blood.service.*;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodStock> implements BloodStockService {
@@ -50,8 +52,8 @@ public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodSt
 
         // 2. 校验血液状态为合格
         BloodTest test = bloodTestService.getByCollectionId(dto.getCollectionId());
-        if (test == null || !"合格".equals(test.getBloodStatus())) {
-            throw new BusinessException("不合格血液无法入库，请核对后操作");
+        if (test == null || !BloodConstants.STATUS_QUALIFIED.equals(test.getBloodStatus())) {
+            throw new BusinessException("只有检验合格且未入库的血液可以入库，请核对后操作");
         }
 
         // 3. 校验有效期有效
@@ -69,6 +71,9 @@ public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodSt
 
         // 5. 获取血型
         Donor donor = donorService.getById(collection.getDonorId());
+        if (donor == null) {
+            throw new BusinessException("献血者信息不存在，请核对采血记录");
+        }
 
         // 6. 生成入库记录
         BloodStock stock = new BloodStock();
@@ -80,7 +85,7 @@ public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodSt
         save(stock);
 
         // 7. 更新检验记录状态为已入库
-        test.setBloodStatus("已入库");
+        test.setBloodStatus(BloodConstants.STATUS_STORED);
         bloodTestService.updateById(test);
     }
 
@@ -176,47 +181,56 @@ public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodSt
     @Override
     public Result<List<StockTrendVO>> getStockTrend(String bloodType) {
         List<StockTrendVO> trendList = new ArrayList<>();
-        
-        List<Map<String, Object>> inData = baseMapper.selectDailyStockIn(30);
-        List<Map<String, Object>> outData = baseMapper.selectDailyStockOut(30);
-        
-        java.util.Map<String, java.util.Map<String, Integer>> inMap = new java.util.HashMap<>();
-        java.util.Map<String, java.util.Map<String, Integer>> outMap = new java.util.HashMap<>();
-        
-        for (Map<String, Object> item : inData) {
-            String date = item.get("date").toString();
-            String type = item.get("blood_type").toString();
-            Integer amount = ((Number) item.get("in_amount")).intValue();
-            inMap.computeIfAbsent(date, k -> new java.util.HashMap<>()).put(type, amount);
+
+        if (bloodType == null || bloodType.trim().isEmpty()) {
+            throw new BusinessException("请选择血型");
         }
-        
-        for (Map<String, Object> item : outData) {
-            String date = item.get("date").toString();
-            String type = item.get("blood_type").toString();
-            Integer amount = ((Number) item.get("out_amount")).intValue();
-            outMap.computeIfAbsent(date, k -> new java.util.HashMap<>()).put(type, amount);
-        }
-        
-        java.util.Set<String> allDates = new java.util.TreeSet<>();
-        allDates.addAll(inMap.keySet());
-        allDates.addAll(outMap.keySet());
-        
+
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(29);
+        Map<LocalDate, Integer> dailyInMap = new HashMap<>();
+        Map<LocalDate, Integer> dailyOutMap = new HashMap<>();
         int currentStock = 0;
-        for (String date : allDates) {
+
+        List<BloodStock> stocks = list(new LambdaQueryWrapper<BloodStock>()
+                .eq(BloodStock::getBloodType, bloodType.trim()));
+
+        for (BloodStock stock : stocks) {
+            if (stock.getCreateTime() == null || stock.getBloodAmount() == null) {
+                continue;
+            }
+            LocalDate inDate = stock.getCreateTime().toLocalDate();
+            LocalDate outDate = stock.getUpdateTime() == null ? null : stock.getUpdateTime().toLocalDate();
+            boolean isOut = "已出库".equals(stock.getStatus());
+            int amount = stock.getBloodAmount();
+
+            if (inDate.isBefore(startDate)) {
+                currentStock += amount;
+            } else if (!inDate.isAfter(endDate)) {
+                dailyInMap.merge(inDate, amount, Integer::sum);
+            }
+
+            if (isOut) {
+                if (outDate != null && outDate.isBefore(startDate)) {
+                    currentStock -= amount;
+                } else if (outDate != null && !outDate.isAfter(endDate)) {
+                    dailyOutMap.merge(outDate, amount, Integer::sum);
+                }
+            }
+        }
+
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            int inAmount = dailyInMap.getOrDefault(date, 0);
+            int outAmount = dailyOutMap.getOrDefault(date, 0);
+            currentStock += inAmount - outAmount;
+
             StockTrendVO vo = new StockTrendVO();
-            vo.setDate(date);
-            vo.setBloodType(bloodType);
-            
-            Integer inAmount = inMap.getOrDefault(date, new java.util.HashMap<>()).getOrDefault(bloodType, 0);
-            Integer outAmount = outMap.getOrDefault(date, new java.util.HashMap<>()).getOrDefault(bloodType, 0);
-            
+            vo.setDate(date.toString());
+            vo.setBloodType(bloodType.trim());
             vo.setInAmount(inAmount);
             vo.setOutAmount(outAmount);
             vo.setChangeAmount(inAmount - outAmount);
-            
-            currentStock += (inAmount - outAmount);
-            vo.setStockAmount(currentStock);
-            
+            vo.setStockAmount(Math.max(currentStock, 0));
             trendList.add(vo);
         }
         

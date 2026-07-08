@@ -52,13 +52,21 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     private Integer getTotalDonateAmount() {
         List<BloodCollection> list = bloodCollectionService.list();
-        return list.stream().mapToInt(BloodCollection::getDonateAmount).sum();
+        return list.stream()
+                .map(BloodCollection::getDonateAmount)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
     }
 
     private Integer getTotalUseAmount() {
         List<BloodStock> list = bloodStockService.list(new LambdaQueryWrapper<BloodStock>()
                 .eq(BloodStock::getStatus, "已出库"));
-        return list.stream().mapToInt(BloodStock::getBloodAmount).sum();
+        return list.stream()
+                .map(BloodStock::getBloodAmount)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
     }
 
     @Override
@@ -86,10 +94,12 @@ public class StatisticsServiceImpl implements StatisticsService {
                 }, Collectors.counting()));
         
         List<Map<String, Object>> result = new ArrayList<>();
-        reasonCount.forEach((reason, count) -> {
+        reasonCount.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .forEach(entry -> {
             Map<String, Object> map = new HashMap<>();
-            map.put("reason", reason);
-            map.put("count", count);
+            map.put("reason", entry.getKey());
+            map.put("count", entry.getValue());
             result.add(map);
         });
         
@@ -116,11 +126,14 @@ public class StatisticsServiceImpl implements StatisticsService {
                     return "55岁以上";
                 }, Collectors.counting()));
         
+        List<String> ageGroups = List.of("未满18岁", "18-25岁", "26-35岁", "36-45岁", "46-55岁", "55岁以上");
         List<Map<String, Object>> result = new ArrayList<>();
-        ageCount.forEach((age, count) -> {
+        ageGroups.stream()
+                .filter(ageCount::containsKey)
+                .forEach(age -> {
             Map<String, Object> map = new HashMap<>();
             map.put("ageGroup", age);
-            map.put("count", count);
+            map.put("count", ageCount.get(age));
             result.add(map);
         });
         
@@ -139,13 +152,25 @@ public class StatisticsServiceImpl implements StatisticsService {
                 .filter(d -> d.getGender() != null && !d.getGender().trim().isEmpty())
                 .collect(Collectors.groupingBy(Donor::getGender, Collectors.counting()));
         
+        List<String> genders = List.of("男", "女");
         List<Map<String, Object>> result = new ArrayList<>();
-        genderCount.forEach((gender, count) -> {
+        genders.stream()
+                .filter(genderCount::containsKey)
+                .forEach(gender -> {
             Map<String, Object> map = new HashMap<>();
             map.put("gender", gender);
-            map.put("count", count);
+            map.put("count", genderCount.get(gender));
             result.add(map);
         });
+        genderCount.entrySet().stream()
+                .filter(entry -> !genders.contains(entry.getKey()))
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("gender", entry.getKey());
+                    map.put("count", entry.getValue());
+                    result.add(map);
+                });
         
         return result;
     }

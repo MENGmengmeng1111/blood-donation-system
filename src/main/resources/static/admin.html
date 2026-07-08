@@ -1975,6 +1975,7 @@ body.legacy-page {
                     <h2>献血活动列表</h2>
                     <div style="display:flex; gap:10px;">
                         <button class="btn btn-primary" onclick="showTab('activity-add')">新增活动</button>
+                        <button class="btn btn-warning" onclick="loadRecruitmentList()">智能招募名单</button>
                         <button class="btn btn-primary" onclick="exportActivities()">导出Excel报表</button>
                     </div>
                 </div>
@@ -1990,6 +1991,37 @@ body.legacy-page {
                     </tr></thead>
                     <tbody id="activity-table-body"></tbody>
                 </table>
+                <div style="border-top:1px solid var(--apple-border); margin-top:22px; padding-top:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:15px;">
+                        <h3 style="font-size:18px; margin:0;">智能招募名单</h3>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <select id="recruitment-blood-type" onchange="loadRecruitmentList()">
+                                <option value="">按库存需求自动筛选</option>
+                                <option value="A型">A型</option>
+                                <option value="B型">B型</option>
+                                <option value="O型">O型</option>
+                                <option value="AB型">AB型</option>
+                            </select>
+                            <button class="btn btn-warning" onclick="loadRecruitmentList()">刷新名单</button>
+                        </div>
+                    </div>
+                    <table id="recruitment-table">
+                        <thead><tr>
+                            <th>姓名</th>
+                            <th>身份证</th>
+                            <th>血型</th>
+                            <th>电话</th>
+                            <th>性别</th>
+                            <th>年龄</th>
+                            <th>上次献血</th>
+                            <th>累计献血</th>
+                            <th>推荐原因</th>
+                        </tr></thead>
+                        <tbody id="recruitment-table-body">
+                            <tr><td colspan="9" style="text-align:center;">点击“智能招募名单”生成</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -2075,6 +2107,16 @@ body.legacy-page {
                     <h2>检验记录列表</h2>
                     <button class="btn btn-primary" onclick="exportTests()">导出Excel报表</button>
                 </div>
+                <div class="test-chart-grid" style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:18px 0 22px;">
+                    <div style="border:1px solid var(--apple-border); border-radius:8px; padding:16px; min-height:280px;">
+                        <h3 style="font-size:16px; margin:0 0 12px;">复检结果占比</h3>
+                        <canvas id="admin-recheck-pie-chart" style="width:100%; height:220px; display:block;"></canvas>
+                    </div>
+                    <div style="border:1px solid var(--apple-border); border-radius:8px; padding:16px; min-height:280px;">
+                        <h3 style="font-size:16px; margin:0 0 12px;">复检结果数量</h3>
+                        <canvas id="admin-recheck-bar-chart" style="width:100%; height:220px; display:block;"></canvas>
+                    </div>
+                </div>
                 <table id="test-table">
                     <thead><tr>
                         <th>献血者姓名</th>
@@ -2096,6 +2138,21 @@ body.legacy-page {
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                     <h2>库存明细</h2>
                     <button class="btn btn-primary" onclick="exportStocks()">导出Excel报表</button>
+                </div>
+                <div style="border:1px solid var(--apple-border); border-radius:8px; padding:16px; min-height:320px; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
+                        <h3 style="font-size:18px; margin:0;">库存趋势分析</h3>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <select id="stock-trend-blood-type" onchange="loadStockTrend()">
+                                <option value="A型">A型</option>
+                                <option value="B型">B型</option>
+                                <option value="O型">O型</option>
+                                <option value="AB型">AB型</option>
+                            </select>
+                            <button class="btn btn-warning" onclick="loadStockTrend()">刷新趋势</button>
+                        </div>
+                    </div>
+                    <canvas id="stock-trend-chart" style="width:100%; height:260px; display:block;"></canvas>
                 </div>
                 <table id="stock-table">
                         <thead><tr>
@@ -2255,20 +2312,44 @@ body.legacy-page {
 
         <div id="report" class="tab-content" style="display:none;">
             <div class="card">
-                <h2>报表统计</h2>
-                <button class="btn btn-primary" onclick="exportReport()">导出Excel报表</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:15px;">
+                    <h2>报表统计</h2>
+                    <button class="btn btn-primary" onclick="exportReport()">一键导出Excel报表</button>
+                </div>
                 <div class="stats-grid" style="margin-top:20px;">
                     <div class="stat-card">
                         <div class="stat-value" id="report-donor-count">0</div>
-                        <div class="stat-label">年度献血人数</div>
+                        <div class="stat-label">献血者总数</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value" id="report-total-amount">0</div>
-                        <div class="stat-label">年度献血总量(ml)</div>
+                        <div class="stat-label">总献血量(ml)</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="report-qualified-rate">0%</div>
-                        <div class="stat-label">血液合格率</div>
+                        <div class="stat-value" id="report-use-amount">0</div>
+                        <div class="stat-label">总用血量(ml)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="report-activity-count">0</div>
+                        <div class="stat-label">活动总数</div>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-top:22px;">
+                    <div style="border:1px solid var(--apple-border); border-radius:8px; padding:16px; min-height:300px;">
+                        <h3 style="font-size:18px; margin:0 0 12px;">献血量与用血量对比</h3>
+                        <canvas id="report-amount-chart" style="width:100%; height:240px; display:block;"></canvas>
+                    </div>
+                    <div style="border:1px solid var(--apple-border); border-radius:8px; padding:16px; min-height:300px;">
+                        <h3 style="font-size:18px; margin:0 0 12px;">不合格原因占比</h3>
+                        <canvas id="report-reason-chart" style="width:100%; height:240px; display:block;"></canvas>
+                    </div>
+                    <div style="border:1px solid var(--apple-border); border-radius:8px; padding:16px; min-height:300px;">
+                        <h3 style="font-size:18px; margin:0 0 12px;">献血者年龄分布</h3>
+                        <canvas id="report-age-chart" style="width:100%; height:240px; display:block;"></canvas>
+                    </div>
+                    <div style="border:1px solid var(--apple-border); border-radius:8px; padding:16px; min-height:300px;">
+                        <h3 style="font-size:18px; margin:0 0 12px;">献血者性别分布</h3>
+                        <canvas id="report-gender-chart" style="width:100%; height:240px; display:block;"></canvas>
                     </div>
                 </div>
             </div>
@@ -2397,7 +2478,7 @@ body.legacy-page {
             if (tabId === 'collection-list') { await loadDonorsMap(); loadCollectionList(); }
             if (tabId === 'collection-add') resetCollectionForm();
             if (tabId === 'test-list') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadTestList(); }
-            if (tabId === 'stock-list') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadStockList(); }
+            if (tabId === 'stock-list') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadStockList(); loadStockTrend(); }
             if (tabId === 'stock-in') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadPendingStockList(); loadStockInHistory(); }
             if (tabId === 'stock-out') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadStockOutPendingList(); loadStockOutHistory(); }
             if (tabId === 'operation-log') loadOperationLogs();
@@ -2573,7 +2654,7 @@ body.legacy-page {
             document.getElementById('detail-medical-history').textContent = d.medicalHistory || '-';
             document.getElementById('detail-status').textContent = d.donorStatus || '-';
             document.getElementById('detail-lastdonate').textContent = d.lastDonateDate || '-';
-            document.getElementById('detail-attention').textContent = d.attentionFlag === 1 ? '是' : '否';
+            document.getElementById('detail-attention').textContent = d.attentionFlag === 1 ? '是（多次复检异常）' : '否';
             document.getElementById('donor-detail-view').style.display = 'block';
             document.getElementById('donor-detail-edit').style.display = 'none';
             document.getElementById('detail-title').textContent = '个人档案详情';
@@ -2588,7 +2669,7 @@ body.legacy-page {
             const d = result.data;
             document.getElementById('detail-edit-id').value = d.id;
             document.getElementById('detail-edit-name').value = d.name || '';
-            document.getElementById('detail-edit-idcard').value = d.idCard || '';
+            document.getElementById('detail-edit-idcard').value = '';
             document.getElementById('detail-edit-bloodtype').value = d.bloodType || 'A型';
             document.getElementById('detail-edit-gender').value = d.gender || '';
             document.getElementById('detail-edit-phone').value = d.phone || '';
@@ -2715,6 +2796,7 @@ body.legacy-page {
                     <td>${a.morningRemaining}/${a.morningQuota}</td>
                     <td>${a.afternoonRemaining}/${a.afternoonQuota}</td>
                     <td>
+                        <button class="btn btn-primary" onclick="loadRecruitmentList('${a.id}')">招募</button>
                         <button class="btn btn-warning" onclick="editActivity('${a.id}')">修改</button>
                         <button class="btn btn-danger" onclick="deleteActivity('${a.id}')">删除</button>
                     </td>
@@ -2771,6 +2853,33 @@ body.legacy-page {
                     alert(result?.msg || '删除失败');
                 }
             }
+        }
+
+        async function loadRecruitmentList(activityId = '') {
+            const bloodType = document.getElementById('recruitment-blood-type')?.value || '';
+            let url = '/activity/recruitment?';
+            if (activityId) url += 'activityId=' + encodeURIComponent(activityId) + '&';
+            if (bloodType) url += 'bloodType=' + encodeURIComponent(bloodType);
+            const result = await fetchData(url);
+            const tbody = document.getElementById('recruitment-table-body');
+            if (!tbody) return;
+            if (!result?.data?.length) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">暂无符合库存需求和献血周期的招募对象</td></tr>';
+                return;
+            }
+            tbody.innerHTML = result.data.map(item => `
+                <tr>
+                    <td>${item.name || '-'}</td>
+                    <td>${item.idCardMask || '-'}</td>
+                    <td>${item.bloodType || '-'}</td>
+                    <td>${item.phone || '-'}</td>
+                    <td>${item.gender || '-'}</td>
+                    <td>${item.age || '-'}</td>
+                    <td>${item.lastDonateDate || '无历史记录'}</td>
+                    <td>${item.donateCount || 0}次 / ${item.totalDonateAmount || 0}ml</td>
+                    <td>${item.reason || '-'}</td>
+                </tr>
+            `).join('');
         }
 
         async function loadCollectionList() {
@@ -2922,8 +3031,10 @@ body.legacy-page {
             const tbody = document.getElementById('test-table-body');
             if (!result?.data?.length) {
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">暂无数据</td></tr>';
+                renderAdminRecheckCharts([]);
                 return;
             }
+            renderAdminRecheckCharts(result.data);
             tbody.innerHTML = result.data.map(t => {
                 const donor = donorsMap[t.donorId] || {};
                 const collection = collectionsMap[t.collectionId] || {};
@@ -2987,14 +3098,21 @@ body.legacy-page {
                     <button type="button" class="btn" onclick="saveTest()">保存</button>
                 </form>
             `;
+            initTestEditRules();
             document.getElementById('edit-modal').style.display = 'flex';
         }
 
         async function saveTest() {
+            const recheckResult = document.getElementById('test-recheck-result').value;
+            const bloodStatus = document.getElementById('test-blood-status').value;
+            if (recheckResult && recheckResult !== '合格' && bloodStatus === '合格') {
+                document.getElementById('modal-message').innerHTML = '<div class="message error">复检结果不是合格时，血液状态只能为不合格</div>';
+                return;
+            }
             const data = {
                 testId: document.getElementById('test-id').value,
-                recheckResult: document.getElementById('test-recheck-result').value,
-                bloodStatus: document.getElementById('test-blood-status').value,
+                recheckResult: recheckResult,
+                bloodStatus: bloodStatus,
                 unqualifiedReason: document.getElementById('test-reason').value,
                 remark: document.getElementById('test-remark').value
             };
@@ -3008,6 +3126,231 @@ body.legacy-page {
             } else {
                 document.getElementById('modal-message').innerHTML = `<div class="message error">${result?.msg || '保存失败'}</div>`;
             }
+        }
+
+        function initTestEditRules() {
+            const recheckSelect = document.getElementById('test-recheck-result');
+            const statusSelect = document.getElementById('test-blood-status');
+            if (!recheckSelect || !statusSelect) return;
+            const sync = () => {
+                const mustBeUnqualified = recheckSelect.value && recheckSelect.value !== '合格';
+                Array.from(statusSelect.options).forEach(option => {
+                    option.disabled = mustBeUnqualified && option.value !== '不合格';
+                });
+                if (mustBeUnqualified) statusSelect.value = '不合格';
+            };
+            recheckSelect.addEventListener('change', sync);
+            statusSelect.addEventListener('change', sync);
+            sync();
+        }
+
+        const ADMIN_RECHECK_CHART_COLORS = ['#0071e3', '#34c759', '#ff9500', '#ff3b30', '#af52de', '#5ac8fa', '#8e8e93'];
+
+        function getAdminRecheckCounts(data) {
+            const counts = {};
+            (data || []).forEach(item => {
+                const result = (item.recheckResult || '').trim() || '未填写';
+                counts[result] = (counts[result] || 0) + 1;
+            });
+            return Object.entries(counts).map(([name, value]) => ({ name, value }));
+        }
+
+        function setupAdminChartCanvas(canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const ratio = window.devicePixelRatio || 1;
+            canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+            canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            return { ctx, width: rect.width, height: rect.height };
+        }
+
+        function renderAdminRecheckCharts(data) {
+            const items = getAdminRecheckCounts(data);
+            drawAdminPieChart(document.getElementById('admin-recheck-pie-chart'), items);
+            drawAdminBarChart(document.getElementById('admin-recheck-bar-chart'), items);
+        }
+
+        function drawAdminEmptyChart(ctx, width, height) {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#8e8e93';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('暂无复检结果数据', width / 2, height / 2);
+        }
+
+        function drawAdminPieChart(canvas, items) {
+            if (!canvas) return;
+            const { ctx, width, height } = setupAdminChartCanvas(canvas);
+            ctx.clearRect(0, 0, width, height);
+            const total = items.reduce((sum, item) => sum + item.value, 0);
+            if (!total) {
+                drawAdminEmptyChart(ctx, width, height);
+                return;
+            }
+            const radius = Math.min(width * 0.24, height * 0.36);
+            const cx = width * 0.28;
+            const cy = height * 0.5;
+            let start = -Math.PI / 2;
+            items.forEach((item, index) => {
+                const angle = (item.value / total) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, radius, start, start + angle);
+                ctx.closePath();
+                ctx.fillStyle = ADMIN_RECHECK_CHART_COLORS[index % ADMIN_RECHECK_CHART_COLORS.length];
+                ctx.fill();
+                start += angle;
+            });
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            items.forEach((item, index) => {
+                const y = 24 + index * 24;
+                const percent = ((item.value / total) * 100).toFixed(1);
+                ctx.fillStyle = ADMIN_RECHECK_CHART_COLORS[index % ADMIN_RECHECK_CHART_COLORS.length];
+                ctx.fillRect(width * 0.58, y - 6, 12, 12);
+                ctx.fillStyle = '#1d1d1f';
+                ctx.fillText(`${item.name} ${percent}%`, width * 0.58 + 20, y);
+            });
+        }
+
+        function drawAdminBarChart(canvas, items) {
+            if (!canvas) return;
+            const { ctx, width, height } = setupAdminChartCanvas(canvas);
+            ctx.clearRect(0, 0, width, height);
+            if (!items.length) {
+                drawAdminEmptyChart(ctx, width, height);
+                return;
+            }
+            const max = Math.max(...items.map(item => item.value), 1);
+            const left = 42;
+            const right = 18;
+            const top = 18;
+            const bottom = 48;
+            const chartWidth = width - left - right;
+            const chartHeight = height - top - bottom;
+            const barWidth = Math.max(18, chartWidth / items.length * 0.5);
+            ctx.strokeStyle = '#d2d2d7';
+            ctx.beginPath();
+            ctx.moveTo(left, top);
+            ctx.lineTo(left, top + chartHeight);
+            ctx.lineTo(left + chartWidth, top + chartHeight);
+            ctx.stroke();
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            items.forEach((item, index) => {
+                const slot = chartWidth / items.length;
+                const x = left + slot * index + slot / 2 - barWidth / 2;
+                const barHeight = (item.value / max) * chartHeight;
+                const y = top + chartHeight - barHeight;
+                ctx.fillStyle = ADMIN_RECHECK_CHART_COLORS[index % ADMIN_RECHECK_CHART_COLORS.length];
+                ctx.fillRect(x, y, barWidth, barHeight);
+                ctx.fillStyle = '#1d1d1f';
+                ctx.fillText(item.value, x + barWidth / 2, Math.max(12, y - 8));
+                ctx.save();
+                ctx.translate(x + barWidth / 2, top + chartHeight + 12);
+                ctx.rotate(-Math.PI / 8);
+                ctx.fillStyle = '#6e6e73';
+                ctx.fillText(item.name.length > 8 ? item.name.slice(0, 8) + '…' : item.name, 0, 12);
+                ctx.restore();
+            });
+        }
+
+        async function loadStockTrend() {
+            const bloodType = document.getElementById('stock-trend-blood-type')?.value || 'A型';
+            const result = await fetchData('/stock/trend?bloodType=' + encodeURIComponent(bloodType));
+            drawStockTrendChart(document.getElementById('stock-trend-chart'), result?.data || []);
+        }
+
+        function drawStockTrendChart(canvas, data) {
+            if (!canvas) return;
+            const { ctx, width, height } = setupAdminChartCanvas(canvas);
+            ctx.clearRect(0, 0, width, height);
+            if (!data.length) {
+                drawAdminEmptyChart(ctx, width, height);
+                return;
+            }
+
+            const series = [
+                { key: 'stockAmount', name: '库存量', color: '#0071e3' },
+                { key: 'inAmount', name: '入库量', color: '#34c759' },
+                { key: 'outAmount', name: '用血量', color: '#ff3b30' }
+            ];
+            const left = 54;
+            const right = 24;
+            const top = 34;
+            const bottom = 54;
+            const chartWidth = width - left - right;
+            const chartHeight = height - top - bottom;
+            const maxValue = Math.max(...data.flatMap(item => series.map(s => Number(item[s.key] || 0))), 1);
+            const stepX = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
+            const toX = index => left + index * stepX;
+            const toY = value => top + chartHeight - (Number(value || 0) / maxValue) * chartHeight;
+
+            ctx.strokeStyle = '#d2d2d7';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(left, top);
+            ctx.lineTo(left, top + chartHeight);
+            ctx.lineTo(left + chartWidth, top + chartHeight);
+            ctx.stroke();
+
+            ctx.fillStyle = '#6e6e73';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let i = 0; i <= 4; i++) {
+                const value = Math.round(maxValue * i / 4);
+                const y = toY(value);
+                ctx.strokeStyle = 'rgba(210, 210, 215, 0.55)';
+                ctx.beginPath();
+                ctx.moveTo(left, y);
+                ctx.lineTo(left + chartWidth, y);
+                ctx.stroke();
+                ctx.fillText(value, left - 8, y);
+            }
+
+            series.forEach(item => {
+                ctx.strokeStyle = item.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                data.forEach((point, index) => {
+                    const x = toX(index);
+                    const y = toY(point[item.key]);
+                    if (index === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                ctx.fillStyle = item.color;
+                data.forEach((point, index) => {
+                    const x = toX(index);
+                    const y = toY(point[item.key]);
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            });
+
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#6e6e73';
+            const labelIndexes = [0, Math.floor(data.length / 2), data.length - 1];
+            [...new Set(labelIndexes)].forEach(index => {
+                const label = (data[index]?.date || '').slice(5);
+                ctx.fillText(label, toX(index), top + chartHeight + 22);
+            });
+
+            ctx.textAlign = 'left';
+            series.forEach((item, index) => {
+                const x = left + index * 90;
+                ctx.fillStyle = item.color;
+                ctx.fillRect(x, 8, 12, 12);
+                ctx.fillStyle = '#1d1d1f';
+                ctx.fillText(item.name, x + 18, 14);
+            });
         }
 
         async function deleteTest(id) {
@@ -3088,6 +3431,7 @@ body.legacy-page {
                 setTimeout(() => {
                     closeModal();
                     loadStockList();
+                    loadStockTrend();
                 }, 1000);
             } else {
                 document.getElementById('modal-message').innerHTML = `<div class="message error">${result?.msg || '保存失败'}</div>`;
@@ -3121,6 +3465,7 @@ body.legacy-page {
                 setTimeout(() => {
                     closeModal();
                     loadStockList();
+                    loadStockTrend();
                 }, 1000);
             } else {
                 document.getElementById('modal-message').innerHTML = `<div class="message error">${result?.msg || '出库失败'}</div>`;
@@ -3131,6 +3476,7 @@ body.legacy-page {
             if (confirm('确定删除该库存记录吗？')) {
                 await fetch(API_BASE + '/stock/delete/' + id, { method: 'DELETE', headers: getHeaders() });
                 loadStockList();
+                loadStockTrend();
             }
         }
 
@@ -3322,8 +3668,43 @@ body.legacy-page {
         }
 
         async function loadReport() {
-            const donors = await fetchData('/donor/list?pageNum=1&pageSize=1000');
-            document.getElementById('report-donor-count').textContent = donors?.data?.total || 0;
+            const result = await fetchData('/statistics/overview');
+            const statistics = result?.data;
+            if (!statistics) {
+                document.getElementById('report-donor-count').textContent = 0;
+                document.getElementById('report-total-amount').textContent = 0;
+                document.getElementById('report-use-amount').textContent = 0;
+                document.getElementById('report-activity-count').textContent = 0;
+                renderReportCharts(null);
+                return;
+            }
+            document.getElementById('report-donor-count').textContent = statistics.totalDonors || 0;
+            document.getElementById('report-total-amount').textContent = statistics.totalDonateAmount || 0;
+            document.getElementById('report-use-amount').textContent = statistics.totalUseAmount || 0;
+            document.getElementById('report-activity-count').textContent = statistics.totalActivities || 0;
+            renderReportCharts(statistics);
+        }
+
+        function renderReportCharts(statistics) {
+            const amountItems = statistics ? [
+                { name: '总献血量', value: statistics.totalDonateAmount || 0 },
+                { name: '总用血量', value: statistics.totalUseAmount || 0 }
+            ] : [];
+            const reasonItems = toChartItems(statistics?.unqualifiedReasonDistribution, 'reason', 'count');
+            const ageItems = toChartItems(statistics?.ageDistribution, 'ageGroup', 'count');
+            const genderItems = toChartItems(statistics?.genderDistribution, 'gender', 'count');
+
+            drawAdminBarChart(document.getElementById('report-amount-chart'), amountItems);
+            drawAdminPieChart(document.getElementById('report-reason-chart'), reasonItems);
+            drawAdminBarChart(document.getElementById('report-age-chart'), ageItems);
+            drawAdminPieChart(document.getElementById('report-gender-chart'), genderItems);
+        }
+
+        function toChartItems(data, nameField, valueField) {
+            return (data || []).map(item => ({
+                name: item[nameField] ?? '-',
+                value: Number(item[valueField] || 0)
+            }));
         }
 
         async function downloadExcel(url, fileName) {
@@ -3351,7 +3732,7 @@ body.legacy-page {
         }
 
         function exportReport() {
-            downloadExcel(API_BASE + '/report/export?type=all', '统计报表.xlsx');
+            downloadExcel(API_BASE + '/export/statistics', '统计报表.xlsx');
         }
 
         function exportDonors() {

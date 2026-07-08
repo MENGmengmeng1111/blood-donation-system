@@ -1786,6 +1786,7 @@ body.legacy-page {
         <div class="card">
             <h2>📦 库存管理</h2>
             <button class="btn btn-primary" onclick="openAddModal()">+ 登记入库</button>
+            <button class="btn btn-success" onclick="loadPendingStockIn()">待入库血液</button>
             <button class="btn" onclick="loadNearExpire()">查询临期库存</button>
             <button class="btn" onclick="loadStockList()">查询全部库存</button>
             
@@ -1871,6 +1872,7 @@ body.legacy-page {
         const API_BASE = '/api';
         let donorsMap = {};
         let collectionsMap = {};
+        let currentStockView = 'list';
 
         async function fetchData(url) {
             try {
@@ -1909,6 +1911,7 @@ body.legacy-page {
         }
 
         async function loadStockList() {
+            currentStockView = 'list';
             const stocks = await fetchData('/stock/list');
             const tbody = document.getElementById('stockTable');
             
@@ -1946,6 +1949,7 @@ body.legacy-page {
         }
 
         async function loadNearExpire() {
+            currentStockView = 'nearExpire';
             const data = await fetchData('/stock/near-expire?days=7');
             const tbody = document.getElementById('stockTable');
             
@@ -1979,6 +1983,33 @@ body.legacy-page {
             `}).join('');
         }
 
+        async function loadPendingStockIn() {
+            currentStockView = 'pending';
+            const data = await fetchData('/stock/pending');
+            const tbody = document.getElementById('stockTable');
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #999;">暂无待入库血液</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td>${item.testId}</td>
+                    <td>${item.collectionId}</td>
+                    <td>${item.donorName || '-'}</td>
+                    <td>${item.bloodType || '-'}</td>
+                    <td>${item.donateAmount || '-'}</td>
+                    <td>-</td>
+                    <td><span class="status-badge status-pending">待入库</span></td>
+                    <td>${item.judgeTime || '-'}</td>
+                    <td>
+                        <button class="btn btn-success" onclick="openStockInModal(${item.collectionId})">确认入库</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
         function getStatusClass(status) {
             switch(status) {
                 case '正常':
@@ -1998,7 +2029,20 @@ body.legacy-page {
             document.getElementById('modalTitle').textContent = '登记血液入库';
             document.getElementById('stockId').value = '';
             document.getElementById('collectionId').value = '';
+            document.getElementById('collectionId').readOnly = false;
             document.getElementById('expireDate').value = '';
+            document.getElementById('expireDate').min = new Date().toISOString().slice(0, 10);
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('stockModal').style.display = 'flex';
+        }
+
+        function openStockInModal(collectionId) {
+            document.getElementById('modalTitle').textContent = '确认血液入库';
+            document.getElementById('stockId').value = '';
+            document.getElementById('collectionId').value = collectionId;
+            document.getElementById('collectionId').readOnly = true;
+            document.getElementById('expireDate').value = '';
+            document.getElementById('expireDate').min = new Date().toISOString().slice(0, 10);
             document.getElementById('message').innerHTML = '';
             document.getElementById('stockModal').style.display = 'flex';
         }
@@ -2011,7 +2055,9 @@ body.legacy-page {
             document.getElementById('modalTitle').textContent = '修改库存信息';
             document.getElementById('stockId').value = stock.id;
             document.getElementById('collectionId').value = stock.collectionId;
+            document.getElementById('collectionId').readOnly = true;
             document.getElementById('expireDate').value = stock.expireDate;
+            document.getElementById('expireDate').min = new Date().toISOString().slice(0, 10);
             document.getElementById('message').innerHTML = '';
             document.getElementById('stockModal').style.display = 'flex';
         }
@@ -2083,7 +2129,11 @@ body.legacy-page {
                     setTimeout(() => {
                         closeModal();
                         loadStockSummary();
-                        loadStockList();
+                        if (isEdit || currentStockView !== 'pending') {
+                            loadStockList();
+                        } else {
+                            loadPendingStockIn();
+                        }
                     }, 1000);
                 } else {
                     document.getElementById('message').innerHTML = `<div class="message error">${result.msg}</div>`;

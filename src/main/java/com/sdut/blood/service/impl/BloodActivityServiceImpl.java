@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sdut.blood.common.exception.BusinessException;
 import com.sdut.blood.common.utils.DateUtil;
 import com.sdut.blood.common.utils.EncryptUtil;
+import com.sdut.blood.domain.entity.BloodCollection;
 import com.sdut.blood.domain.entity.BloodActivity;
 import com.sdut.blood.domain.entity.Donor;
 import com.sdut.blood.domain.vo.RecruitmentVO;
+import com.sdut.blood.domain.vo.StockWarningVO;
 import com.sdut.blood.mapper.BloodActivityMapper;
 import com.sdut.blood.service.BloodActivityService;
 import com.sdut.blood.service.BloodCollectionService;
@@ -18,8 +20,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -84,21 +89,28 @@ public class BloodActivityServiceImpl extends ServiceImpl<BloodActivityMapper, B
 
     @Override
     public List<RecruitmentVO> generateRecruitmentList(Long activityId, String targetBloodType) {
+        List<String> neededBloodTypes = getNeededBloodTypes(targetBloodType);
+        if (neededBloodTypes.isEmpty()) {
+            return List.of();
+        }
+
         List<Donor> allDonors = donorService.list(new LambdaQueryWrapper<Donor>()
-                .eq(Donor::getDonorStatus, "正常"));
+                .eq(Donor::getDonorStatus, "正常")
+                .in(Donor::getBloodType, neededBloodTypes));
         
         List<RecruitmentVO> result = new ArrayList<>();
         
         for (Donor donor : allDonors) {
-            if (targetBloodType != null && !targetBloodType.isEmpty() 
-                    && !targetBloodType.equals(donor.getBloodType())) {
+            if (Integer.valueOf(1).equals(donor.getAttentionFlag())) {
                 continue;
             }
-            
-            if (!donorService.checkDonateQualification(donor.getId(), "全血")) {
+            BloodCollection lastRecord = getLatestDonateRecord(donor.getId());
+            String donateType = lastRecord == null ? "全血" : lastRecord.getDonateType();
+            LocalDate lastDonateDate = getEffectiveLastDonateDate(donor, lastRecord);
+            if (!isEligibleByCycle(lastDonateDate, donateType)) {
                 continue;
             }
-            
+
             RecruitmentVO vo = new RecruitmentVO();
             vo.setDonorId(donor.getId());
             vo.setName(donor.getName());
@@ -107,7 +119,7 @@ public class BloodActivityServiceImpl extends ServiceImpl<BloodActivityMapper, B
             vo.setGender(donor.getGender());
             vo.setAge(donor.getAge());
             vo.setDonorStatus(donor.getDonorStatus());
-            vo.setLastDonateDate(donor.getLastDonateDate());
+            vo.setLastDonateDate(lastDonateDate);
             
             if (donor.getIdCard() != null) {
                 try {
@@ -124,17 +136,70 @@ public class BloodActivityServiceImpl extends ServiceImpl<BloodActivityMapper, B
             vo.setTotalDonateAmount(stats.getTotalAmount());
             vo.setDonateCount(stats.getDonateCount());
             
-            vo.setReason("符合献血条件");
+            vo.setReason(buildRecruitmentReason(donor.getBloodType(), donateType, lastDonateDate));
             result.add(vo);
         }
         
-        result.sort((a, b) -> {
-            if (a.getDonateCount() != null && b.getDonateCount() != null) {
-                return b.getDonateCount().compareTo(a.getDonateCount());
-            }
-            return 0;
-        });
+        Map<String, Integer> bloodTypePriority = buildBloodTypePriority(neededBloodTypes);
+        result.sort(Comparator
+                .comparing((RecruitmentVO vo) -> bloodTypePriority.getOrDefault(vo.getBloodType(), Integer.MAX_VALUE))
+                .thenComparing(RecruitmentVO::getLastDonateDate, Comparator.nullsFirst(Comparator.naturalOrder()))
+                .thenComparing(RecruitmentVO::getDonateCount, Comparator.nullsLast(Comparator.reverseOrder())));
         
         return result;
+    }
+
+    private List<String> getNeededBloodTypes(String targetBloodType) {
+        if (targetBloodType != null && !targetBloodType.trim().isEmpty()) {
+            return List.of(targetBloodType.trim());
+        }
+        List<StockWarningVO> warningDetails = bloodStockService.getStockWarningDetails();
+        List<String> shortageTypes = warningDetails.stream()
+                .filter(item -> item.getShortageAmount() != null && item.getShortageAmount() > 0)
+                .sorted(Comparator.comparing(StockWarningVO::getShortageAmount, Comparator.nullsLast(Comparator.reverseOrder())))
+                .map(StockWarningVO::getBloodType)
+                .collect(Collectors.toList());
+        if (!shortageTypes.isEmpty()) {
+            return shortageTypes;
+        }
+        return warningDetails.stream()
+                .sorted(Comparator.comparing(StockWarningVO::getCurrentStock, Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(StockWarningVO::getBloodType)
+                .collect(Collectors.toList());
+    }
+
+    private Map<String, Integer> buildBloodTypePriority(List<String> bloodTypes) {
+        java.util.Map<String, Integer> priority = new java.util.HashMap<>();
+        for (int i = 0; i < bloodTypes.size(); i++) {
+            priority.put(bloodTypes.get(i), i);
+        }
+        return priority;
+    }
+
+    private BloodCollection getLatestDonateRecord(Long donorId) {
+        return bloodCollectionService.getOne(new LambdaQueryWrapper<BloodCollection>()
+                .eq(BloodCollection::getDonorId, donorId)
+                .orderByDesc(BloodCollection::getCollectionTime)
+                .last("LIMIT 1"));
+    }
+
+    private LocalDate getEffectiveLastDonateDate(Donor donor, BloodCollection lastRecord) {
+        if (lastRecord != null && lastRecord.getCollectionTime() != null) {
+            return lastRecord.getCollectionTime().toLocalDate();
+        }
+        return donor.getLastDonateDate();
+    }
+
+    private boolean isEligibleByCycle(LocalDate lastDonateDate, String donateType) {
+        if ("成分血".equals(donateType)) {
+            return DateUtil.checkComponentBloodInterval(lastDonateDate);
+        }
+        return DateUtil.checkWholeBloodInterval(lastDonateDate);
+    }
+
+    private String buildRecruitmentReason(String bloodType, String donateType, LocalDate lastDonateDate) {
+        String interval = "成分血".equals(donateType) ? "已满足28天献血间隔" : "已满足6个月献血间隔";
+        String lastDonate = lastDonateDate == null ? "无历史献血记录" : "上次献血：" + lastDonateDate;
+        return bloodType + "库存需要补充；" + interval + "；" + lastDonate;
     }
 }
