@@ -2607,7 +2607,7 @@ body.legacy-page {
             document.getElementById('detail-medical-history').textContent = d.medicalHistory || '-';
             document.getElementById('detail-status').textContent = d.donorStatus || '-';
             document.getElementById('detail-lastdonate').textContent = d.lastDonateDate || '-';
-            document.getElementById('detail-attention').textContent = d.attentionFlag === 1 ? '是' : '否';
+            document.getElementById('detail-attention').textContent = d.attentionFlag === 1 ? '是（多次复检异常）' : '否';
             document.getElementById('donor-detail-view').style.display = 'block';
             document.getElementById('donor-detail-edit').style.display = 'none';
             document.getElementById('detail-title').textContent = '个人档案详情';

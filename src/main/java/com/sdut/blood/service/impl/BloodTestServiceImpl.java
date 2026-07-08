@@ -79,9 +79,7 @@ public class BloodTestServiceImpl extends ServiceImpl<BloodTestMapper, BloodTest
         }
         updateById(test);
         
-        if (BloodConstants.STATUS_UNQUALIFIED.equals(dto.getBloodStatus())) {
-            checkAndMarkAttention(test.getDonorId());
-        }
+        checkAndMarkAttention(test.getDonorId());
     }
 
     private String trimToNull(String value) {
@@ -98,12 +96,14 @@ public class BloodTestServiceImpl extends ServiceImpl<BloodTestMapper, BloodTest
         }
         
         LambdaQueryWrapper<BloodTest> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(BloodTest::getDonorId, donorId);
-        wrapper.eq(BloodTest::getBloodStatus, BloodConstants.STATUS_UNQUALIFIED);
-        int unqualifiedCount = (int) count(wrapper);
+        wrapper.eq(BloodTest::getDonorId, donorId)
+                .isNotNull(BloodTest::getRecheckResult)
+                .ne(BloodTest::getRecheckResult, "")
+                .ne(BloodTest::getRecheckResult, BloodConstants.STATUS_QUALIFIED);
+        int abnormalRecheckCount = (int) count(wrapper);
         
         Donor donor = donorService.getById(donorId);
-        if (donor != null && unqualifiedCount >= ATTENTION_THRESHOLD) {
+        if (donor != null && abnormalRecheckCount >= ATTENTION_THRESHOLD) {
             donor.setAttentionFlag(1);
             donorService.updateById(donor);
         }
@@ -179,6 +179,7 @@ public class BloodTestServiceImpl extends ServiceImpl<BloodTestMapper, BloodTest
             test.setRemark(dto.getRemark());
         }
         updateById(test);
+        checkAndMarkAttention(test.getDonorId());
     }
 
     @Override
