@@ -2139,6 +2139,21 @@ body.legacy-page {
                     <h2>库存明细</h2>
                     <button class="btn btn-primary" onclick="exportStocks()">导出Excel报表</button>
                 </div>
+                <div style="border:1px solid var(--apple-border); border-radius:8px; padding:16px; min-height:320px; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
+                        <h3 style="font-size:18px; margin:0;">库存趋势分析</h3>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <select id="stock-trend-blood-type" onchange="loadStockTrend()">
+                                <option value="A型">A型</option>
+                                <option value="B型">B型</option>
+                                <option value="O型">O型</option>
+                                <option value="AB型">AB型</option>
+                            </select>
+                            <button class="btn btn-warning" onclick="loadStockTrend()">刷新趋势</button>
+                        </div>
+                    </div>
+                    <canvas id="stock-trend-chart" style="width:100%; height:260px; display:block;"></canvas>
+                </div>
                 <table id="stock-table">
                         <thead><tr>
                             <th>献血者姓名</th>
@@ -2463,7 +2478,7 @@ body.legacy-page {
             if (tabId === 'collection-list') { await loadDonorsMap(); loadCollectionList(); }
             if (tabId === 'collection-add') resetCollectionForm();
             if (tabId === 'test-list') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadTestList(); }
-            if (tabId === 'stock-list') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadStockList(); }
+            if (tabId === 'stock-list') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadStockList(); loadStockTrend(); }
             if (tabId === 'stock-in') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadPendingStockList(); loadStockInHistory(); }
             if (tabId === 'stock-out') { await Promise.all([loadDonorsMap(), loadCollectionsMap()]); loadStockOutPendingList(); loadStockOutHistory(); }
             if (tabId === 'operation-log') loadOperationLogs();
@@ -3243,6 +3258,101 @@ body.legacy-page {
             });
         }
 
+        async function loadStockTrend() {
+            const bloodType = document.getElementById('stock-trend-blood-type')?.value || 'A型';
+            const result = await fetchData('/stock/trend?bloodType=' + encodeURIComponent(bloodType));
+            drawStockTrendChart(document.getElementById('stock-trend-chart'), result?.data || []);
+        }
+
+        function drawStockTrendChart(canvas, data) {
+            if (!canvas) return;
+            const { ctx, width, height } = setupAdminChartCanvas(canvas);
+            ctx.clearRect(0, 0, width, height);
+            if (!data.length) {
+                drawAdminEmptyChart(ctx, width, height);
+                return;
+            }
+
+            const series = [
+                { key: 'stockAmount', name: '库存量', color: '#0071e3' },
+                { key: 'inAmount', name: '入库量', color: '#34c759' },
+                { key: 'outAmount', name: '用血量', color: '#ff3b30' }
+            ];
+            const left = 54;
+            const right = 24;
+            const top = 34;
+            const bottom = 54;
+            const chartWidth = width - left - right;
+            const chartHeight = height - top - bottom;
+            const maxValue = Math.max(...data.flatMap(item => series.map(s => Number(item[s.key] || 0))), 1);
+            const stepX = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
+            const toX = index => left + index * stepX;
+            const toY = value => top + chartHeight - (Number(value || 0) / maxValue) * chartHeight;
+
+            ctx.strokeStyle = '#d2d2d7';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(left, top);
+            ctx.lineTo(left, top + chartHeight);
+            ctx.lineTo(left + chartWidth, top + chartHeight);
+            ctx.stroke();
+
+            ctx.fillStyle = '#6e6e73';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let i = 0; i <= 4; i++) {
+                const value = Math.round(maxValue * i / 4);
+                const y = toY(value);
+                ctx.strokeStyle = 'rgba(210, 210, 215, 0.55)';
+                ctx.beginPath();
+                ctx.moveTo(left, y);
+                ctx.lineTo(left + chartWidth, y);
+                ctx.stroke();
+                ctx.fillText(value, left - 8, y);
+            }
+
+            series.forEach(item => {
+                ctx.strokeStyle = item.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                data.forEach((point, index) => {
+                    const x = toX(index);
+                    const y = toY(point[item.key]);
+                    if (index === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                ctx.fillStyle = item.color;
+                data.forEach((point, index) => {
+                    const x = toX(index);
+                    const y = toY(point[item.key]);
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            });
+
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#6e6e73';
+            const labelIndexes = [0, Math.floor(data.length / 2), data.length - 1];
+            [...new Set(labelIndexes)].forEach(index => {
+                const label = (data[index]?.date || '').slice(5);
+                ctx.fillText(label, toX(index), top + chartHeight + 22);
+            });
+
+            ctx.textAlign = 'left';
+            series.forEach((item, index) => {
+                const x = left + index * 90;
+                ctx.fillStyle = item.color;
+                ctx.fillRect(x, 8, 12, 12);
+                ctx.fillStyle = '#1d1d1f';
+                ctx.fillText(item.name, x + 18, 14);
+            });
+        }
+
         async function deleteTest(id) {
             if (confirm('确定删除该检验记录吗？')) {
                 const result = await fetchData('/blood-test/delete/' + encodeURIComponent(id), { method: 'DELETE' });
@@ -3321,6 +3431,7 @@ body.legacy-page {
                 setTimeout(() => {
                     closeModal();
                     loadStockList();
+                    loadStockTrend();
                 }, 1000);
             } else {
                 document.getElementById('modal-message').innerHTML = `<div class="message error">${result?.msg || '保存失败'}</div>`;
@@ -3354,6 +3465,7 @@ body.legacy-page {
                 setTimeout(() => {
                     closeModal();
                     loadStockList();
+                    loadStockTrend();
                 }, 1000);
             } else {
                 document.getElementById('modal-message').innerHTML = `<div class="message error">${result?.msg || '出库失败'}</div>`;
@@ -3364,6 +3476,7 @@ body.legacy-page {
             if (confirm('确定删除该库存记录吗？')) {
                 await fetch(API_BASE + '/stock/delete/' + id, { method: 'DELETE', headers: getHeaders() });
                 loadStockList();
+                loadStockTrend();
             }
         }
 
