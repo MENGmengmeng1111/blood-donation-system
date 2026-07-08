@@ -68,6 +68,8 @@ public class BloodCollectionServiceImpl extends ServiceImpl<BloodCollectionMappe
             collection.setOperatorId(operatorId);
         }
         save(collection);
+        donor.setLastDonateDate(collection.getCollectionTime().toLocalDate());
+        donorService.updateById(donor);
 
         // 4. 初筛不合格直接标记，不进入复检
         if ("不合格".equals(dto.getInitialScreenResult())) {

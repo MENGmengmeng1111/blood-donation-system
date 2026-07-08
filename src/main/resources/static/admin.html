@@ -1975,6 +1975,7 @@ body.legacy-page {
                     <h2>献血活动列表</h2>
                     <div style="display:flex; gap:10px;">
                         <button class="btn btn-primary" onclick="showTab('activity-add')">新增活动</button>
+                        <button class="btn btn-warning" onclick="loadRecruitmentList()">智能招募名单</button>
                         <button class="btn btn-primary" onclick="exportActivities()">导出Excel报表</button>
                     </div>
                 </div>
@@ -1990,6 +1991,37 @@ body.legacy-page {
                     </tr></thead>
                     <tbody id="activity-table-body"></tbody>
                 </table>
+                <div style="border-top:1px solid var(--apple-border); margin-top:22px; padding-top:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:15px;">
+                        <h3 style="font-size:18px; margin:0;">智能招募名单</h3>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <select id="recruitment-blood-type" onchange="loadRecruitmentList()">
+                                <option value="">按库存需求自动筛选</option>
+                                <option value="A型">A型</option>
+                                <option value="B型">B型</option>
+                                <option value="O型">O型</option>
+                                <option value="AB型">AB型</option>
+                            </select>
+                            <button class="btn btn-warning" onclick="loadRecruitmentList()">刷新名单</button>
+                        </div>
+                    </div>
+                    <table id="recruitment-table">
+                        <thead><tr>
+                            <th>姓名</th>
+                            <th>身份证</th>
+                            <th>血型</th>
+                            <th>电话</th>
+                            <th>性别</th>
+                            <th>年龄</th>
+                            <th>上次献血</th>
+                            <th>累计献血</th>
+                            <th>推荐原因</th>
+                        </tr></thead>
+                        <tbody id="recruitment-table-body">
+                            <tr><td colspan="9" style="text-align:center;">点击“智能招募名单”生成</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -2749,6 +2781,7 @@ body.legacy-page {
                     <td>${a.morningRemaining}/${a.morningQuota}</td>
                     <td>${a.afternoonRemaining}/${a.afternoonQuota}</td>
                     <td>
+                        <button class="btn btn-primary" onclick="loadRecruitmentList('${a.id}')">招募</button>
                         <button class="btn btn-warning" onclick="editActivity('${a.id}')">修改</button>
                         <button class="btn btn-danger" onclick="deleteActivity('${a.id}')">删除</button>
                     </td>
@@ -2805,6 +2838,33 @@ body.legacy-page {
                     alert(result?.msg || '删除失败');
                 }
             }
+        }
+
+        async function loadRecruitmentList(activityId = '') {
+            const bloodType = document.getElementById('recruitment-blood-type')?.value || '';
+            let url = '/activity/recruitment?';
+            if (activityId) url += 'activityId=' + encodeURIComponent(activityId) + '&';
+            if (bloodType) url += 'bloodType=' + encodeURIComponent(bloodType);
+            const result = await fetchData(url);
+            const tbody = document.getElementById('recruitment-table-body');
+            if (!tbody) return;
+            if (!result?.data?.length) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">暂无符合库存需求和献血周期的招募对象</td></tr>';
+                return;
+            }
+            tbody.innerHTML = result.data.map(item => `
+                <tr>
+                    <td>${item.name || '-'}</td>
+                    <td>${item.idCardMask || '-'}</td>
+                    <td>${item.bloodType || '-'}</td>
+                    <td>${item.phone || '-'}</td>
+                    <td>${item.gender || '-'}</td>
+                    <td>${item.age || '-'}</td>
+                    <td>${item.lastDonateDate || '无历史记录'}</td>
+                    <td>${item.donateCount || 0}次 / ${item.totalDonateAmount || 0}ml</td>
+                    <td>${item.reason || '-'}</td>
+                </tr>
+            `).join('');
         }
 
         async function loadCollectionList() {
