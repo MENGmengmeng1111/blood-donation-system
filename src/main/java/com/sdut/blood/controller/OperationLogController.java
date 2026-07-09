@@ -19,9 +19,43 @@ public class OperationLogController {
 
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN')")
-    public Result<List<OperationLog>> list() {
+    public Result<List<OperationLog>> list(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String operationType,
+            @RequestParam(required = false) String sortField,
+            @RequestParam(required = false) String sortOrder) {
         LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(OperationLog::getOperationTime);
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            wrapper.and(w -> w.like(OperationLog::getOperatorName, keyword.trim())
+                             .or()
+                             .like(OperationLog::getOperationType, keyword.trim())
+                             .or()
+                             .like(OperationLog::getOperationContent, keyword.trim()));
+        }
+        
+        if (operationType != null && !operationType.trim().isEmpty()) {
+            wrapper.eq(OperationLog::getOperationType, operationType.trim());
+        }
+        
+        if (sortField != null && !sortField.trim().isEmpty()) {
+            boolean isAsc = !"desc".equalsIgnoreCase(sortOrder);
+            if ("operatorName".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(OperationLog::getOperatorName);
+                else wrapper.orderByDesc(OperationLog::getOperatorName);
+            } else if ("operationType".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(OperationLog::getOperationType);
+                else wrapper.orderByDesc(OperationLog::getOperationType);
+            } else if ("operationTime".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(OperationLog::getOperationTime);
+                else wrapper.orderByDesc(OperationLog::getOperationTime);
+            } else {
+                wrapper.orderByDesc(OperationLog::getOperationTime);
+            }
+        } else {
+            wrapper.orderByDesc(OperationLog::getOperationTime);
+        }
+        
         List<OperationLog> list = operationLogService.list(wrapper);
         return Result.success(list);
     }

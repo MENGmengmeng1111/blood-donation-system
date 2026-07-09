@@ -24,10 +24,53 @@ public class SysUserManageController {
 
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN')")
-    public Result<List<SysUser>> list() {
+    public Result<List<SysUser>> list(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String sortField,
+            @RequestParam(required = false) String sortOrder) {
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
         wrapper.ne(SysUser::getRole, "ROLE_SUPER_ADMIN");
-        wrapper.orderByDesc(SysUser::getCreateTime);
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            wrapper.and(w -> w.like(SysUser::getUsername, keyword.trim())
+                             .or()
+                             .like(SysUser::getRealName, keyword.trim()));
+        }
+        
+        if (role != null && !role.trim().isEmpty()) {
+            wrapper.eq(SysUser::getRole, role.trim());
+        }
+        
+        if (status != null) {
+            wrapper.eq(SysUser::getStatus, status);
+        }
+        
+        if (sortField != null && !sortField.trim().isEmpty()) {
+            boolean isAsc = !"desc".equalsIgnoreCase(sortOrder);
+            if ("username".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(SysUser::getUsername);
+                else wrapper.orderByDesc(SysUser::getUsername);
+            } else if ("realName".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(SysUser::getRealName);
+                else wrapper.orderByDesc(SysUser::getRealName);
+            } else if ("role".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(SysUser::getRole);
+                else wrapper.orderByDesc(SysUser::getRole);
+            } else if ("status".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(SysUser::getStatus);
+                else wrapper.orderByDesc(SysUser::getStatus);
+            } else if ("createTime".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(SysUser::getCreateTime);
+                else wrapper.orderByDesc(SysUser::getCreateTime);
+            } else {
+                wrapper.orderByDesc(SysUser::getCreateTime);
+            }
+        } else {
+            wrapper.orderByDesc(SysUser::getCreateTime);
+        }
+        
         List<SysUser> list = sysUserService.list(wrapper);
         list.forEach(user -> user.setPassword(null));
         return Result.success(list);

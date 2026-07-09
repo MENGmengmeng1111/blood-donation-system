@@ -82,12 +82,18 @@
         FROM blood_test bt
         INNER JOIN blood_collection bc ON bt.collection_id = bc.id
         INNER JOIN donor d ON bt.donor_id = d.id
-        LEFT JOIN blood_stock bs ON bt.collection_id = bs.collection_id AND bs.deleted = 0
+        LEFT JOIN blood_stock bs ON bt.collection_id = bs.collection_id
         WHERE bt.blood_status = '合格'
           AND bs.id IS NULL
           AND bt.deleted = 0
           AND bc.deleted = 0
           AND d.deleted = 0
+          <if test="keyword != null and keyword != ''">
+              AND d.name LIKE CONCAT('%', #{keyword}, '%')
+          </if>
+          <if test="bloodType != null and bloodType != ''">
+              AND d.blood_type = #{bloodType}
+          </if>
         ORDER BY bt.judge_time DESC
     </select>
 
@@ -111,6 +117,12 @@
           AND bs.deleted = 0
           AND bc.deleted = 0
           AND d.deleted = 0
+          <if test="keyword != null and keyword != ''">
+              AND d.name LIKE CONCAT('%', #{keyword}, '%')
+          </if>
+          <if test="bloodType != null and bloodType != ''">
+              AND bs.blood_type = #{bloodType}
+          </if>
         ORDER BY bs.create_time DESC
     </select>
 

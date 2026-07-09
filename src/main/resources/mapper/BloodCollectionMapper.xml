@@ -30,4 +30,19 @@
         ORDER BY collection_time DESC
     </select>
 
+    <!-- 分页查询采血记录（支持按献血者姓名搜索） -->
+    <select id="selectCollectionList" resultMap="BaseResultMap">
+        SELECT bc.*
+        FROM blood_collection bc
+        LEFT JOIN donor d ON bc.donor_id = d.id
+        WHERE bc.deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND d.name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="donateType != null and donateType != ''">
+            AND bc.donate_type = #{donateType}
+        </if>
+        ORDER BY bc.collection_time DESC
+    </select>
+
 </mapper>

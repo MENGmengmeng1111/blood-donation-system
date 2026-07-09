@@ -86,7 +86,10 @@ public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodSt
 
         // 7. 更新检验记录状态为已入库
         test.setBloodStatus(BloodConstants.STATUS_STORED);
-        bloodTestService.updateById(test);
+        boolean updated = bloodTestService.updateById(test);
+        if (!updated) {
+            throw new BusinessException("更新检验记录状态失败");
+        }
     }
 
     @Override
@@ -326,13 +329,13 @@ public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodSt
     }
 
     @Override
-    public List<com.sdut.blood.domain.vo.PendingStockInVO> listPendingStockIn() {
-        return baseMapper.selectPendingStockInList();
+    public List<com.sdut.blood.domain.vo.PendingStockInVO> listPendingStockIn(String keyword, String bloodType) {
+        return baseMapper.selectPendingStockInList(keyword, bloodType);
     }
 
     @Override
-    public List<com.sdut.blood.domain.vo.PendingStockOutVO> listStockOutPending() {
-        return baseMapper.selectStockOutPendingList();
+    public List<com.sdut.blood.domain.vo.PendingStockOutVO> listStockOutPending(String keyword, String bloodType) {
+        return baseMapper.selectStockOutPendingList(keyword, bloodType);
     }
 
     @Override
