@@ -6,6 +6,7 @@ import com.sdut.blood.common.result.Result;
 import com.sdut.blood.domain.entity.BloodActivity;
 import com.sdut.blood.domain.vo.RecruitmentVO;
 import com.sdut.blood.service.BloodActivityService;
+import com.sdut.blood.service.OperationLogService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,16 +24,22 @@ public class BloodActivityController {
     @Resource
     private BloodActivityService bloodActivityService;
 
+    @Resource
+    private OperationLogService operationLogService;
+
     /**
      * 新增献血活动
      */
     @PostMapping("/add")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
     public Result<Void> addActivity(@RequestBody BloodActivity activity) {
-        activity.setStatus("未开始");
+        if (activity.getStatus() == null || activity.getStatus().trim().isEmpty()) {
+            activity.setStatus("未开始");
+        }
         activity.setMorningRemaining(activity.getMorningQuota());
         activity.setAfternoonRemaining(activity.getAfternoonQuota());
         bloodActivityService.save(activity);
+        operationLogService.saveLog("新增活动", "新增献血活动，名称：" + activity.getActivityName());
         return Result.success();
     }
 
@@ -50,6 +57,7 @@ public class BloodActivityController {
             activity.setAfternoonRemaining(existing.getAfternoonRemaining() + afternoonDiff);
         }
         bloodActivityService.updateById(activity);
+        operationLogService.saveLog("修改活动", "修改献血活动，ID：" + activity.getId() + "，名称：" + activity.getActivityName());
         return Result.success();
     }
 
@@ -60,6 +68,7 @@ public class BloodActivityController {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
     public Result<Void> deleteActivity(@PathVariable Long id) {
         bloodActivityService.removeById(id);
+        operationLogService.saveLog("删除活动", "删除献血活动，ID：" + id);
         return Result.success();
     }
 
@@ -79,11 +88,15 @@ public class BloodActivityController {
     public Result<Page<BloodActivity>> listActivities(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String sortField,
             @RequestParam(required = false) String sortOrder) {
         Page<BloodActivity> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<BloodActivity> wrapper = new LambdaQueryWrapper<>();
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            wrapper.like(BloodActivity::getActivityName, keyword.trim());
+        }
         if (status != null && !status.trim().isEmpty()) {
             wrapper.eq(BloodActivity::getStatus, status);
         }

@@ -130,7 +130,7 @@ public class ExcelExportController {
     public void exportPendingStockIn(HttpServletResponse response) throws IOException {
         setExcelResponseHeader(response, "待入库记录");
         try (OutputStream outputStream = response.getOutputStream()) {
-            var data = excelExportService.exportPendingStockIn(bloodStockService.listPendingStockIn());
+            var data = excelExportService.exportPendingStockIn(bloodStockService.listPendingStockIn(null, null));
             outputStream.write(data.toByteArray());
         }
     }
@@ -142,7 +142,7 @@ public class ExcelExportController {
     public void exportPendingStockOut(HttpServletResponse response) throws IOException {
         setExcelResponseHeader(response, "待出库记录");
         try (OutputStream outputStream = response.getOutputStream()) {
-            var data = excelExportService.exportPendingStockOut(bloodStockService.listStockOutPending());
+            var data = excelExportService.exportPendingStockOut(bloodStockService.listStockOutPending(null, null));
             outputStream.write(data.toByteArray());
         }
     }

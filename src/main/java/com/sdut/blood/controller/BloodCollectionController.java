@@ -6,12 +6,16 @@ import com.sdut.blood.common.result.Result;
 import com.sdut.blood.domain.dto.CollectionAddDTO;
 import com.sdut.blood.domain.dto.CollectionUpdateDTO;
 import com.sdut.blood.domain.entity.BloodCollection;
+import com.sdut.blood.domain.entity.Donor;
 import com.sdut.blood.service.BloodCollectionService;
+import com.sdut.blood.service.DonorService;
+import com.sdut.blood.service.OperationLogService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 采血记录控制器
@@ -24,12 +28,21 @@ public class BloodCollectionController {
     @Resource
     private BloodCollectionService bloodCollectionService;
 
+    @Resource
+    private DonorService donorService;
+
+    @Resource
+    private OperationLogService operationLogService;
+
     /**
      * 新增采血记录（UC25）
      */
     @PostMapping("/add")
     public Result<Void> addCollectionRecord(@Valid @RequestBody CollectionAddDTO dto) {
         bloodCollectionService.addCollectionRecord(dto);
+        Donor donor = donorService.getById(dto.getDonorId());
+        String donorName = donor != null ? donor.getName() : "未知";
+        operationLogService.saveLog("新增采血", "新增采血记录，献血者：" + donorName + "，血量：" + dto.getDonateAmount() + "ml");
         return Result.success();
     }
 
@@ -40,10 +53,30 @@ public class BloodCollectionController {
     public Result<Page<BloodCollection>> listCollections(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String donateType,
             @RequestParam(required = false) String sortField,
             @RequestParam(required = false) String sortOrder) {
         Page<BloodCollection> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<BloodCollection> wrapper = new LambdaQueryWrapper<>();
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            LambdaQueryWrapper<Donor> donorWrapper = new LambdaQueryWrapper<>();
+            donorWrapper.like(Donor::getName, keyword.trim());
+            List<Donor> donors = donorService.list(donorWrapper);
+            if (!donors.isEmpty()) {
+                List<Long> donorIds = donors.stream().map(Donor::getId).collect(Collectors.toList());
+                wrapper.in(BloodCollection::getDonorId, donorIds);
+            } else {
+                page.setRecords(List.of());
+                page.setTotal(0);
+                return Result.success(page);
+            }
+        }
+        
+        if (donateType != null && !donateType.trim().isEmpty()) {
+            wrapper.eq(BloodCollection::getDonateType, donateType);
+        }
         if (sortField != null && !sortField.trim().isEmpty()) {
             boolean isAsc = !"desc".equalsIgnoreCase(sortOrder);
             if ("donateAmount".equals(sortField.trim())) {
@@ -95,6 +128,7 @@ public class BloodCollectionController {
     @PutMapping("/update")
     public Result<Void> updateCollectionRecord(@Valid @RequestBody CollectionUpdateDTO dto) {
         bloodCollectionService.updateCollectionRecord(dto);
+        operationLogService.saveLog("修改采血", "修改采血记录，ID：" + dto.getId());
         return Result.success();
     }
 
@@ -111,6 +145,7 @@ public class BloodCollectionController {
         if (!removed) {
             return Result.error("删除失败，请刷新后重试");
         }
+        operationLogService.saveLog("删除采血", "删除采血记录，ID：" + id);
         return Result.success();
     }
 

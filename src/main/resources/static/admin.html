@@ -1979,6 +1979,16 @@ body.legacy-page {
                         <button class="btn btn-primary" onclick="exportActivities()">导出Excel报表</button>
                     </div>
                 </div>
+                <div class="search-bar">
+                    <input type="text" id="activity-search" placeholder="搜索活动名称..." onkeyup="loadActivityList()">
+                    <select id="activity-status-filter" onchange="loadActivityList()">
+                        <option value="">全部状态</option>
+                        <option value="招募中">招募中</option>
+                        <option value="进行中">进行中</option>
+                        <option value="已结束">已结束</option>
+                        <option value="已取消">已取消</option>
+                    </select>
+                </div>
                 <table id="activity-table">
                     <thead><tr>
                         <th class="sortable" data-sort="activityName" onclick="toggleSort('activity-table', 'activityName'); loadActivityList()">活动名称</th>
@@ -2033,6 +2043,13 @@ body.legacy-page {
                     <div class="form-group"><label>活动名称</label><input type="text" id="activity-name" required></div>
                     <div class="form-group"><label>活动地点</label><input type="text" id="activity-location" required></div>
                     <div class="form-group"><label>活动日期</label><input type="date" id="activity-date" required></div>
+                    <div class="form-group"><label>状态</label>
+                        <select id="activity-status">
+                            <option value="未开始">未开始</option>
+                            <option value="进行中">进行中</option>
+                            <option value="已结束">已结束</option>
+                        </select>
+                    </div>
                     <div class="form-group"><label>上午名额</label><input type="number" id="activity-morning-quota" value="50"></div>
                     <div class="form-group"><label>下午名额</label><input type="number" id="activity-afternoon-quota" value="50"></div>
                     <button type="button" class="btn" onclick="saveActivity()">保存</button>
@@ -2048,6 +2065,14 @@ body.legacy-page {
                         <button class="btn btn-primary" onclick="showTab('collection-add')">新增采血记录</button>
                         <button class="btn btn-primary" onclick="exportCollections()">导出Excel报表</button>
                     </div>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="collection-search" placeholder="搜索献血者姓名..." onkeyup="loadCollectionList()">
+                    <select id="collection-type-filter" onchange="loadCollectionList()">
+                        <option value="">全部献血类型</option>
+                        <option value="全血">全血</option>
+                        <option value="成分血">成分血</option>
+                    </select>
                 </div>
                 <table id="collection-table">
                     <thead><tr>
@@ -2107,6 +2132,18 @@ body.legacy-page {
                     <h2>检验记录列表</h2>
                     <button class="btn btn-primary" onclick="exportTests()">导出Excel报表</button>
                 </div>
+                <div class="search-bar">
+                    <input type="text" id="test-search" placeholder="搜索献血者姓名..." onkeyup="loadTestList()">
+                    <select id="test-status-filter" onchange="loadTestList()">
+                        <option value="">全部状态</option>
+                        <option value="待检验">待检验</option>
+                        <option value="合格">合格</option>
+                        <option value="不合格">不合格</option>
+                        <option value="已入库">已入库</option>
+                        <option value="已出库">已出库</option>
+                        <option value="已过期">已过期</option>
+                    </select>
+                </div>
                 <div class="test-chart-grid" style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:18px 0 22px;">
                     <div style="border:1px solid var(--apple-border); border-radius:8px; padding:16px; min-height:280px;">
                         <h3 style="font-size:16px; margin:0 0 12px;">复检结果占比</h3>
@@ -2154,6 +2191,23 @@ body.legacy-page {
                     </div>
                     <canvas id="stock-trend-chart" style="width:100%; height:260px; display:block;"></canvas>
                 </div>
+                <div class="search-bar">
+                    <input type="text" id="stock-search" placeholder="搜索献血者姓名..." onkeyup="loadStockList()">
+                    <select id="stock-blood-type-filter" onchange="loadStockList()">
+                        <option value="">全部血型</option>
+                        <option value="A型">A型</option>
+                        <option value="B型">B型</option>
+                        <option value="O型">O型</option>
+                        <option value="AB型">AB型</option>
+                    </select>
+                    <select id="stock-status-filter" onchange="loadStockList()">
+                        <option value="">全部状态</option>
+                        <option value="正常">正常</option>
+                        <option value="临期">临期</option>
+                        <option value="已过期">已过期</option>
+                        <option value="已出库">已出库</option>
+                    </select>
+                </div>
                 <table id="stock-table">
                         <thead><tr>
                             <th>献血者姓名</th>
@@ -2179,6 +2233,16 @@ body.legacy-page {
                 <div style="margin-bottom:30px;">
                     <h3 style="margin-bottom:15px; color:var(--apple-ink); font-size:18px;">待入库血液</h3>
                     <p style="color:var(--apple-muted); font-size:14px; margin-bottom:15px;">检验合格但未入库的采血记录将显示在此列表中，请选择需要入库的记录并填写有效期</p>
+                    <div class="search-bar">
+                        <input type="text" id="stock-in-search" placeholder="搜索献血者姓名..." onkeyup="loadPendingStockList()">
+                        <select id="stock-in-blood-type-filter" onchange="loadPendingStockList()">
+                            <option value="">全部血型</option>
+                            <option value="A型">A型</option>
+                            <option value="B型">B型</option>
+                            <option value="O型">O型</option>
+                            <option value="AB型">AB型</option>
+                        </select>
+                    </div>
                     <table id="pending-stock-table">
                         <thead><tr>
                             <th><input type="checkbox" id="select-all-pending" onclick="toggleSelectAllPending()"></th>
@@ -2226,6 +2290,16 @@ body.legacy-page {
                 <div style="margin-bottom:30px;">
                     <h3 style="margin-bottom:15px; color:var(--apple-ink); font-size:18px;">待出库血液</h3>
                     <p style="color:var(--apple-muted); font-size:14px; margin-bottom:15px;">已入库但未出库的血液记录将显示在此列表中，请选择需要出库的记录并填写用血单位</p>
+                    <div class="search-bar">
+                        <input type="text" id="stock-out-search" placeholder="搜索献血者姓名..." onkeyup="loadStockOutPendingList()">
+                        <select id="stock-out-blood-type-filter" onchange="loadStockOutPendingList()">
+                            <option value="">全部血型</option>
+                            <option value="A型">A型</option>
+                            <option value="B型">B型</option>
+                            <option value="O型">O型</option>
+                            <option value="AB型">AB型</option>
+                        </select>
+                    </div>
                     <table id="pending-out-table">
                         <thead><tr>
                             <th><input type="checkbox" id="select-all-out" onclick="toggleSelectAllOut()"></th>
@@ -2275,13 +2349,35 @@ body.legacy-page {
                         <button class="btn btn-warning" onclick="loadOperationLogs()">刷新列表</button>
                     </div>
                 </div>
+                <div class="search-bar">
+                    <input type="text" id="log-search" placeholder="搜索操作人、操作类型或内容..." onkeyup="loadOperationLogs()">
+                    <select id="log-type-filter" onchange="loadOperationLogs()">
+                        <option value="">全部操作类型</option>
+                        <option value="新增档案">新增档案</option>
+                        <option value="修改档案">修改档案</option>
+                        <option value="删除档案">删除档案</option>
+                        <option value="新增活动">新增活动</option>
+                        <option value="修改活动">修改活动</option>
+                        <option value="删除活动">删除活动</option>
+                        <option value="新增采血">新增采血</option>
+                        <option value="修改采血">修改采血</option>
+                        <option value="删除采血">删除采血</option>
+                        <option value="判定检验">判定检验</option>
+                        <option value="修改检验">修改检验</option>
+                        <option value="删除检验">删除检验</option>
+                        <option value="血液入库">血液入库</option>
+                        <option value="血液出库">血液出库</option>
+                        <option value="修改库存">修改库存</option>
+                        <option value="删除库存">删除库存</option>
+                    </select>
+                </div>
                 <table id="operation-log-table">
                     <thead><tr>
                         <th><input type="checkbox" id="select-all-log" onclick="toggleSelectAllLog()"></th>
-                        <th>操作人</th>
-                        <th>操作类型</th>
+                        <th class="sortable" data-sort="operatorName" onclick="toggleSort('operation-log-table', 'operatorName'); loadOperationLogs()">操作人</th>
+                        <th class="sortable" data-sort="operationType" onclick="toggleSort('operation-log-table', 'operationType'); loadOperationLogs()">操作类型</th>
                         <th>操作内容</th>
-                        <th>操作时间</th>
+                        <th class="sortable" data-sort="operationTime" onclick="toggleSort('operation-log-table', 'operationTime'); loadOperationLogs()">操作时间</th>
                         <th>操作IP</th>
                         <th>操作</th>
                     </tr></thead>
@@ -2296,13 +2392,27 @@ body.legacy-page {
                     <h2>账号管理</h2>
                     <button class="btn btn-primary" onclick="showAddUserModal()">新增账号</button>
                 </div>
+                <div class="search-bar">
+                    <input type="text" id="user-search" placeholder="搜索用户名或真实姓名..." onkeyup="loadUserManageList()">
+                    <select id="user-role-filter" onchange="loadUserManageList()">
+                        <option value="">全部角色</option>
+                        <option value="ROLE_DONOR">献血者</option>
+                        <option value="ROLE_ADMIN">管理员</option>
+                        <option value="ROLE_SUPER_ADMIN">超级管理员</option>
+                    </select>
+                    <select id="user-status-filter" onchange="loadUserManageList()">
+                        <option value="">全部状态</option>
+                        <option value="0">正常</option>
+                        <option value="1">禁用</option>
+                    </select>
+                </div>
                 <table id="user-manage-table">
                     <thead><tr>
-                        <th>用户名</th>
-                        <th>真实姓名</th>
-                        <th>角色</th>
-                        <th>状态</th>
-                        <th>创建时间</th>
+                        <th class="sortable" data-sort="username" onclick="toggleSort('user-manage-table', 'username'); loadUserManageList()">用户名</th>
+                        <th class="sortable" data-sort="realName" onclick="toggleSort('user-manage-table', 'realName'); loadUserManageList()">真实姓名</th>
+                        <th class="sortable" data-sort="role" onclick="toggleSort('user-manage-table', 'role'); loadUserManageList()">角色</th>
+                        <th class="sortable" data-sort="status" onclick="toggleSort('user-manage-table', 'status'); loadUserManageList()">状态</th>
+                        <th class="sortable" data-sort="createTime" onclick="toggleSort('user-manage-table', 'createTime'); loadUserManageList()">创建时间</th>
                         <th>操作</th>
                     </tr></thead>
                     <tbody id="user-manage-table-body"></tbody>
@@ -2385,6 +2495,10 @@ body.legacy-page {
                     alert('登录已过期，请重新登录');
                     localStorage.clear();
                     window.location.href = 'index.html';
+                    return null;
+                }
+                if (response.status === 403) {
+                    alert('权限不足，无法执行此操作');
                     return null;
                 }
                 return await response.json();
@@ -2722,7 +2836,7 @@ body.legacy-page {
         }
 
         async function saveDonor() {
-            const donorId = document.getElementById('donor-id').value;
+            const donorId = document.getElementById('donor-id')?.value || '';
             const idCard = document.getElementById('donor-id-card').value.trim();
             const data = {
                 id: donorId ? donorId : null,
@@ -2779,7 +2893,11 @@ body.legacy-page {
 
         async function loadActivityList() {
             const sort = getSortParam('activity-table');
+            const keyword = document.getElementById('activity-search')?.value.trim() || '';
+            const status = document.getElementById('activity-status-filter')?.value || '';
             let url = '/activity/list?pageNum=1&pageSize=20';
+            if (keyword) url += '&keyword=' + encodeURIComponent(keyword);
+            if (status) url += '&status=' + encodeURIComponent(status);
             if (sort.field) url += '&sortField=' + encodeURIComponent(sort.field) + '&sortOrder=' + encodeURIComponent(sort.order);
             const result = await fetchData(url);
             const tbody = document.getElementById('activity-table-body');
@@ -2815,6 +2933,7 @@ body.legacy-page {
             document.getElementById('activity-name').value = a.activityName || '';
             document.getElementById('activity-location').value = a.location || '';
             document.getElementById('activity-date').value = a.activityDate || '';
+            document.getElementById('activity-status').value = a.status || '未开始';
             document.getElementById('activity-morning-quota').value = a.morningQuota || 50;
             document.getElementById('activity-afternoon-quota').value = a.afternoonQuota || 50;
             showTab('activity-add');
@@ -2827,6 +2946,7 @@ body.legacy-page {
                 activityName: document.getElementById('activity-name').value,
                 location: document.getElementById('activity-location').value,
                 activityDate: document.getElementById('activity-date').value,
+                status: document.getElementById('activity-status').value,
                 morningQuota: parseInt(document.getElementById('activity-morning-quota').value) || 0,
                 afternoonQuota: parseInt(document.getElementById('activity-afternoon-quota').value) || 0
             };
@@ -2884,7 +3004,11 @@ body.legacy-page {
 
         async function loadCollectionList() {
             const sort = getSortParam('collection-table');
+            const keyword = document.getElementById('collection-search')?.value.trim() || '';
+            const donateType = document.getElementById('collection-type-filter')?.value || '';
             let url = '/collection/list?pageNum=1&pageSize=20';
+            if (keyword) url += '&keyword=' + encodeURIComponent(keyword);
+            if (donateType) url += '&donateType=' + encodeURIComponent(donateType);
             if (sort.field) url += '&sortField=' + encodeURIComponent(sort.field) + '&sortOrder=' + encodeURIComponent(sort.order);
             const result = await fetchData(url);
             const tbody = document.getElementById('collection-table-body');
@@ -3025,8 +3149,17 @@ body.legacy-page {
 
         async function loadTestList() {
             const sort = getSortParam('test-table');
+            const keyword = document.getElementById('test-search')?.value.trim() || '';
+            const bloodStatus = document.getElementById('test-status-filter')?.value || '';
             let url = '/blood-test/list';
-            if (sort.field) url += '?sortField=' + encodeURIComponent(sort.field) + '&sortOrder=' + encodeURIComponent(sort.order);
+            let params = [];
+            if (keyword) params.push('keyword=' + encodeURIComponent(keyword));
+            if (bloodStatus) params.push('bloodStatus=' + encodeURIComponent(bloodStatus));
+            if (sort.field) {
+                params.push('sortField=' + encodeURIComponent(sort.field));
+                params.push('sortOrder=' + encodeURIComponent(sort.order));
+            }
+            if (params.length > 0) url += '?' + params.join('&');
             const result = await fetchData(url);
             const tbody = document.getElementById('test-table-body');
             if (!result?.data?.length) {
@@ -3367,8 +3500,19 @@ body.legacy-page {
 
         async function loadStockList() {
             const sort = getSortParam('stock-table');
+            const keyword = document.getElementById('stock-search')?.value.trim() || '';
+            const bloodType = document.getElementById('stock-blood-type-filter')?.value || '';
+            const status = document.getElementById('stock-status-filter')?.value || '';
             let url = '/stock/list';
-            if (sort.field) url += '?sortField=' + encodeURIComponent(sort.field) + '&sortOrder=' + encodeURIComponent(sort.order);
+            let params = [];
+            if (keyword) params.push('keyword=' + encodeURIComponent(keyword));
+            if (bloodType) params.push('bloodType=' + encodeURIComponent(bloodType));
+            if (status) params.push('status=' + encodeURIComponent(status));
+            if (sort.field) {
+                params.push('sortField=' + encodeURIComponent(sort.field));
+                params.push('sortOrder=' + encodeURIComponent(sort.order));
+            }
+            if (params.length > 0) url += '?' + params.join('&');
             const result = await fetchData(url);
             const tbody = document.getElementById('stock-table-body');
             if (!result?.data?.length) {
@@ -3518,7 +3662,14 @@ body.legacy-page {
         }
 
         async function loadPendingStockList() {
-            const result = await fetchData('/stock/pending');
+            const keyword = document.getElementById('stock-in-search')?.value.trim() || '';
+            const bloodType = document.getElementById('stock-in-blood-type-filter')?.value || '';
+            let url = '/stock/pending';
+            let params = [];
+            if (keyword) params.push('keyword=' + encodeURIComponent(keyword));
+            if (bloodType) params.push('bloodType=' + encodeURIComponent(bloodType));
+            if (params.length > 0) url += '?' + params.join('&');
+            const result = await fetchData(url);
             const tbody = document.getElementById('pending-stock-table-body');
             if (!result?.data?.length) {
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">暂无待入库记录</td></tr>';
@@ -3560,7 +3711,14 @@ body.legacy-page {
         }
 
         async function loadStockOutPendingList() {
-            const result = await fetchData('/stock/out-pending');
+            const keyword = document.getElementById('stock-out-search')?.value.trim() || '';
+            const bloodType = document.getElementById('stock-out-blood-type-filter')?.value || '';
+            let url = '/stock/out-pending';
+            let params = [];
+            if (keyword) params.push('keyword=' + encodeURIComponent(keyword));
+            if (bloodType) params.push('bloodType=' + encodeURIComponent(bloodType));
+            if (params.length > 0) url += '?' + params.join('&');
+            const result = await fetchData(url);
             const tbody = document.getElementById('pending-out-table-body');
             if (!result?.data?.length) {
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">暂无可出库库存记录</td></tr>';
@@ -3772,7 +3930,19 @@ body.legacy-page {
         }
 
         async function loadOperationLogs() {
-            const result = await fetchData('/log/list');
+            const keyword = document.getElementById('log-search')?.value.trim() || '';
+            const operationType = document.getElementById('log-type-filter')?.value || '';
+            const sort = getSortParam('operation-log-table');
+            let url = '/log/list';
+            let params = [];
+            if (keyword) params.push('keyword=' + encodeURIComponent(keyword));
+            if (operationType) params.push('operationType=' + encodeURIComponent(operationType));
+            if (sort.field) {
+                params.push('sortField=' + encodeURIComponent(sort.field));
+                params.push('sortOrder=' + encodeURIComponent(sort.order));
+            }
+            if (params.length > 0) url += '?' + params.join('&');
+            const result = await fetchData(url);
             const tbody = document.getElementById('operation-log-table-body');
             if (!result?.data?.length) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">暂无操作日志</td></tr>';
@@ -3818,23 +3988,37 @@ body.legacy-page {
         }
 
         async function loadUserManageList() {
-            const result = await fetchData('/user-manage/list');
+            const keyword = document.getElementById('user-search')?.value.trim() || '';
+            const role = document.getElementById('user-role-filter')?.value || '';
+            const status = document.getElementById('user-status-filter')?.value || '';
+            const sort = getSortParam('user-manage-table');
+            let url = '/user-manage/list?pageNum=1&pageSize=20';
+            let params = [];
+            if (keyword) params.push('keyword=' + encodeURIComponent(keyword));
+            if (role) params.push('role=' + encodeURIComponent(role));
+            if (status) params.push('status=' + encodeURIComponent(status));
+            if (sort.field) {
+                params.push('sortField=' + encodeURIComponent(sort.field));
+                params.push('sortOrder=' + encodeURIComponent(sort.order));
+            }
+            if (params.length > 0) url += '&' + params.join('&');
+            const result = await fetchData(url);
             const tbody = document.getElementById('user-manage-table-body');
-            if (!result?.data?.length) {
+            if (!result?.data?.records?.length) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">暂无账号记录</td></tr>';
                 return;
             }
-            tbody.innerHTML = result.data.map(item => `
+            tbody.innerHTML = result.data.records.map(item => `
                 <tr>
                     <td>${item.username}</td>
                     <td>${item.realName || '-'}</td>
-                    <td>${item.role === 'ROLE_ADMIN' ? '管理员' : '普通用户'}</td>
+                    <td>${item.role === 'ROLE_ADMIN' ? '管理员' : '献血者'}</td>
                     <td>${item.status === 0 ? '<span class="status-badge active">正常</span>' : '<span class="status-badge inactive">禁用</span>'}</td>
                     <td>${item.createTime?.split(' ')[0] || '-'}</td>
                     <td>
-                        <button class="btn btn-primary btn-sm" onclick="showEditUserModal(${item.id})">编辑</button>
-                        <button class="btn btn-warning btn-sm" onclick="toggleUserStatus(${item.id}, ${item.status})">${item.status === 0 ? '禁用' : '启用'}</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteUser(${item.id})">删除</button>
+                        <button class="btn btn-primary btn-sm" onclick="showEditUserModal('${item.id}')">编辑</button>
+                        <button class="btn btn-warning btn-sm" onclick="toggleUserStatus('${item.id}', ${item.status})">${item.status === 0 ? '禁用' : '启用'}</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteUser('${item.id}')">删除</button>
                     </td>
                 </tr>
             `).join('');

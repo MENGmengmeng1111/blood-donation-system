@@ -9,6 +9,7 @@ import com.sdut.blood.domain.dto.DonorUpdateDTO;
 import com.sdut.blood.domain.entity.Donor;
 import com.sdut.blood.domain.vo.DonorVO;
 import com.sdut.blood.service.DonorService;
+import com.sdut.blood.service.OperationLogService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
@@ -25,12 +26,16 @@ public class DonorController {
     @Resource
     private DonorService donorService;
 
+    @Resource
+    private OperationLogService operationLogService;
+
     /**
      * 新增献血者档案（UC13）
      */
     @PostMapping("/add")
     public Result<Void> addDonor(@Valid @RequestBody DonorAddDTO dto) {
         donorService.addDonor(dto);
+        operationLogService.saveLog("新增档案", "新增献血者档案，姓名：" + dto.getName());
         return Result.success();
     }
 
@@ -40,6 +45,7 @@ public class DonorController {
     @PutMapping("/update")
     public Result<Void> updateDonor(@Valid @RequestBody DonorUpdateDTO dto) {
         donorService.updateDonor(dto);
+        operationLogService.saveLog("修改档案", "修改献血者档案，ID：" + dto.getId());
         return Result.success();
     }
 
@@ -127,6 +133,7 @@ public class DonorController {
     @DeleteMapping("/delete/{id}")
     public Result<Void> deleteDonor(@PathVariable Long id) {
         donorService.removeById(id);
+        operationLogService.saveLog("删除档案", "删除献血者档案，ID：" + id);
         return Result.success();
     }
 }

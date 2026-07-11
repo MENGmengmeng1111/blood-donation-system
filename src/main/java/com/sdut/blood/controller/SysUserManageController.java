@@ -24,19 +24,65 @@ public class SysUserManageController {
 
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN')")
-    public Result<List<SysUser>> list() {
+    public Result<com.baomidou.mybatisplus.extension.plugins.pagination.Page<SysUser>> list(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "20") Integer pageSize,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String sortField,
+            @RequestParam(required = false) String sortOrder) {
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<SysUser> page = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(pageNum, pageSize);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
         wrapper.ne(SysUser::getRole, "ROLE_SUPER_ADMIN");
-        wrapper.orderByDesc(SysUser::getCreateTime);
-        List<SysUser> list = sysUserService.list(wrapper);
-        list.forEach(user -> user.setPassword(null));
-        return Result.success(list);
+        
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            wrapper.and(w -> w.like(SysUser::getUsername, keyword.trim())
+                             .or()
+                             .like(SysUser::getRealName, keyword.trim()));
+        }
+        
+        if (role != null && !role.trim().isEmpty()) {
+            wrapper.eq(SysUser::getRole, role.trim());
+        }
+        
+        if (status != null) {
+            wrapper.eq(SysUser::getStatus, status);
+        }
+        
+        if (sortField != null && !sortField.trim().isEmpty()) {
+            boolean isAsc = !"desc".equalsIgnoreCase(sortOrder);
+            if ("username".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(SysUser::getUsername);
+                else wrapper.orderByDesc(SysUser::getUsername);
+            } else if ("realName".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(SysUser::getRealName);
+                else wrapper.orderByDesc(SysUser::getRealName);
+            } else if ("role".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(SysUser::getRole);
+                else wrapper.orderByDesc(SysUser::getRole);
+            } else if ("status".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(SysUser::getStatus);
+                else wrapper.orderByDesc(SysUser::getStatus);
+            } else if ("createTime".equals(sortField.trim())) {
+                if (isAsc) wrapper.orderByAsc(SysUser::getCreateTime);
+                else wrapper.orderByDesc(SysUser::getCreateTime);
+            } else {
+                wrapper.orderByDesc(SysUser::getCreateTime);
+            }
+        } else {
+            wrapper.orderByDesc(SysUser::getCreateTime);
+        }
+        
+        sysUserService.page(page, wrapper);
+        page.getRecords().forEach(user -> user.setPassword(null));
+        return Result.success(page);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN')")
-    public Result<SysUser> getById(@PathVariable Long id) {
-        SysUser user = sysUserService.getById(id);
+    public Result<SysUser> getById(@PathVariable String id) {
+        SysUser user = sysUserService.getById(Long.parseLong(id));
         if (user != null) {
             user.setPassword(null);
         }
@@ -59,8 +105,9 @@ public class SysUserManageController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN')")
-    public Result<Void> update(@PathVariable Long id, @RequestBody SysUser user) {
-        SysUser existing = sysUserService.getById(id);
+    public Result<Void> update(@PathVariable String id, @RequestBody SysUser user) {
+        Long userId = Long.parseLong(id);
+        SysUser existing = sysUserService.getById(userId);
         if (existing == null) {
             return Result.error("用户不存在");
         }
@@ -75,7 +122,7 @@ public class SysUserManageController {
         } else {
             user.setPassword(existing.getPassword());
         }
-        user.setId(id);
+        user.setId(userId);
         user.setUpdateTime(LocalDateTime.now());
         sysUserService.updateById(user);
         return Result.success();
@@ -83,22 +130,24 @@ public class SysUserManageController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN')")
-    public Result<Void> delete(@PathVariable Long id) {
-        SysUser user = sysUserService.getById(id);
+    public Result<Void> delete(@PathVariable String id) {
+        Long userId = Long.parseLong(id);
+        SysUser user = sysUserService.getById(userId);
         if (user == null) {
             return Result.error("用户不存在");
         }
         if ("ROLE_SUPER_ADMIN".equals(user.getRole())) {
             return Result.error("不能删除超级管理员");
         }
-        sysUserService.removeById(id);
+        sysUserService.removeById(userId);
         return Result.success();
     }
 
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN')")
-    public Result<Void> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
-        SysUser user = sysUserService.getById(id);
+    public Result<Void> updateStatus(@PathVariable String id, @RequestParam Integer status) {
+        Long userId = Long.parseLong(id);
+        SysUser user = sysUserService.getById(userId);
         if (user == null) {
             return Result.error("用户不存在");
         }
