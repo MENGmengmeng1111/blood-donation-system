@@ -20,6 +20,9 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
+    generator:
+      write-bigdecimal-as-plain: true
+      write-numbers-as-strings: true
 
   # ==================== AI 配置 ====================
 ai:

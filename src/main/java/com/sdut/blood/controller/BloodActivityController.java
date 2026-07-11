@@ -33,7 +33,9 @@ public class BloodActivityController {
     @PostMapping("/add")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_SUPER_ADMIN')")
     public Result<Void> addActivity(@RequestBody BloodActivity activity) {
-        activity.setStatus("未开始");
+        if (activity.getStatus() == null || activity.getStatus().trim().isEmpty()) {
+            activity.setStatus("未开始");
+        }
         activity.setMorningRemaining(activity.getMorningQuota());
         activity.setAfternoonRemaining(activity.getAfternoonQuota());
         bloodActivityService.save(activity);
