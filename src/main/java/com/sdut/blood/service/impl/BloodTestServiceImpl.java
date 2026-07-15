@@ -127,6 +127,8 @@ public class BloodTestServiceImpl extends ServiceImpl<BloodTestMapper, BloodTest
         }
         if (bloodStatus != null && !bloodStatus.trim().isEmpty()) {
             wrapper.eq(BloodTest::getBloodStatus, bloodStatus);
+        } else {
+            wrapper.ne(BloodTest::getBloodStatus, BloodConstants.STATUS_PENDING_TEST);
         }
         if (sortField != null && !sortField.trim().isEmpty()) {
             boolean isAsc = !"desc".equalsIgnoreCase(sortOrder);

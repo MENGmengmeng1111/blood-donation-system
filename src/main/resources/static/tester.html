@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <link rel="icon" href="data:,">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>献血管理系统 - 血液化验</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f5f5f5; }
+        .header { background: linear-gradient(135deg, #e53935 0%, #d32f2f 100%); color: white; padding: 18px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 22px; }
+        .header .user-info { font-size: 14px; }
+        .header .user-info span { margin-right: 20px; }
+        .header .btn-logout { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 16px; border-radius: 4px; cursor: pointer; }
+        .sidebar { width: 200px; background: #2c3e50; min-height: calc(100vh - 60px); position: fixed; top: 60px; left: 0; padding-top: 20px; }
+        .sidebar a { display: block; color: #ecf0f1; padding: 12px 20px; text-decoration: none; transition: background 0.3s; font-size: 14px; }
+        .sidebar a:hover { background: #34495e; }
+        .sidebar a.active { background: #e53935; }
+        .main-content { margin-left: 200px; padding: 25px; }
+        .card { background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .card h2 { color: #333; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e53935; }
+        .btn { background: #e53935; color: white; border: none; padding: 8px 18px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn:hover { background: #d32f2f; }
+        .btn-primary { background: #1976d2; }
+        .btn-success { background: #388e3c; }
+        .btn-warning { background: #ff9800; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table th, table td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        table th { background: #f8f9fa; font-weight: 600; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
+        .modal-content .close { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; }
+        .status-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; }
+        .status-pending { background: #fff3e0; color: #e65100; }
+        .status-active { background: #e3f2fd; color: #1565c0; }
+        .status-completed { background: #e8f5e9; color: #2e7d32; }
+        .message { padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; }
+        .message.success { background: #e8f5e9; color: #2e7d32; }
+        .message.error { background: #fce4ec; color: #c2185b; }
+    </style>
+    <style id="apple-style-inline">
+:root {
+    --apple-bg: #f7f8fb;
+    --apple-bg-soft: #ffffff;
+    --apple-surface: rgba(255, 255, 255, 0.88);
+    --apple-surface-strong: #ffffff;
+    --apple-ink: #111111;
+    --apple-ink-soft: #1d1d1f;
+    --apple-muted: #6e6e73;
+    --apple-muted-2: #86868b;
+    --apple-border: rgba(0, 0, 0, 0.08);
+    --apple-border-strong: rgba(0, 0, 0, 0.14);
+    --apple-fill: #f2f2f4;
+    --apple-fill-strong: #e8e8ed;
+    --apple-black: #0b0b0d;
+    --apple-coral: #ff3b5f;
+    --apple-coral-deep: #d91f43;
+    --apple-coral-soft: #fff1f4;
+    --apple-aqua: #16b8cf;
+    --apple-aqua-deep: #08798b;
+    --apple-aqua-soft: #e8fbff;
+    --apple-gold: #ffb340;
+    --apple-gold-soft: #fff7e6;
+    --apple-lilac: #7c6cff;
+    --apple-lilac-soft: #f3f1ff;
+    --apple-red: var(--apple-coral-deep);
+    --apple-red-soft: var(--apple-coral-soft);
+    --apple-green: #1f9d55;
+    --apple-green-soft: #edfff5;
+    --apple-blue: #1677ff;
+    --apple-blue-soft: #eff6ff;
+    --apple-orange: #a15c07;
+    --apple-orange-soft: #fff7ed;
+    --apple-radius-xs: 10px;
+    --apple-radius-sm: 14px;
+    --apple-radius-md: 20px;
+    --apple-radius-lg: 28px;
+    --apple-radius-xl: 34px;
+    --apple-shadow-sm: 0 12px 34px rgba(0, 0, 0, 0.06);
+    --apple-shadow-md: 0 24px 70px rgba(0, 0, 0, 0.10);
+    --apple-shadow-lg: 0 32px 90px rgba(0, 0, 0, 0.15);
+}
+
+* {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+}
+
+body {
+    color: var(--apple-ink-soft);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", Arial, sans-serif !important;
+}
+
+body.app-shell {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 9% 2%, rgba(255, 59, 95, 0.13) 0, transparent 24%),
+        radial-gradient(circle at 84% 8%, rgba(22, 184, 207, 0.16) 0, transparent 28%),
+        radial-gradient(circle at 56% 106%, rgba(255, 179, 64, 0.13) 0, transparent 30%),
+        linear-gradient(135deg, #ffffff 0%, #f9fafc 44%, #eef3f8 100%) !important;
+}
+
+.app-shell .header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: grid !important;
+    grid-template-columns: minmax(260px, 0.7fr) minmax(320px, 1.1fr) auto;
+    gap: 24px;
+    align-items: center;
+    min-height: 72px;
+    padding: 14px 28px 14px 32px !important;
+    color: var(--apple-ink) !important;
+    background: rgba(255, 255, 255, 0.72) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+    box-shadow: none !important;
+    backdrop-filter: blur(24px) saturate(160%);
+}
+
+.app-shell .header h1 {
+    color: var(--apple-ink) !important;
+    font-size: 20px !important;
+    font-weight: 750 !important;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+}
+
+.app-shell .header .user-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    color: var(--apple-muted) !important;
+}
+
+.app-shell .header .user-info span {
+    margin-right: 0 !important;
+    padding: 8px 12px;
+    border: 1px solid var(--apple-border);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.62);
+}
+
+.app-shell .btn-logout {
+    border: 1px solid var(--apple-border) !important;
+    border-radius: 999px !important;
+    background: #ffffff !important;
+    color: var(--apple-ink) !important;
+    font-weight: 650;
+}
+
+.app-shell .sidebar {
+    width: 252px !important;
+    min-height: auto !important;
+    position: fixed;
+    top: 94px !important;
+    bottom: 22px;
+    left: 22px;
+    z-index: 40;
+    padding: 18px !important;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 30px;
+    background:
+        radial-gradient(circle at 16% 4%, rgba(255, 59, 95, 0.10), transparent 30%),
+        radial-gradient(circle at 92% 18%, rgba(22, 184, 207, 0.10), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 253, 0.86) 100%) !important;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, 0.09);
+    backdrop-filter: blur(28px) saturate(160%);
+}
+
+.app-shell .sidebar::before {
+    content: "Workspace";
+    display: block;
+    margin: 4px 8px 12px;
+    color: var(--apple-muted-2);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.app-shell .sidebar a {
+    margin: 4px 0;
+    padding: 12px 14px !important;
+    border-radius: 18px;
+    color: var(--apple-muted) !important;
+    font-size: 14px !important;
+    font-weight: 680;
+    letter-spacing: -0.01em;
+    background: transparent !important;
+}
+
+.app-shell .sidebar a:hover {
+    color: var(--apple-ink) !important;
+    background: rgba(0, 0, 0, 0.055) !important;
+}
+
+.app-shell .sidebar a.active {
+    color: var(--apple-ink) !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(245, 247, 251, 0.92)) !important;
+    box-shadow: inset 4px 0 0 var(--apple-coral), 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.app-shell .main-content {
+    margin-left: 304px !important;
+    padding: 26px 36px 54px !important;
+}
+
+.card,
+.modal-content {
+    border: 1px solid rgba(255, 255, 255, 0.82) !important;
+    border-radius: var(--apple-radius-lg) !important;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(250, 250, 252, 0.82)) !important;
+    box-shadow: var(--apple-shadow-sm) !important;
+    backdrop-filter: blur(24px) saturate(145%);
+}
+
+.app-shell .card {
+    padding: 28px !important;
+    margin-bottom: 22px !important;
+    overflow-x: auto;
+}
+
+.card h2 {
+    color: var(--apple-ink) !important;
+    border-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    font-weight: 760 !important;
+    letter-spacing: -0.04em;
+    margin-bottom: 18px !important;
+    font-size: clamp(22px, 2vw, 30px) !important;
+}
+
+.btn,
+button.btn {
+    min-height: 40px;
+    border: 1px solid var(--apple-black) !important;
+    border-radius: 999px !important;
+    background: linear-gradient(135deg, #111114 0%, #2a2a31 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+    font-weight: 650 !important;
+    letter-spacing: -0.01em;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease !important;
+}
+
+.btn:hover,
+button.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary,
+.btn-success {
+    background: linear-gradient(135deg, var(--apple-coral) 0%, var(--apple-coral-deep) 100%) !important;
+    border-color: rgba(255, 79, 109, 0.42) !important;
+    box-shadow: 0 14px 30px rgba(255, 79, 109, 0.20);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(233, 251, 255, 0.86)) !important;
+    border-color: rgba(24, 200, 216, 0.28) !important;
+    color: var(--apple-aqua-deep) !important;
+    box-shadow: 0 12px 26px rgba(24, 200, 216, 0.11);
+}
+
+table {
+    width: 100%;
+    min-width: 760px;
+    overflow: hidden;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border: 1px solid var(--apple-border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.62);
+}
+
+table th,
+table td {
+    border-bottom: 1px solid var(--apple-border) !important;
+    padding: 14px 15px !important;
+    color: var(--apple-ink-soft);
+    font-size: 13px !important;
+    vertical-align: middle;
+}
+
+table th {
+    color: var(--apple-muted) !important;
+    background: rgba(245, 245, 247, 0.92) !important;
+    font-weight: 750 !important;
+    letter-spacing: -0.01em;
+}
+
+table tbody tr:hover {
+    background: rgba(0, 0, 0, 0.025);
+}
+
+table tr:last-child td {
+    border-bottom: 0 !important;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 4px 10px !important;
+    border: 1px solid var(--apple-border);
+    border-radius: 999px !important;
+    background: var(--apple-fill) !important;
+    color: var(--apple-ink) !important;
+    font-size: 12px !important;
+    font-weight: 700;
+}
+
+.status-pending {
+    background: var(--apple-orange-soft) !important;
+    color: var(--apple-orange) !important;
+    border-color: rgba(244, 178, 79, 0.26);
+}
+
+.status-qualified,
+.status-active,
+.status-completed {
+    background: var(--apple-aqua-soft) !important;
+    color: var(--apple-aqua-deep) !important;
+    border-color: rgba(24, 200, 216, 0.18);
+}
+
+.status-unqualified {
+    background: var(--apple-red-soft) !important;
+    color: var(--apple-red) !important;
+    border-color: rgba(180, 35, 45, 0.16);
+}
+
+.form-group label {
+    color: var(--apple-muted) !important;
+    font-size: 13px !important;
+    font-weight: 650 !important;
+    letter-spacing: -0.01em;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    min-height: 42px;
+    border: 1px solid var(--apple-border) !important;
+    border-radius: 14px !important;
+    background: rgba(255, 255, 255, 0.82) !important;
+    color: var(--apple-ink) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none !important;
+    border-color: rgba(0, 0, 0, 0.34) !important;
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+.modal {
+    background: rgba(0, 0, 0, 0.36) !important;
+    backdrop-filter: blur(12px);
+}
+
+.modal-content {
+    width: min(900px, calc(100% - 32px)) !important;
+    max-height: min(820px, calc(100vh - 48px));
+    overflow: auto;
+}
+
+.modal-content .close {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    color: var(--apple-muted);
+    background: var(--apple-fill);
+    font-size: 22px !important;
+}
+
+.message.success {
+    background: var(--apple-green-soft) !important;
+    color: var(--apple-green) !important;
+    border: 1px solid rgba(24, 121, 78, 0.16);
+}
+
+.message.error {
+    background: var(--apple-red-soft) !important;
+    color: var(--apple-red) !important;
+    border: 1px solid rgba(180, 35, 45, 0.16);
+}
+
+.indicator-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+}
+
+@media (max-width: 860px) {
+    .app-shell .header {
+        grid-template-columns: 1fr;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .app-shell .sidebar {
+        position: static;
+        width: auto !important;
+        margin: 18px;
+        max-height: none;
+        border-radius: 24px;
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+    }
+    .app-shell .sidebar::before {
+        display: none;
+    }
+    .app-shell .sidebar a {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        margin: 0 !important;
+        padding: 10px 14px !important;
+    }
+    .app-shell .main-content {
+        margin-left: 0 !important;
+        padding: 0 18px 36px !important;
+    }
+    .app-shell .card {
+        padding: 20px !important;
+        border-radius: 24px !important;
+    }
+    .indicator-grid {
+        grid-template-columns: 1fr;
+    }
+}
+    </style>
+</head>
+<body class="app-shell">
+    <div class="header">
+        <h1>🩸 献血管理系统 - 血液化验</h1>
+        <div></div>
+        <div class="user-info">
+            <span id="user-name">检验员</span>
+            <button class="btn-logout" onclick="logout()">退出登录</button>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <a href="#pending" class="active" onclick="showTab('pending')">待化验列表</a>
+        <a href="#history" onclick="showTab('history')">化验历史</a>
+    </div>
+
+    <div class="main-content">
+        <div id="pending" class="tab-content">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>待化验列表</h2>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-primary" onclick="loadPendingList()">刷新列表</button>
+                        <button class="btn btn-success" onclick="exportPendingExcel()">导出Excel</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>检验ID</th>
+                            <th>批次号</th>
+                            <th>献血者姓名</th>
+                            <th>性别</th>
+                            <th>血型</th>
+                            <th>年龄</th>
+                            <th>献血量(ml)</th>
+                            <th>采血时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingTable">
+                        <tr>
+                            <td colspan="9" style="text-align: center; color: #999;">加载中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="history" class="tab-content" style="display:none;">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <h2>化验历史</h2>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-primary" onclick="loadHistoryList()">刷新列表</button>
+                        <button class="btn btn-success" onclick="exportHistoryExcel()">导出Excel</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>检验ID</th>
+                            <th>批次号</th>
+                            <th>献血者姓名</th>
+                            <th>性别</th>
+                            <th>血型</th>
+                            <th>ALT(U/L)</th>
+                            <th>传染病指标</th>
+                            <th>白细胞(×10^9/L)</th>
+                            <th>血红蛋白(g/L)</th>
+                            <th>血小板(×10^9/L)</th>
+                            <th>血液状态</th>
+                            <th>复检结果</th>
+                            <th>不合格原因</th>
+                            <th>化验时间</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable">
+                        <tr>
+                            <td colspan="14" style="text-align: center; color: #999;">加载中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="indicatorModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle">录入化验指标</h3>
+            <div id="modalMessage"></div>
+            
+            <div id="donorInfo" style="margin-bottom: 20px; padding: 15px; background: rgba(245,245,247,0.82); border-radius: 14px; border: 1px solid var(--apple-border);">
+                <h4 style="margin: 0 0 10px; font-size: 16px; color: var(--apple-ink); font-weight: 700;">献血者信息</h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <div><strong>姓名：</strong><span id="donorName">-</span></div>
+                    <div><strong>性别：</strong><span id="donorGender">-</span></div>
+                    <div><strong>血型：</strong><span id="donorBloodType">-</span></div>
+                    <div><strong>年龄：</strong><span id="donorAge">-</span></div>
+                    <div><strong>献血量：</strong><span id="donorAmount">-</span></div>
+                </div>
+            </div>
+
+            <form id="indicatorForm">
+                <input type="hidden" id="testId">
+                <input type="hidden" id="donorGenderInput">
+                
+                <div class="indicator-grid">
+                    <div class="form-group">
+                        <label>谷丙转氨酶ALT(U/L)</label>
+                        <input type="number" id="alt" step="0.1" placeholder="正常值 ≤ 40">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>乙肝表面抗原</label>
+                        <select id="hbvSurfaceAntigen">
+                            <option value="">请选择</option>
+                            <option value="阴性">阴性</option>
+                            <option value="阳性">阳性</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>丙肝抗体</label>
+                        <select id="hcvAntibody">
+                            <option value="">请选择</option>
+                            <option value="阴性">阴性</option>
+                            <option value="阳性">阳性</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>艾滋病抗体</label>
+                        <select id="hivAntibody">
+                            <option value="">请选择</option>
+                            <option value="阴性">阴性</option>
+                            <option value="阳性">阳性</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>梅毒抗体</label>
+                        <select id="syphilisAntibody">
+                            <option value="">请选择</option>
+                            <option value="阴性">阴性</option>
+                            <option value="阳性">阳性</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>白细胞计数(×10^9/L)</label>
+                        <input type="number" id="whiteBloodCell" step="0.01" placeholder="正常值 3.5-9.5">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>血红蛋白(g/L)</label>
+                        <input type="number" id="hemoglobin" step="0.1" placeholder="男≥120，女≥115">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>血小板计数(×10^9/L)</label>
+                        <input type="number" id="platelet" step="0.01" placeholder="正常值 125-350">
+                    </div>
+                    
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>其他异常情况</label>
+                        <textarea id="otherAbnormality" rows="3" placeholder="如：重度脂血、溶血标本等"></textarea>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success" style="margin-top: 20px; width: 100%;">保存并判定</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        function getToken() { return localStorage.getItem('token'); }
+        function getHeaders() {
+            const token = getToken();
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = 'Bearer ' + token;
+            return headers;
+        }
+
+        async function fetchData(url, options = {}) {
+            try {
+                const response = await fetch(API_BASE + url, { headers: getHeaders(), ...options });
+                if (response.status === 401) {
+                    alert('登录已过期，请重新登录');
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                    return null;
+                }
+                const result = await response.json();
+                return result.data;
+            } catch (error) {
+                console.error('Fetch error:', error);
+                return null;
+            }
+        }
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.getElementById(tabId).style.display = 'block';
+            document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+            const activeLink = document.querySelector(`.sidebar a[href="#${tabId}"]`);
+            if (activeLink) activeLink.classList.add('active');
+            
+            if (tabId === 'pending') loadPendingList();
+            if (tabId === 'history') loadHistoryList();
+        }
+
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+        async function loadPendingList() {
+            const data = await fetchData('/blood-test-indicator/pending/list');
+            renderPendingList(data);
+        }
+
+        async function loadHistoryList() {
+            const data = await fetchData('/blood-test-indicator/history');
+            renderHistoryList(data);
+        }
+
+        function renderPendingList(data) {
+            const tbody = document.getElementById('pendingTable');
+            
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--apple-muted);">暂无待化验记录</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td>${item.testId}</td>
+                    <td>${item.batchNo || '-'}</td>
+                    <td>${item.donorName || '-'}</td>
+                    <td>${item.donorGender || '-'}</td>
+                    <td>${item.donorBloodType || '-'}</td>
+                    <td>${item.donorAge || '-'}</td>
+                    <td>${item.donateAmount || '-'}</td>
+                    <td>${item.collectionTime ? item.collectionTime.substring(0, 19) : '-'}</td>
+                    <td>
+                        <button class="btn btn-warning" onclick="openIndicatorModal('${item.testId}', '${item.donorName || ''}', '${item.donorGender || ''}', '${item.donorBloodType || ''}', '${item.donorAge || ''}', '${item.donateAmount || ''}')">录入指标</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderHistoryList(data) {
+            const tbody = document.getElementById('historyTable');
+            
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="14" style="text-align: center; color: var(--apple-muted);">暂无化验历史记录</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map(item => {
+                let infectiousDisease = [];
+                if (item.hbvSurfaceAntigen) infectiousDisease.push('乙肝:' + item.hbvSurfaceAntigen);
+                if (item.hcvAntibody) infectiousDisease.push('丙肝:' + item.hcvAntibody);
+                if (item.hivAntibody) infectiousDisease.push('艾滋:' + item.hivAntibody);
+                if (item.syphilisAntibody) infectiousDisease.push('梅毒:' + item.syphilisAntibody);
+                
+                return `
+                <tr>
+                    <td>${item.testId}</td>
+                    <td>${item.batchNo || '-'}</td>
+                    <td>${item.donorName || '-'}</td>
+                    <td>${item.donorGender || '-'}</td>
+                    <td>${item.donorBloodType || '-'}</td>
+                    <td>${item.alt || '-'}</td>
+                    <td>${infectiousDisease.length > 0 ? infectiousDisease.join('<br>') : '-'}</td>
+                    <td>${item.whiteBloodCell || '-'}</td>
+                    <td>${item.hemoglobin || '-'}</td>
+                    <td>${item.platelet || '-'}</td>
+                    <td><span class="status-badge ${getStatusClass(item.bloodStatus)}">${item.bloodStatus || '-'}</span></td>
+                    <td>${item.recheckResult || '-'}</td>
+                    <td>${item.unqualifiedReason || '-'}</td>
+                    <td>${item.updateTime ? item.updateTime.substring(0, 19) : '-'}</td>
+                </tr>
+            `}).join('');
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case '待检验':
+                    return 'status-pending';
+                case '合格':
+                    return 'status-qualified';
+                case '不合格':
+                    return 'status-unqualified';
+                case '已入库':
+                    return 'status-qualified';
+                default:
+                    return 'status-pending';
+            }
+        }
+
+        function openIndicatorModal(testId, donorName, donorGender, donorBloodType, donorAge, donateAmount) {
+            document.getElementById('modalTitle').textContent = '录入化验指标';
+            document.getElementById('testId').value = testId;
+            document.getElementById('donorName').textContent = donorName;
+            document.getElementById('donorGender').textContent = donorGender;
+            document.getElementById('donorGenderInput').value = donorGender;
+            document.getElementById('donorBloodType').textContent = donorBloodType;
+            document.getElementById('donorAge').textContent = donorAge;
+            document.getElementById('donorAmount').textContent = donateAmount;
+            
+            document.getElementById('alt').value = '';
+            document.getElementById('hbvSurfaceAntigen').value = '';
+            document.getElementById('hcvAntibody').value = '';
+            document.getElementById('hivAntibody').value = '';
+            document.getElementById('syphilisAntibody').value = '';
+            document.getElementById('whiteBloodCell').value = '';
+            document.getElementById('hemoglobin').value = '';
+            document.getElementById('platelet').value = '';
+            document.getElementById('otherAbnormality').value = '';
+            document.getElementById('modalMessage').innerHTML = '';
+            
+            document.getElementById('indicatorModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('indicatorModal').style.display = 'none';
+        }
+
+        document.getElementById('indicatorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const indicatorData = {
+                testId: document.getElementById('testId').value,
+                alt: document.getElementById('alt').value ? parseFloat(document.getElementById('alt').value) : null,
+                hbvSurfaceAntigen: document.getElementById('hbvSurfaceAntigen').value || null,
+                hcvAntibody: document.getElementById('hcvAntibody').value || null,
+                hivAntibody: document.getElementById('hivAntibody').value || null,
+                syphilisAntibody: document.getElementById('syphilisAntibody').value || null,
+                whiteBloodCell: document.getElementById('whiteBloodCell').value ? parseFloat(document.getElementById('whiteBloodCell').value) : null,
+                hemoglobin: document.getElementById('hemoglobin').value ? parseFloat(document.getElementById('hemoglobin').value) : null,
+                platelet: document.getElementById('platelet').value ? parseFloat(document.getElementById('platelet').value) : null,
+                otherAbnormality: document.getElementById('otherAbnormality').value || null
+            };
+
+            try {
+                const response = await fetch(API_BASE + '/blood-test-indicator/save', {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(indicatorData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    document.getElementById('modalMessage').innerHTML = '<div class="message success">化验指标保存成功，系统已自动判定血液状态</div>';
+                    setTimeout(() => {
+                        closeModal();
+                        loadPendingList();
+                        loadHistoryList();
+                    }, 1500);
+                } else {
+                    document.getElementById('modalMessage').innerHTML = `<div class="message error">保存失败: ${result.msg}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('modalMessage').innerHTML = '<div class="message error">保存失败，请重试</div>';
+            }
+        });
+
+        async function exportPendingExcel() {
+            const data = await fetchData('/blood-test-indicator/pending/list');
+            if (!data || data.length === 0) {
+                alert('暂无待化验数据');
+                return;
+            }
+            
+            const headers = ['检验ID', '批次号', '献血者姓名', '性别', '血型', '年龄', '献血量(ml)', '采血时间'];
+            const rows = data.map(item => [
+                item.testId || '-',
+                item.batchNo || '-',
+                item.donorName || '-',
+                item.donorGender || '-',
+                item.donorBloodType || '-',
+                item.donorAge || '-',
+                item.donateAmount || '-',
+                item.collectionTime ? item.collectionTime.substring(0, 19) : '-'
+            ]);
+            
+            downloadExcel('待化验列表', headers, rows);
+        }
+
+        async function exportHistoryExcel() {
+            const data = await fetchData('/blood-test-indicator/history');
+            if (!data || data.length === 0) {
+                alert('暂无化验历史数据');
+                return;
+            }
+            
+            const headers = ['检验ID', '批次号', '献血者姓名', '性别', '血型', 'ALT(U/L)', '乙肝表面抗原', '丙肝抗体', '艾滋病抗体', '梅毒抗体', '白细胞(×10^9/L)', '血红蛋白(g/L)', '血小板(×10^9/L)', '血液状态', '复检结果', '不合格原因', '化验时间'];
+            const rows = data.map(item => [
+                item.testId || '-',
+                item.batchNo || '-',
+                item.donorName || '-',
+                item.donorGender || '-',
+                item.donorBloodType || '-',
+                item.alt || '-',
+                item.hbvSurfaceAntigen || '-',
+                item.hcvAntibody || '-',
+                item.hivAntibody || '-',
+                item.syphilisAntibody || '-',
+                item.whiteBloodCell || '-',
+                item.hemoglobin || '-',
+                item.platelet || '-',
+                item.bloodStatus || '-',
+                item.recheckResult || '-',
+                item.unqualifiedReason || '-',
+                item.updateTime ? item.updateTime.substring(0, 19) : '-'
+            ]);
+            
+            downloadExcel('化验历史', headers, rows);
+        }
+
+        function downloadExcel(sheetName, headers, rows) {
+            let csvContent = headers.join('\t') + '\n';
+            rows.forEach(row => {
+                csvContent += row.map(cell => {
+                    const escaped = String(cell).replace(/[\t\n]/g, ' ');
+                    return escaped;
+                }).join('\t') + '\n';
+            });
+            
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', sheetName + '_' + new Date().toISOString().slice(0, 10) + '.xls');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            loadPendingList();
+        });
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('indicatorModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

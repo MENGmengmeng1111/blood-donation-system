@@ -21,8 +21,7 @@ public class UserConstants {
      */
     public static final String ROLE_SUPER_ADMIN = "ROLE_SUPER_ADMIN";
 
-    /**
-     * 新账号默认密码
-     */
+    public static final String ROLE_TESTER = "ROLE_TESTER";
+
     public static final String DEFAULT_PASSWORD = "123456";
 }
