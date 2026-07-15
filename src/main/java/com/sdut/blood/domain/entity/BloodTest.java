@@ -58,6 +58,11 @@ public class BloodTest {
      */
     private Long operatorId;
 
+    /**
+     * 检验批次号
+     */
+    private String batchNo;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;

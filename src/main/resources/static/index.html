@@ -1911,6 +1911,8 @@ body.legacy-page {
             let targetUrl;
             if (user.role === 'ROLE_SUPER_ADMIN' || user.role === 'ROLE_ADMIN') {
                 targetUrl = 'admin.html';
+            } else if (user.role === 'ROLE_TESTER') {
+                targetUrl = 'tester.html';
             } else {
                 targetUrl = 'donor.html';
             }

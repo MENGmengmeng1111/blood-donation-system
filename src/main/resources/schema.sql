@@ -10,6 +10,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `appointment`;
 DROP TABLE IF EXISTS `blood_stock`;
 DROP TABLE IF EXISTS `blood_test`;
+DROP TABLE IF EXISTS `blood_test_indicator`;
 DROP TABLE IF EXISTS `blood_collection`;
 DROP TABLE IF EXISTS `donor`;
 DROP TABLE IF EXISTS `blood_activity`;
@@ -26,7 +27,7 @@ CREATE TABLE `sys_user` (
   `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '登录用户名',
   `password` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '登录密码（BCrypt加密）',
   `real_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '真实姓名',
-  `role` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色：ROLE_DONOR/ROLE_ADMIN/ROLE_SUPER_ADMIN',
+  `role` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色：ROLE_DONOR/ROLE_ADMIN/ROLE_SUPER_ADMIN/ROLE_TESTER',
   `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0-正常 1-禁用',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -152,6 +153,7 @@ CREATE TABLE `blood_test` (
   `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '备注',
   `judge_time` datetime NULL DEFAULT NULL COMMENT '判定时间',
   `operator_id` bigint NULL DEFAULT NULL COMMENT '判定管理员ID',
+  `batch_no` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '检验批次号',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
@@ -163,6 +165,29 @@ CREATE TABLE `blood_test` (
   CONSTRAINT `blood_test_ibfk_2` FOREIGN KEY (`donor_id`) REFERENCES `donor` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `blood_test_ibfk_3` FOREIGN KEY (`operator_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '血液检验记录表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for blood_test_indicator
+-- ----------------------------
+CREATE TABLE `blood_test_indicator` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '指标记录ID',
+  `test_id` bigint NOT NULL COMMENT '关联检验记录ID',
+  `alt` decimal(5,1) NULL DEFAULT NULL COMMENT '谷丙转氨酶ALT(U/L)',
+  `hbv_surface_antigen` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '乙肝表面抗原：阴性/阳性',
+  `hcv_antibody` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '丙肝抗体：阴性/阳性',
+  `hiv_antibody` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '艾滋病抗体：阴性/阳性',
+  `syphilis_antibody` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '梅毒抗体：阴性/阳性',
+  `white_blood_cell` decimal(5,2) NULL DEFAULT NULL COMMENT '白细胞计数(×10^9/L)',
+  `hemoglobin` decimal(5,1) NULL DEFAULT NULL COMMENT '血红蛋白(g/L)',
+  `platelet` decimal(5,2) NULL DEFAULT NULL COMMENT '血小板计数(×10^9/L)',
+  `other_abnormality` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '其他异常情况',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_blood_test_indicator_test_id` (`test_id`) USING BTREE,
+  CONSTRAINT `blood_test_indicator_ibfk_1` FOREIGN KEY (`test_id`) REFERENCES `blood_test` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '血液检验指标表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for blood_stock
@@ -218,7 +243,8 @@ CREATE TABLE `operation_log` (
 INSERT INTO `sys_user` (`id`, `username`, `password`, `real_name`, `role`, `status`, `create_time`, `update_time`, `deleted`) VALUES
 (1, 'admin', '$2a$10$BjIS9y7RP1vdQL/sMuWEQeYKb3tHKwMx7M.KhYVWRLsMzT4OvOija', '管理员', 'ROLE_ADMIN', 0, NOW(), NOW(), 0),
 (2, 'superadmin', '$2a$10$g75E5/0RPtBhRUhfl5.j3.KqPUs1ohEWHdH7UNFMgYdXjc1amI1Qy', '超级管理员', 'ROLE_SUPER_ADMIN', 0, NOW(), NOW(), 0),
-(3, 'donor001', '$2a$10$96VA1mfKlA9HykWBqotDwePic2zY/W07BFFfOGxj5FgYzCC06zR9C', '张三', 'ROLE_DONOR', 0, NOW(), NOW(), 0);
+(3, 'donor001', '$2a$10$96VA1mfKlA9HykWBqotDwePic2zY/W07BFFfOGxj5FgYzCC06zR9C', '张三', 'ROLE_DONOR', 0, NOW(), NOW(), 0),
+(4, 'tester001', '$2a$10$BjIS9y7RP1vdQL/sMuWEQeYKb3tHKwMx7M.KhYVWRLsMzT4OvOija', '检验员张三', 'ROLE_TESTER', 0, NOW(), NOW(), 0);
 
 -- ----------------------------
 -- Initial stock thresholds

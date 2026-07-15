@@ -65,7 +65,7 @@ public class SecurityConfig {
                 // 4. 接口权限配置
                 .authorizeRequests()
                 // 放行：静态资源（HTML、CSS、JS、图片等）
-                .antMatchers("/", "/index.html", "/admin.html", "/donor.html", "/*.html", "/*.css", "/*.js", "/css/**", "/js/**", "/static/**", "/images/**").permitAll()
+                .antMatchers("/", "/index.html", "/admin.html", "/donor.html", "/tester.html", "/*.html", "/*.css", "/*.js", "/css/**", "/js/**", "/static/**", "/images/**").permitAll()
                 // 放行：登录、注册、找回密码等公开接口
                 .antMatchers("/api/user/login", "/api/user/register", "/api/user/reset-password").permitAll()
                 // 放行：Knife4j接口文档所有资源

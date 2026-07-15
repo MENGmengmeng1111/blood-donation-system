@@ -3992,7 +3992,7 @@ body.legacy-page {
             const role = document.getElementById('user-role-filter')?.value || '';
             const status = document.getElementById('user-status-filter')?.value || '';
             const sort = getSortParam('user-manage-table');
-            let url = '/user-manage/list?pageNum=1&pageSize=20';
+            let url = '/user-manage/list';
             let params = [];
             if (keyword) params.push('keyword=' + encodeURIComponent(keyword));
             if (role) params.push('role=' + encodeURIComponent(role));
@@ -4001,7 +4001,7 @@ body.legacy-page {
                 params.push('sortField=' + encodeURIComponent(sort.field));
                 params.push('sortOrder=' + encodeURIComponent(sort.order));
             }
-            if (params.length > 0) url += '&' + params.join('&');
+            if (params.length > 0) url += '?' + params.join('&');
             const result = await fetchData(url);
             const tbody = document.getElementById('user-manage-table-body');
             if (!result?.data?.records?.length) {
@@ -4012,7 +4012,7 @@ body.legacy-page {
                 <tr>
                     <td>${item.username}</td>
                     <td>${item.realName || '-'}</td>
-                    <td>${item.role === 'ROLE_ADMIN' ? '管理员' : '献血者'}</td>
+                    <td>${item.role === 'ROLE_ADMIN' ? '管理员' : (item.role === 'ROLE_SUPER_ADMIN' ? '超级管理员' : '献血者')}</td>
                     <td>${item.status === 0 ? '<span class="status-badge active">正常</span>' : '<span class="status-badge inactive">禁用</span>'}</td>
                     <td>${item.createTime?.split(' ')[0] || '-'}</td>
                     <td>
