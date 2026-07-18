@@ -296,7 +296,7 @@ public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodSt
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void stockOut(Long id, String outUnit) {
+    public void stockOut(Long id, String outUnit, String outPurpose) {
         BloodStock stock = getById(id);
         if (stock == null) {
             throw new BusinessException("库存记录不存在");
@@ -305,10 +305,14 @@ public class BloodStockServiceImpl extends ServiceImpl<BloodStockMapper, BloodSt
             throw new BusinessException("该血液已出库");
         }
         if (outUnit == null || outUnit.trim().isEmpty()) {
-            throw new BusinessException("请填写用血单位");
+            throw new BusinessException("请选择用血单位");
+        }
+        if (outPurpose == null || outPurpose.trim().isEmpty()) {
+            throw new BusinessException("请选择血液用途");
         }
         stock.setStatus("已出库");
         stock.setOutUnit(outUnit.trim());
+        stock.setOutPurpose(outPurpose.trim());
         updateById(stock);
     }
 

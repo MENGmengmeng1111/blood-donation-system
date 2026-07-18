@@ -32,7 +32,7 @@
         .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
+        .modal-content { background: white; padding: 35px; border-radius: 8px; width: 95%; max-width: 1200px; position: relative; }
         .modal-content .close { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; }
         .status-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; }
         .status-pending { background: #fff3e0; color: #e65100; }
@@ -369,8 +369,8 @@ table tr:last-child td {
 }
 
 .modal-content {
-    width: min(900px, calc(100% - 32px)) !important;
-    max-height: min(820px, calc(100vh - 48px));
+    width: min(1200px, calc(100% - 40px)) !important;
+    max-height: min(900px, calc(100vh - 48px));
     overflow: auto;
 }
 
@@ -399,8 +399,8 @@ table tr:last-child td {
 
 .indicator-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
 }
 
 @media (max-width: 860px) {
@@ -447,8 +447,20 @@ table tr:last-child td {
         <h1>🩸 献血管理系统 - 血液化验</h1>
         <div></div>
         <div class="user-info">
+            <button id="msg-btn" class="btn-logout" onclick="toggleMessages()" style="margin-right:15px; position:relative;">
+                消息 📩
+                <span id="msg-badge" style="display:none; position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; padding:2px 5px; border-radius:10px;"></span>
+            </button>
             <span id="user-name">检验员</span>
             <button class="btn-logout" onclick="logout()">退出登录</button>
+        </div>
+    </div>
+
+    <div id="message-dropdown" style="display:none; position:fixed; top:60px; right:20px; background:white; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.15); width:400px; max-height:400px; overflow:auto; z-index:1000;">
+        <div style="padding:15px; border-bottom:1px solid #eee; font-weight:bold;">站内消息</div>
+        <div id="message-list" style="padding:10px;"></div>
+        <div style="padding:10px; border-top:1px solid #eee; text-align:right;">
+            <button style="background:none; border:none; color:#e53935; cursor:pointer;" onclick="markAllRead()">全部已读</button>
         </div>
     </div>
 
@@ -556,8 +568,59 @@ table tr:last-child td {
                     </div>
                     
                     <div class="form-group">
+                        <label>谷草转氨酶AST(U/L)</label>
+                        <input type="number" id="ast" step="0.1" placeholder="正常值 ≤ 40">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>总胆红素(μmol/L)</label>
+                        <input type="number" id="totalBilirubin" step="0.1" placeholder="正常值 3.4-17.1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>直接胆红素(μmol/L)</label>
+                        <input type="number" id="directBilirubin" step="0.1" placeholder="正常值 ≤ 6.8">
+                    </div>
+                    
+                    <div class="form-group">
                         <label>乙肝表面抗原</label>
                         <select id="hbvSurfaceAntigen">
+                            <option value="">请选择</option>
+                            <option value="阴性">阴性</option>
+                            <option value="阳性">阳性</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>乙肝表面抗体</label>
+                        <select id="hbvSurfaceAntibody">
+                            <option value="">请选择</option>
+                            <option value="阴性">阴性</option>
+                            <option value="阳性">阳性</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>乙肝e抗原</label>
+                        <select id="hbvEAntigen">
+                            <option value="">请选择</option>
+                            <option value="阴性">阴性</option>
+                            <option value="阳性">阳性</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>乙肝e抗体</label>
+                        <select id="hbvEAntibody">
+                            <option value="">请选择</option>
+                            <option value="阴性">阴性</option>
+                            <option value="阳性">阳性</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>乙肝核心抗体</label>
+                        <select id="hbvCoreAntibody">
                             <option value="">请选择</option>
                             <option value="阴性">阴性</option>
                             <option value="阳性">阳性</option>
@@ -597,13 +660,113 @@ table tr:last-child td {
                     </div>
                     
                     <div class="form-group">
+                        <label>红细胞计数(×10^12/L)</label>
+                        <input type="number" id="redBloodCell" step="0.01" placeholder="男4.0-5.5，女3.5-5.0">
+                    </div>
+                    
+                    <div class="form-group">
                         <label>血红蛋白(g/L)</label>
                         <input type="number" id="hemoglobin" step="0.1" placeholder="男≥120，女≥115">
                     </div>
                     
                     <div class="form-group">
+                        <label>红细胞压积(%)</label>
+                        <input type="number" id="hematocrit" step="0.1" placeholder="男40-50，女35-45">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>平均红细胞体积(fL)</label>
+                        <input type="number" id="meanCellVolume" step="0.1" placeholder="正常值 82-100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>平均红细胞血红蛋白含量(pg)</label>
+                        <input type="number" id="meanCellHemoglobin" step="0.1" placeholder="正常值 27-34">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>平均红细胞血红蛋白浓度(g/L)</label>
+                        <input type="number" id="meanCellHemoglobinConcentration" step="0.1" placeholder="正常值 316-354">
+                    </div>
+                    
+                    <div class="form-group">
                         <label>血小板计数(×10^9/L)</label>
                         <input type="number" id="platelet" step="0.01" placeholder="正常值 125-350">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>平均血小板体积(fL)</label>
+                        <input type="number" id="meanPlateletVolume" step="0.1" placeholder="正常值 9-13">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>血糖(mmol/L)</label>
+                        <input type="number" id="glucose" step="0.1" placeholder="正常值 3.9-6.1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>肌酐(μmol/L)</label>
+                        <input type="number" id="creatinine" step="0.1" placeholder="男57-111，女41-81">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>尿素氮(mmol/L)</label>
+                        <input type="number" id="bloodUreaNitrogen" step="0.1" placeholder="正常值 3.2-7.1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>总胆固醇(mmol/L)</label>
+                        <input type="number" id="cholesterol" step="0.1" placeholder="正常值 ≤ 5.2">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>甘油三酯(mmol/L)</label>
+                        <input type="number" id="triglyceride" step="0.1" placeholder="正常值 ≤ 1.7">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>总蛋白(g/L)</label>
+                        <input type="number" id="protein" step="0.1" placeholder="正常值 65-85">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>白蛋白(g/L)</label>
+                        <input type="number" id="albumin" step="0.1" placeholder="正常值 40-55">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>球蛋白(g/L)</label>
+                        <input type="number" id="globulin" step="0.1" placeholder="正常值 20-35">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>钾(mmol/L)</label>
+                        <input type="number" id="potassium" step="0.01" placeholder="正常值 3.5-5.3">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>钠(mmol/L)</label>
+                        <input type="number" id="sodium" step="0.1" placeholder="正常值 137-147">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>氯(mmol/L)</label>
+                        <input type="number" id="chloride" step="0.1" placeholder="正常值 99-110">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>钙(mmol/L)</label>
+                        <input type="number" id="calcium" step="0.01" placeholder="正常值 2.11-2.52">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>铁(μmol/L)</label>
+                        <input type="number" id="iron" step="0.1" placeholder="男11-30，女9-27">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>铁蛋白(ng/mL)</label>
+                        <input type="number" id="ferritin" step="0.1" placeholder="男30-400，女13-150">
                     </div>
                     
                     <div class="form-group" style="grid-column: 1 / -1;">
@@ -754,13 +917,40 @@ table tr:last-child td {
             document.getElementById('donorAmount').textContent = donateAmount;
             
             document.getElementById('alt').value = '';
+            document.getElementById('ast').value = '';
+            document.getElementById('totalBilirubin').value = '';
+            document.getElementById('directBilirubin').value = '';
             document.getElementById('hbvSurfaceAntigen').value = '';
+            document.getElementById('hbvSurfaceAntibody').value = '';
+            document.getElementById('hbvEAntigen').value = '';
+            document.getElementById('hbvEAntibody').value = '';
+            document.getElementById('hbvCoreAntibody').value = '';
             document.getElementById('hcvAntibody').value = '';
             document.getElementById('hivAntibody').value = '';
             document.getElementById('syphilisAntibody').value = '';
             document.getElementById('whiteBloodCell').value = '';
+            document.getElementById('redBloodCell').value = '';
             document.getElementById('hemoglobin').value = '';
+            document.getElementById('hematocrit').value = '';
+            document.getElementById('meanCellVolume').value = '';
+            document.getElementById('meanCellHemoglobin').value = '';
+            document.getElementById('meanCellHemoglobinConcentration').value = '';
             document.getElementById('platelet').value = '';
+            document.getElementById('meanPlateletVolume').value = '';
+            document.getElementById('glucose').value = '';
+            document.getElementById('creatinine').value = '';
+            document.getElementById('bloodUreaNitrogen').value = '';
+            document.getElementById('cholesterol').value = '';
+            document.getElementById('triglyceride').value = '';
+            document.getElementById('protein').value = '';
+            document.getElementById('albumin').value = '';
+            document.getElementById('globulin').value = '';
+            document.getElementById('potassium').value = '';
+            document.getElementById('sodium').value = '';
+            document.getElementById('chloride').value = '';
+            document.getElementById('calcium').value = '';
+            document.getElementById('iron').value = '';
+            document.getElementById('ferritin').value = '';
             document.getElementById('otherAbnormality').value = '';
             document.getElementById('modalMessage').innerHTML = '';
             
@@ -777,13 +967,40 @@ table tr:last-child td {
             const indicatorData = {
                 testId: document.getElementById('testId').value,
                 alt: document.getElementById('alt').value ? parseFloat(document.getElementById('alt').value) : null,
+                ast: document.getElementById('ast').value ? parseFloat(document.getElementById('ast').value) : null,
+                totalBilirubin: document.getElementById('totalBilirubin').value ? parseFloat(document.getElementById('totalBilirubin').value) : null,
+                directBilirubin: document.getElementById('directBilirubin').value ? parseFloat(document.getElementById('directBilirubin').value) : null,
                 hbvSurfaceAntigen: document.getElementById('hbvSurfaceAntigen').value || null,
+                hbvSurfaceAntibody: document.getElementById('hbvSurfaceAntibody').value || null,
+                hbvEAntigen: document.getElementById('hbvEAntigen').value || null,
+                hbvEAntibody: document.getElementById('hbvEAntibody').value || null,
+                hbvCoreAntibody: document.getElementById('hbvCoreAntibody').value || null,
                 hcvAntibody: document.getElementById('hcvAntibody').value || null,
                 hivAntibody: document.getElementById('hivAntibody').value || null,
                 syphilisAntibody: document.getElementById('syphilisAntibody').value || null,
                 whiteBloodCell: document.getElementById('whiteBloodCell').value ? parseFloat(document.getElementById('whiteBloodCell').value) : null,
+                redBloodCell: document.getElementById('redBloodCell').value ? parseFloat(document.getElementById('redBloodCell').value) : null,
                 hemoglobin: document.getElementById('hemoglobin').value ? parseFloat(document.getElementById('hemoglobin').value) : null,
+                hematocrit: document.getElementById('hematocrit').value ? parseFloat(document.getElementById('hematocrit').value) : null,
+                meanCellVolume: document.getElementById('meanCellVolume').value ? parseFloat(document.getElementById('meanCellVolume').value) : null,
+                meanCellHemoglobin: document.getElementById('meanCellHemoglobin').value ? parseFloat(document.getElementById('meanCellHemoglobin').value) : null,
+                meanCellHemoglobinConcentration: document.getElementById('meanCellHemoglobinConcentration').value ? parseFloat(document.getElementById('meanCellHemoglobinConcentration').value) : null,
                 platelet: document.getElementById('platelet').value ? parseFloat(document.getElementById('platelet').value) : null,
+                meanPlateletVolume: document.getElementById('meanPlateletVolume').value ? parseFloat(document.getElementById('meanPlateletVolume').value) : null,
+                glucose: document.getElementById('glucose').value ? parseFloat(document.getElementById('glucose').value) : null,
+                creatinine: document.getElementById('creatinine').value ? parseFloat(document.getElementById('creatinine').value) : null,
+                bloodUreaNitrogen: document.getElementById('bloodUreaNitrogen').value ? parseFloat(document.getElementById('bloodUreaNitrogen').value) : null,
+                cholesterol: document.getElementById('cholesterol').value ? parseFloat(document.getElementById('cholesterol').value) : null,
+                triglyceride: document.getElementById('triglyceride').value ? parseFloat(document.getElementById('triglyceride').value) : null,
+                protein: document.getElementById('protein').value ? parseFloat(document.getElementById('protein').value) : null,
+                albumin: document.getElementById('albumin').value ? parseFloat(document.getElementById('albumin').value) : null,
+                globulin: document.getElementById('globulin').value ? parseFloat(document.getElementById('globulin').value) : null,
+                potassium: document.getElementById('potassium').value ? parseFloat(document.getElementById('potassium').value) : null,
+                sodium: document.getElementById('sodium').value ? parseFloat(document.getElementById('sodium').value) : null,
+                chloride: document.getElementById('chloride').value ? parseFloat(document.getElementById('chloride').value) : null,
+                calcium: document.getElementById('calcium').value ? parseFloat(document.getElementById('calcium').value) : null,
+                iron: document.getElementById('iron').value ? parseFloat(document.getElementById('iron').value) : null,
+                ferritin: document.getElementById('ferritin').value ? parseFloat(document.getElementById('ferritin').value) : null,
                 otherAbnormality: document.getElementById('otherAbnormality').value || null
             };
 
@@ -884,14 +1101,98 @@ table tr:last-child td {
             document.body.removeChild(link);
         }
 
+        async function loadMessageCount() {
+            try {
+                const response = await fetch(API_BASE + '/message/unread-count', { headers: getHeaders() });
+                const result = await response.json();
+                const count = result?.data?.unreadCount || 0;
+                const badge = document.getElementById('msg-badge');
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('加载消息数量失败:', error);
+            }
+        }
+
+        async function loadMessages() {
+            try {
+                const response = await fetch(API_BASE + '/message/list', { headers: getHeaders() });
+                const result = await response.json();
+                const messages = result?.data || [];
+                const list = document.getElementById('message-list');
+                
+                if (messages.length === 0) {
+                    list.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">暂无消息</div>';
+                    return;
+                }
+                
+                list.innerHTML = messages.map(msg => `
+                    <div style="padding:12px; border-bottom:1px solid #f0f0f0; cursor:pointer;" onclick="markMessageRead(${msg.id})">
+                        <div style="font-weight:bold; margin-bottom:4px; ${msg.readStatus === 0 ? 'color:#e53935;' : ''}">${msg.title}</div>
+                        <div style="font-size:13px; color:#666; margin-bottom:4px;">${msg.content}</div>
+                        <div style="font-size:11px; color:#999;">${msg.createTime?.split(' ')[0] || ''}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('加载消息失败:', error);
+            }
+        }
+
+        function toggleMessages() {
+            const dropdown = document.getElementById('message-dropdown');
+            if (dropdown.style.display === 'none') {
+                dropdown.style.display = 'block';
+                loadMessages();
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        async function markMessageRead(messageId) {
+            try {
+                await fetch(API_BASE + '/message/read/' + messageId, { 
+                    method: 'PUT', 
+                    headers: getHeaders() 
+                });
+                loadMessageCount();
+                loadMessages();
+            } catch (error) {
+                console.error('标记已读失败:', error);
+            }
+        }
+
+        async function markAllRead() {
+            try {
+                await fetch(API_BASE + '/message/read-all', { 
+                    method: 'PUT', 
+                    headers: getHeaders() 
+                });
+                loadMessageCount();
+                loadMessages();
+            } catch (error) {
+                console.error('标记全部已读失败:', error);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             loadPendingList();
+            loadMessageCount();
+            setInterval(loadMessageCount, 30000);
         });
 
         window.onclick = function(event) {
             const modal = document.getElementById('indicatorModal');
             if (event.target == modal) {
                 modal.style.display = 'none';
+            }
+            const dropdown = document.getElementById('message-dropdown');
+            const msgBtn = document.getElementById('msg-btn');
+            if (dropdown.style.display === 'block' && event.target !== dropdown && event.target !== msgBtn && !msgBtn.contains(event.target)) {
+                dropdown.style.display = 'none';
             }
         }
     </script>

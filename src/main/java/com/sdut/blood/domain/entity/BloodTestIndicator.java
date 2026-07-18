@@ -20,7 +20,21 @@ public class BloodTestIndicator {
 
     private Double alt;
 
+    private Double ast;
+
+    private Double totalBilirubin;
+
+    private Double directBilirubin;
+
     private String hbvSurfaceAntigen;
+
+    private String hbvSurfaceAntibody;
+
+    private String hbvEAntigen;
+
+    private String hbvEAntibody;
+
+    private String hbvCoreAntibody;
 
     private String hcvAntibody;
 
@@ -30,9 +44,49 @@ public class BloodTestIndicator {
 
     private Double whiteBloodCell;
 
+    private Double redBloodCell;
+
     private Double hemoglobin;
 
+    private Double hematocrit;
+
+    private Double meanCellVolume;
+
+    private Double meanCellHemoglobin;
+
+    private Double meanCellHemoglobinConcentration;
+
     private Double platelet;
+
+    private Double meanPlateletVolume;
+
+    private Double glucose;
+
+    private Double creatinine;
+
+    private Double bloodUreaNitrogen;
+
+    private Double cholesterol;
+
+    private Double triglyceride;
+
+    private Double protein;
+
+    private Double albumin;
+
+    private Double globulin;
+
+    private Double potassium;
+
+    private Double sodium;
+
+    private Double chloride;
+
+    private Double calcium;
+
+    private Double iron;
+
+    private Double ferritin;
 
     private String otherAbnormality;
 
