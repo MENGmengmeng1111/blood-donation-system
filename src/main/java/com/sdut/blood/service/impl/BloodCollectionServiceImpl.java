@@ -13,6 +13,7 @@ import com.sdut.blood.mapper.BloodCollectionMapper;
 import com.sdut.blood.service.BloodCollectionService;
 import com.sdut.blood.service.BloodTestService;
 import com.sdut.blood.service.DonorService;
+import com.sdut.blood.service.SysMessageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
@@ -27,6 +28,9 @@ public class BloodCollectionServiceImpl extends ServiceImpl<BloodCollectionMappe
 
     @Resource
     private BloodTestService bloodTestService;
+
+    @Resource
+    private SysMessageService sysMessageService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -70,6 +74,8 @@ public class BloodCollectionServiceImpl extends ServiceImpl<BloodCollectionMappe
         save(collection);
         donor.setLastDonateDate(collection.getCollectionTime().toLocalDate());
         donorService.updateById(donor);
+
+        sysMessageService.sendMessageToTester(collection.getId(), donor.getName(), dto.getDonateAmount());
 
         // 4. 初筛不合格直接标记，不进入复检
         if ("不合格".equals(dto.getInitialScreenResult())) {

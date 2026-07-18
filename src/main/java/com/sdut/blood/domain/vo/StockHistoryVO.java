@@ -25,6 +25,8 @@ public class StockHistoryVO {
 
     private String outUnit;
 
+    private String outPurpose;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;

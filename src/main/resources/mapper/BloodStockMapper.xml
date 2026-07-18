@@ -10,13 +10,14 @@
         <result column="expire_date" property="expireDate"/>
         <result column="status" property="status"/>
         <result column="out_unit" property="outUnit"/>
+        <result column="out_purpose" property="outPurpose"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
         <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, collection_id, blood_type, blood_amount, expire_date, status, out_unit,
+        id, collection_id, blood_type, blood_amount, expire_date, status, out_unit, out_purpose,
         create_time, update_time, deleted
     </sql>
 
@@ -138,6 +139,7 @@
             bc.donate_type AS donateType,
             bs.expire_date AS expireDate,
             bs.out_unit AS outUnit,
+            bs.out_purpose AS outPurpose,
             bs.create_time AS createTime,
             bs.update_time AS updateTime
         FROM blood_stock bs
@@ -161,6 +163,7 @@
             bc.donate_type AS donateType,
             bs.expire_date AS expireDate,
             bs.out_unit AS outUnit,
+            bs.out_purpose AS outPurpose,
             bs.create_time AS createTime,
             bs.update_time AS updateTime
         FROM blood_stock bs

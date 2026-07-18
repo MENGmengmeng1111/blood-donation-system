@@ -2310,6 +2310,7 @@ body.legacy-page {
                             <th>有效期</th>
                             <th>库存状态</th>
                             <th>入库时间</th>
+                            <th>血液用途</th>
                             <th>用血单位</th>
                         </tr></thead>
                         <tbody id="pending-out-table-body"></tbody>
@@ -2331,6 +2332,7 @@ body.legacy-page {
                             <th>血量(ml)</th>
                             <th>献血类型</th>
                             <th>有效期</th>
+                            <th>血液用途</th>
                             <th>用血单位</th>
                             <th>出库时间</th>
                         </tr></thead>
@@ -2479,6 +2481,37 @@ body.legacy-page {
         const API_BASE = '/api';
         let donorsMap = {};
         let collectionsMap = {};
+
+        const BLOOD_UNITS = [
+            '各级医院急诊科', '重症医学科（ICU）', '城市急救中心', '综合医院手术室',
+            '妇产科', '普外科', '骨科', '心胸外科', '妇幼保健院', '血液病专科医院',
+            '综合医院血液内科', '应急医疗救援队', '灾区临时救治点', '突发公共卫生事件定点医院',
+            '肿瘤专科医院', '综合医院肿瘤科', '放疗科', '烧伤专科医院', '综合医院烧伤科',
+            '儿童医院', '综合医院新生儿重症监护室（NICU）', '儿科重症监护室（PICU）',
+            '综合医院血液净化中心', '肝病科', '风湿免疫科', '综合医院肾内科',
+            '慢性病定点救治机构', '血液病专科门诊', '血友病定点诊疗中心',
+            '医学科研院所', '高等医学院校', '临床检验质控中心', '医药研发机构'
+        ];
+
+        const BLOOD_PURPOSES = [
+            '危重患者急救', '临床手术用血', '血液疾病治疗', '应急医疗支援',
+            '肿瘤放化疗辅助', '大面积烧伤救治', '新生儿及儿科重症救治',
+            '治疗性血液置换', '慢性疾病长期维持治疗', '凝血功能障碍纠正', '科研教学与质控'
+        ];
+
+        const PURPOSE_UNIT_MAP = {
+            '危重患者急救': ['各级医院急诊科', '重症医学科（ICU）', '城市急救中心'],
+            '临床手术用血': ['综合医院手术室', '妇产科', '普外科', '骨科', '心胸外科', '妇幼保健院'],
+            '血液疾病治疗': ['血液病专科医院', '综合医院血液内科'],
+            '应急医疗支援': ['应急医疗救援队', '灾区临时救治点', '突发公共卫生事件定点医院'],
+            '肿瘤放化疗辅助': ['肿瘤专科医院', '综合医院肿瘤科', '放疗科'],
+            '大面积烧伤救治': ['烧伤专科医院', '综合医院烧伤科'],
+            '新生儿及儿科重症救治': ['儿童医院', '综合医院新生儿重症监护室（NICU）', '儿科重症监护室（PICU）'],
+            '治疗性血液置换': ['综合医院血液净化中心', '肝病科', '风湿免疫科', '重症医学科'],
+            '慢性疾病长期维持治疗': ['综合医院肾内科', '慢性病定点救治机构', '血液病专科门诊'],
+            '凝血功能障碍纠正': ['血友病定点诊疗中心', '综合医院血液科', '肝病科', '重症医学科'],
+            '科研教学与质控': ['医学科研院所', '高等医学院校', '临床检验质控中心', '医药研发机构']
+        };
 
         function getToken() { return localStorage.getItem('token'); }
         function getHeaders() {
@@ -3710,6 +3743,27 @@ body.legacy-page {
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
         }
 
+        function createUnitOptions(selectedValue) {
+            return `<option value="">请选择用血单位</option>` + 
+                BLOOD_UNITS.map(unit => `<option value="${unit}"${unit === selectedValue ? ' selected' : ''}>${unit}</option>`).join('');
+        }
+
+        function createPurposeOptions(selectedValue) {
+            return `<option value="">请选择血液用途</option>` + 
+                BLOOD_PURPOSES.map(purpose => `<option value="${purpose}"${purpose === selectedValue ? ' selected' : ''}>${purpose}</option>`).join('');
+        }
+
+        function updateUnitOptions(purposeSelectId, unitSelectId) {
+            const purpose = document.getElementById(purposeSelectId)?.value;
+            const unitSelect = document.getElementById(unitSelectId);
+            if (purpose && PURPOSE_UNIT_MAP[purpose]) {
+                unitSelect.innerHTML = `<option value="">请选择用血单位</option>` + 
+                    PURPOSE_UNIT_MAP[purpose].map(unit => `<option value="${unit}">${unit}</option>`).join('');
+            } else {
+                unitSelect.innerHTML = createUnitOptions('');
+            }
+        }
+
         async function loadStockOutPendingList() {
             const keyword = document.getElementById('stock-out-search')?.value.trim() || '';
             const bloodType = document.getElementById('stock-out-blood-type-filter')?.value || '';
@@ -3721,7 +3775,7 @@ body.legacy-page {
             const result = await fetchData(url);
             const tbody = document.getElementById('pending-out-table-body');
             if (!result?.data?.length) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">暂无可出库库存记录</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">暂无可出库库存记录</td></tr>';
                 return;
             }
             tbody.innerHTML = result.data.map(item => `
@@ -3734,7 +3788,16 @@ body.legacy-page {
                     <td>${item.expireDate}</td>
                     <td><span class="status-badge ${getStatusClass(item.status)}">${item.status}</span></td>
                     <td>${item.createTime?.split(' ')[0] || '-'}</td>
-                    <td><input type="text" id="out-unit-${item.stockId}" placeholder="请输入用血单位" style="width:150px;"></td>
+                    <td>
+                        <select id="out-purpose-${item.stockId}" style="width:180px;" onchange="updateUnitOptions('out-purpose-${item.stockId}', 'out-unit-${item.stockId}')">
+                            ${createPurposeOptions('')}
+                        </select>
+                    </td>
+                    <td>
+                        <select id="out-unit-${item.stockId}" style="width:180px;">
+                            ${createUnitOptions('')}
+                        </select>
+                    </td>
                 </tr>
             `).join('');
         }
@@ -3752,13 +3815,18 @@ body.legacy-page {
             for (const checkbox of checkedBoxes) {
                 const stockId = checkbox.value;
                 const outUnit = document.getElementById('out-unit-' + stockId).value;
+                const outPurpose = document.getElementById('out-purpose-' + stockId).value;
                 
                 if (!outUnit) {
-                    alert('请为所有选中的记录填写用血单位');
+                    alert('请为所有选中的记录选择用血单位');
+                    return;
+                }
+                if (!outPurpose) {
+                    alert('请为所有选中的记录选择血液用途');
                     return;
                 }
 
-                const result = await fetchData('/stock/out/' + stockId, { method: 'PUT', body: JSON.stringify({ outUnit }) });
+                const result = await fetchData('/stock/out/' + stockId, { method: 'PUT', body: JSON.stringify({ outUnit, outPurpose }) });
                 if (result && result.code === 200) {
                     successCount++;
                 } else {
@@ -3804,7 +3872,7 @@ body.legacy-page {
             const result = await fetchData('/stock/out-history');
             const tbody = document.getElementById('stock-out-history-table-body');
             if (!result?.data?.length) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">暂无出库操作历史</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">暂无出库操作历史</td></tr>';
                 return;
             }
             tbody.innerHTML = result.data.map(item => `
@@ -3814,6 +3882,7 @@ body.legacy-page {
                     <td>${item.bloodAmount}</td>
                     <td>${item.donateType}</td>
                     <td>${item.expireDate}</td>
+                    <td>${item.outPurpose || '-'}</td>
                     <td>${item.outUnit || '-'}</td>
                     <td>${item.updateTime?.split(' ')[0] || '-'}</td>
                 </tr>

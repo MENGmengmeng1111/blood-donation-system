@@ -57,7 +57,7 @@ public interface BloodStockService extends IService<BloodStock> {
     /**
      * 血液出库
      */
-    void stockOut(Long id, String outUnit);
+    void stockOut(Long id, String outUnit, String outPurpose);
 
     /**
      * 修改库存信息

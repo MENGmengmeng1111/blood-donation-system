@@ -11,7 +11,7 @@
  Target Server Version : 80044
  File Encoding         : 65001
 
- Date: 13/07/2026 16:51:47
+ Date: 15/07/2026 11:10:08
 */
 
 SET NAMES utf8mb4;
@@ -33,7 +33,7 @@ CREATE TABLE `ai_chat_session`  (
   INDEX `idx_ai_chat_session_user_id`(`user_id`) USING BTREE,
   INDEX `idx_ai_chat_session_update_time`(`update_time`) USING BTREE,
   CONSTRAINT `ai_chat_session_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2074798728085884929 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'AI对话会话表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2074798728085884930 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'AI对话会话表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of ai_chat_session
@@ -103,7 +103,7 @@ CREATE TABLE `blood_activity`  (
 -- ----------------------------
 -- Records of blood_activity
 -- ----------------------------
-INSERT INTO `blood_activity` VALUES (1, '市中心爱心献血屋日常采血', '张店区中心血站一楼大厅', '2026-07-10', 49, 50, 48, 50, '进行中', '2026-07-04 18:04:37', '2026-07-10 09:13:17', 0);
+INSERT INTO `blood_activity` VALUES (1, '市中心爱心献血屋日常采血', '张店区中心血站一楼大厅', '2026-07-10', 49, 50, 48, 50, '已结束', '2026-07-04 18:04:37', '2026-07-13 18:50:52', 0);
 INSERT INTO `blood_activity` VALUES (2, '1', '1', '2026-07-01', 50, 50, 50, 50, '未开始', '2026-07-04 21:47:48', '2026-07-05 11:37:36', 1);
 INSERT INTO `blood_activity` VALUES (2072882713903288322, '高校校园无偿献血活动', '山东理工大学大学生艺术广场', '2026-07-05', 49, 50, 49, 50, '未开始', '2026-07-06 20:40:18', '2026-07-06 21:49:59', 1);
 INSERT INTO `blood_activity` VALUES (2072882713903288323, '献血屋日常采血', '中心血站一楼大厅', '2026-07-13', 50, 50, 50, 50, '未开始', '2026-07-06 20:42:38', '2026-07-06 20:42:38', 0);
@@ -136,7 +136,7 @@ CREATE TABLE `blood_collection`  (
   INDEX `operator_id`(`operator_id`) USING BTREE,
   CONSTRAINT `blood_collection_ibfk_1` FOREIGN KEY (`donor_id`) REFERENCES `donor` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `blood_collection_ibfk_2` FOREIGN KEY (`operator_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2075402018251698179 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '采血记录表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2076923080080113666 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '采血记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of blood_collection
@@ -162,6 +162,14 @@ INSERT INTO `blood_collection` VALUES (2074491884175978498, 10, 'CSpralndYFq55Y6
 INSERT INTO `blood_collection` VALUES (2074809192337436673, 16, 'eFgHiJ5678901234efghijklmnopqrstuvwxyz567=', 200, '全血', '合格', '2026-07-08 18:53:54', 2, '2026-07-08 18:53:54', '2026-07-08 18:53:54', 0);
 INSERT INTO `blood_collection` VALUES (2075387975498997761, 18, 'gHiJkL7890123456ghijklmnopqrstuvwxyz789=', 400, '全血', '合格', '2026-07-10 09:13:47', 2, '2026-07-10 09:13:46', '2026-07-10 09:13:46', 0);
 INSERT INTO `blood_collection` VALUES (2075402018251698178, 11, 'Ngo6pJEPxqijfLAYjcI/r33sTe6ZW/b52Wk7rF/yn2k=', 400, '全血', '合格', '2026-07-10 10:09:35', 2, '2026-07-10 10:09:34', '2026-07-10 10:09:34', 0);
+INSERT INTO `blood_collection` VALUES (2076601637974917122, 3, 'K67cL1djGmDfCc3++I05tu6jY9XxVAq2p7XhfdrnWCQ=', 400, '全血', '合格', '2026-07-13 17:36:27', 2, '2026-07-13 17:36:26', '2026-07-13 18:35:24', 1);
+INSERT INTO `blood_collection` VALUES (2076616534796288002, 3, 'K67cL1djGmDfCc3++I05tu6jY9XxVAq2p7XhfdrnWCQ=', 400, '全血', '合格', '2026-07-13 18:35:38', 2, '2026-07-13 18:35:38', '2026-07-13 18:35:38', 0);
+INSERT INTO `blood_collection` VALUES (2076620569599369217, 2, 'TFeQVarQH1cEvNLpFj87/zs9UMkIvVHepWrGrmovRuM=', 400, '全血', '合格', '2026-07-13 18:51:40', 2, '2026-07-13 18:51:40', '2026-07-13 18:51:40', 0);
+INSERT INTO `blood_collection` VALUES (2076620670229110786, 7, 'DW+fU9BddIcL6Bpm1fG7vNtlSqoL26kTZwOkbg4fNwg=', 400, '全血', '合格', '2026-07-13 18:52:04', 2, '2026-07-13 18:52:04', '2026-07-13 18:52:04', 0);
+INSERT INTO `blood_collection` VALUES (2076923080080113665, 22, 'kLmNoP1234567890klmnopqrstuvwxyz123=', 200, '全血', '合格', '2026-07-14 14:53:44', 2, '2026-07-14 14:53:44', '2026-07-14 14:53:44', 0);
+INSERT INTO `blood_collection` VALUES (2076973945692450818, 8, 'zljUu92TE0WJMLOTibjX6+SZB7hURFW8jDsDUAnoUsg=', 400, '全血', '合格', '2026-07-14 18:15:52', 2, '2026-07-14 18:15:51', '2026-07-14 18:15:51', 0);
+INSERT INTO `blood_collection` VALUES (2076974169806696450, 9, 'qajTYXK001aWpUEPOMtB7afKfTZu0chWcmwh+SqMmOM=', 400, '全血', '合格', '2026-07-14 18:16:45', 2, '2026-07-14 18:16:45', '2026-07-14 18:16:45', 0);
+INSERT INTO `blood_collection` VALUES (2077004583749382146, 14, 'cDeFgH3456789012cdefghijklmnopqrstuvwxyz345=', 400, '全血', '合格', '2026-07-14 20:17:36', 2, '2026-07-14 20:17:36', '2026-07-14 20:17:36', 0);
 
 -- ----------------------------
 -- Table structure for blood_stock
@@ -174,7 +182,8 @@ CREATE TABLE `blood_stock`  (
   `blood_amount` int NOT NULL COMMENT '血量ml',
   `expire_date` date NOT NULL COMMENT '血液有效期',
   `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '正常' COMMENT '库存状态：正常/临期/已过期/已出库',
-  `out_unit` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '用血单位',
+  `out_unit` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '用血单位',
+  `out_purpose` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '血液用途',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '入库时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
@@ -186,24 +195,20 @@ CREATE TABLE `blood_stock`  (
 -- ----------------------------
 -- Records of blood_stock
 -- ----------------------------
-INSERT INTO `blood_stock` VALUES (1, 2073617161636544513, 'B型', 400, '2026-08-11', '已出库', '渗析', '2026-07-07 15:02:43', '2026-07-07 15:02:43', 0);
-INSERT INTO `blood_stock` VALUES (2, 2073638933392011265, 'O型', 200, '2026-08-11', '正常', NULL, '2026-07-07 15:02:43', '2026-07-07 15:02:43', 0);
-INSERT INTO `blood_stock` VALUES (3, 2074430000000000201, 'A型', 300, '2026-09-07', '正常', NULL, '2026-07-07 15:30:00', '2026-07-07 15:30:00', 0);
-INSERT INTO `blood_stock` VALUES (4, 2074430000000000209, 'A型', 400, '2026-09-02', '正常', NULL, '2026-07-03 10:00:00', '2026-07-03 10:00:00', 0);
-INSERT INTO `blood_stock` VALUES (5, 2074430000000000202, 'B型', 400, '2026-09-07', '正常', NULL, '2026-07-07 15:35:00', '2026-07-07 15:35:00', 0);
-INSERT INTO `blood_stock` VALUES (6, 2074430000000000211, 'B型', 300, '2026-09-02', '已出库', '过期处理', '2026-07-03 10:30:00', '2026-07-06 18:00:00', 0);
-INSERT INTO `blood_stock` VALUES (7, 2074430000000000203, 'O型', 200, '2026-09-07', '正常', NULL, '2026-07-07 10:05:00', '2026-07-07 10:05:00', 0);
-INSERT INTO `blood_stock` VALUES (8, 2074430000000000210, 'O型', 200, '2026-09-02', '已出库', '淄博市中心医院', '2026-07-03 10:15:00', '2026-07-05 09:30:00', 0);
-INSERT INTO `blood_stock` VALUES (9, 2074430000000000204, 'AB型', 200, '2026-09-07', '正常', NULL, '2026-07-07 10:30:00', '2026-07-07 10:30:00', 0);
-INSERT INTO `blood_stock` VALUES (10, 2074430000000000212, 'AB型', 200, '2026-09-02', '临期', NULL, '2026-07-03 10:45:00', '2026-07-07 08:00:00', 0);
-INSERT INTO `blood_stock` VALUES (11, 2073413193044176897, 'B型', 200, '2026-08-04', '正常', NULL, '2026-07-07 16:24:00', '2026-07-07 16:24:00', 0);
-INSERT INTO `blood_stock` VALUES (12, 2074409391053664257, 'O型', 220, '2026-09-07', '正常', NULL, '2026-07-07 16:26:00', '2026-07-07 16:26:00', 0);
-INSERT INTO `blood_stock` VALUES (13, 2075387975498997761, 'B型', 400, '2026-08-14', '已出库', '淄博市中心医院', '2026-07-10 09:15:43', '2026-07-10 09:15:43', 0);
-
--- ----------------------------
--- Table structure for blood_test_indicator
--- ----------------------------
-DROP TABLE IF EXISTS `blood_test_indicator`;
+INSERT INTO `blood_stock` VALUES (1, 2073617161636544513, 'B型', 400, '2026-08-11', '已出库', '渗析', '治疗性血液置换', '2026-07-07 15:02:43', '2026-07-07 15:02:43', 0);
+INSERT INTO `blood_stock` VALUES (2, 2073638933392011265, 'O型', 200, '2026-08-11', '正常', NULL, NULL, '2026-07-07 15:02:43', '2026-07-07 15:02:43', 0);
+INSERT INTO `blood_stock` VALUES (3, 2074430000000000201, 'A型', 300, '2026-09-07', '正常', NULL, NULL, '2026-07-07 15:30:00', '2026-07-07 15:30:00', 0);
+INSERT INTO `blood_stock` VALUES (4, 2074430000000000209, 'A型', 400, '2026-09-02', '正常', NULL, NULL, '2026-07-03 10:00:00', '2026-07-03 10:00:00', 0);
+INSERT INTO `blood_stock` VALUES (5, 2074430000000000202, 'B型', 400, '2026-09-07', '正常', NULL, NULL, '2026-07-07 15:35:00', '2026-07-07 15:35:00', 0);
+INSERT INTO `blood_stock` VALUES (6, 2074430000000000211, 'B型', 300, '2026-09-02', '已出库', '过期处理', '科研教学与质控', '2026-07-03 10:30:00', '2026-07-06 18:00:00', 0);
+INSERT INTO `blood_stock` VALUES (7, 2074430000000000203, 'O型', 200, '2026-09-07', '正常', NULL, NULL, '2026-07-07 10:05:00', '2026-07-07 10:05:00', 0);
+INSERT INTO `blood_stock` VALUES (8, 2074430000000000210, 'O型', 200, '2026-09-02', '已出库', '淄博市中心医院', '临床手术用血', '2026-07-03 10:15:00', '2026-07-05 09:30:00', 0);
+INSERT INTO `blood_stock` VALUES (9, 2074430000000000204, 'AB型', 200, '2026-09-07', '正常', NULL, NULL, '2026-07-07 10:30:00', '2026-07-07 10:30:00', 0);
+INSERT INTO `blood_stock` VALUES (10, 2074430000000000212, 'AB型', 200, '2026-09-02', '临期', NULL, NULL, '2026-07-03 10:45:00', '2026-07-07 08:00:00', 0);
+INSERT INTO `blood_stock` VALUES (11, 2073413193044176897, 'B型', 200, '2026-08-04', '正常', NULL, NULL, '2026-07-07 16:24:00', '2026-07-07 16:24:00', 0);
+INSERT INTO `blood_stock` VALUES (12, 2074409391053664257, 'O型', 220, '2026-09-07', '正常', NULL, NULL, '2026-07-07 16:26:00', '2026-07-07 16:26:00', 0);
+INSERT INTO `blood_stock` VALUES (13, 2075387975498997761, 'B型', 400, '2026-08-14', '已出库', '淄博市中心医院', '临床手术用血', '2026-07-10 09:15:43', '2026-07-10 09:15:43', 0);
+INSERT INTO `blood_stock` VALUES (14, 2076974169806696450, 'B型', 400, '2026-08-18', '已出库', '淄博市市中心医院', '危重患者急救', '2026-07-14 18:19:36', '2026-07-14 18:19:36', 0);
 
 -- ----------------------------
 -- Table structure for blood_test
@@ -230,7 +235,7 @@ CREATE TABLE `blood_test`  (
   CONSTRAINT `blood_test_ibfk_1` FOREIGN KEY (`collection_id`) REFERENCES `blood_collection` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `blood_test_ibfk_2` FOREIGN KEY (`donor_id`) REFERENCES `donor` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `blood_test_ibfk_3` FOREIGN KEY (`operator_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2075402018616602626 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '血液检验记录表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2076923080134639618 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '血液检验记录表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of blood_test
@@ -256,33 +261,75 @@ INSERT INTO `blood_test` VALUES (2074491884339556353, 2074491884175978498, 10, '
 INSERT INTO `blood_test` VALUES (2074809192484237314, 2074809192337436673, 16, '合格', '合格', NULL, '', '2026-07-08 18:54:05', 2, NULL, '2026-07-08 18:53:54', '2026-07-08 18:53:54', 0);
 INSERT INTO `blood_test` VALUES (2075387975561912322, 2075387975498997761, 18, '合格', '已入库', '乙肝病毒阳性', '', '2026-07-10 09:15:30', 2, NULL, '2026-07-10 09:13:46', '2026-07-10 09:13:46', 0);
 INSERT INTO `blood_test` VALUES (2075402018616602625, 2075402018251698178, 11, '合格', '合格', NULL, '', '2026-07-10 10:15:59', 2, NULL, '2026-07-10 10:09:35', '2026-07-10 10:09:35', 0);
+INSERT INTO `blood_test` VALUES (2076601638121717762, 2076601637974917122, 3, NULL, '待检验', NULL, NULL, NULL, NULL, NULL, '2026-07-13 17:36:26', '2026-07-13 18:35:24', 1);
+INSERT INTO `blood_test` VALUES (2076616534863396866, 2076616534796288002, 3, '合格', '合格', NULL, NULL, '2026-07-13 18:43:34', NULL, NULL, '2026-07-13 18:35:38', '2026-07-13 18:35:38', 0);
+INSERT INTO `blood_test` VALUES (2076620569666478082, 2076620569599369217, 2, '血液传染病指标异常', '不合格', '艾滋病抗体阳性', NULL, '2026-07-13 18:53:11', NULL, NULL, '2026-07-13 18:51:40', '2026-07-13 18:51:40', 0);
+INSERT INTO `blood_test` VALUES (2076620670229110787, 2076620670229110786, 7, '谷丙转氨酶（ALT）超标；血液传染病指标异常；血红蛋白常规指标不合格；血小板计数不合格', '不合格', '谷丙转氨酶（ALT）超标(50.0U/L)；乙肝表面抗原阳性；血红蛋白低于标准(100.0g/L)；血小板计数异常(100.0×10^9/L)', NULL, '2026-07-13 18:52:41', NULL, NULL, '2026-07-13 18:52:04', '2026-07-13 18:52:04', 0);
+INSERT INTO `blood_test` VALUES (2076923080134639617, 2076923080080113665, 22, '血红蛋白常规指标不合格', '不合格', '血红蛋白低于标准(100.0g/L)', NULL, '2026-07-14 18:17:39', NULL, NULL, '2026-07-14 14:53:44', '2026-07-14 14:53:44', 0);
+INSERT INTO `blood_test` VALUES (2076973945793114114, 2076973945692450818, 8, '血液传染病指标异常', '不合格', '丙肝抗体阳性；乙肝表面抗原阳性', NULL, '2026-07-14 18:18:20', NULL, NULL, '2026-07-14 18:15:51', '2026-07-14 18:15:51', 0);
+INSERT INTO `blood_test` VALUES (2076974169873805313, 2076974169806696450, 9, '合格', '已入库', NULL, NULL, '2026-07-14 18:18:46', NULL, NULL, '2026-07-14 18:16:45', '2026-07-14 18:16:45', 0);
+INSERT INTO `blood_test` VALUES (2077004583879405570, 2077004583749382146, 14, NULL, '待检验', NULL, NULL, NULL, NULL, NULL, '2026-07-14 20:17:36', '2026-07-14 20:17:36', 0);
 
 -- ----------------------------
 -- Table structure for blood_test_indicator
 -- ----------------------------
-CREATE TABLE `blood_test_indicator` (
+DROP TABLE IF EXISTS `blood_test_indicator`;
+CREATE TABLE `blood_test_indicator`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '指标记录ID',
   `test_id` bigint NOT NULL COMMENT '关联检验记录ID',
-  `alt` decimal(5,1) NULL DEFAULT NULL COMMENT '谷丙转氨酶ALT(U/L)',
+  `alt` decimal(5, 1) NULL DEFAULT NULL COMMENT '谷丙转氨酶ALT(U/L)',
+  `ast` decimal(5, 1) NULL DEFAULT NULL COMMENT '谷草转氨酶AST(U/L)',
+  `total_bilirubin` decimal(5, 1) NULL DEFAULT NULL COMMENT '总胆红素(μmol/L)',
+  `direct_bilirubin` decimal(5, 1) NULL DEFAULT NULL COMMENT '直接胆红素(μmol/L)',
   `hbv_surface_antigen` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '乙肝表面抗原：阴性/阳性',
+  `hbv_surface_antibody` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '乙肝表面抗体：阴性/阳性',
+  `hbv_e_antigen` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '乙肝e抗原：阴性/阳性',
+  `hbv_e_antibody` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '乙肝e抗体：阴性/阳性',
+  `hbv_core_antibody` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '乙肝核心抗体：阴性/阳性',
   `hcv_antibody` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '丙肝抗体：阴性/阳性',
   `hiv_antibody` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '艾滋病抗体：阴性/阳性',
   `syphilis_antibody` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '梅毒抗体：阴性/阳性',
-  `white_blood_cell` decimal(5,2) NULL DEFAULT NULL COMMENT '白细胞计数(×10^9/L)',
-  `hemoglobin` decimal(5,1) NULL DEFAULT NULL COMMENT '血红蛋白(g/L)',
-  `platelet` decimal(5,2) NULL DEFAULT NULL COMMENT '血小板计数(×10^9/L)',
+  `white_blood_cell` decimal(5, 2) NULL DEFAULT NULL COMMENT '白细胞计数(×10^9/L)',
+  `red_blood_cell` decimal(5, 2) NULL DEFAULT NULL COMMENT '红细胞计数(×10^12/L)',
+  `hemoglobin` decimal(5, 1) NULL DEFAULT NULL COMMENT '血红蛋白(g/L)',
+  `hematocrit` decimal(5, 1) NULL DEFAULT NULL COMMENT '红细胞压积(%)',
+  `mean_cell_volume` decimal(5, 1) NULL DEFAULT NULL COMMENT '平均红细胞体积(fL)',
+  `mean_cell_hemoglobin` decimal(5, 1) NULL DEFAULT NULL COMMENT '平均红细胞血红蛋白含量(pg)',
+  `mean_cell_hemoglobin_concentration` decimal(5, 1) NULL DEFAULT NULL COMMENT '平均红细胞血红蛋白浓度(g/L)',
+  `platelet` decimal(5, 2) NULL DEFAULT NULL COMMENT '血小板计数(×10^9/L)',
+  `mean_platelet_volume` decimal(5, 1) NULL DEFAULT NULL COMMENT '平均血小板体积(fL)',
+  `glucose` decimal(5, 1) NULL DEFAULT NULL COMMENT '血糖(mmol/L)',
+  `creatinine` decimal(5, 1) NULL DEFAULT NULL COMMENT '肌酐(μmol/L)',
+  `blood_urea_nitrogen` decimal(5, 1) NULL DEFAULT NULL COMMENT '尿素氮(mmol/L)',
+  `cholesterol` decimal(5, 1) NULL DEFAULT NULL COMMENT '总胆固醇(mmol/L)',
+  `triglyceride` decimal(5, 1) NULL DEFAULT NULL COMMENT '甘油三酯(mmol/L)',
+  `protein` decimal(5, 1) NULL DEFAULT NULL COMMENT '总蛋白(g/L)',
+  `albumin` decimal(5, 1) NULL DEFAULT NULL COMMENT '白蛋白(g/L)',
+  `globulin` decimal(5, 1) NULL DEFAULT NULL COMMENT '球蛋白(g/L)',
+  `potassium` decimal(5, 2) NULL DEFAULT NULL COMMENT '钾(mmol/L)',
+  `sodium` decimal(5, 1) NULL DEFAULT NULL COMMENT '钠(mmol/L)',
+  `chloride` decimal(5, 1) NULL DEFAULT NULL COMMENT '氯(mmol/L)',
+  `calcium` decimal(5, 2) NULL DEFAULT NULL COMMENT '钙(mmol/L)',
+  `iron` decimal(5, 1) NULL DEFAULT NULL COMMENT '铁(μmol/L)',
+  `ferritin` decimal(7, 1) NULL DEFAULT NULL COMMENT '铁蛋白(ng/mL)',
   `other_abnormality` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '其他异常情况',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uk_blood_test_indicator_test_id` (`test_id`) USING BTREE,
+  UNIQUE INDEX `uk_blood_test_indicator_test_id`(`test_id`) USING BTREE,
   CONSTRAINT `blood_test_indicator_ibfk_1` FOREIGN KEY (`test_id`) REFERENCES `blood_test` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '血液检验指标表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2076620951914373123 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '血液检验指标表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of blood_test_indicator
 -- ----------------------------
+INSERT INTO `blood_test_indicator` VALUES (2076618530869829633, 2076616534863396866, 35.0, NULL, NULL, NULL, '阴性', NULL, NULL, NULL, NULL, '阴性', '阴性', '阴性', 6.00, NULL, 130.0, NULL, NULL, NULL, NULL, 200.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-07-13 18:43:34', '2026-07-13 18:43:34', 0);
+INSERT INTO `blood_test_indicator` VALUES (2076620825040871425, 2076620670229110787, 50.0, NULL, NULL, NULL, '阳性', NULL, NULL, NULL, NULL, '阴性', '阴性', '阴性', 4.00, NULL, 100.0, NULL, NULL, NULL, NULL, 100.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-07-13 18:52:41', '2026-07-13 18:52:41', 0);
+INSERT INTO `blood_test_indicator` VALUES (2076620951914373122, 2076620569666478082, 20.0, NULL, NULL, NULL, '阴性', NULL, NULL, NULL, NULL, '阴性', '阳性', '阴性', 4.00, NULL, 130.0, NULL, NULL, NULL, NULL, 130.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-07-13 18:53:11', '2026-07-13 18:53:11', 0);
+INSERT INTO `blood_test_indicator` VALUES (2076974395531554818, 2076923080134639617, 12.0, NULL, NULL, NULL, '阴性', NULL, NULL, NULL, NULL, '阴性', '阴性', NULL, 4.00, NULL, 100.0, NULL, NULL, NULL, NULL, 200.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-07-14 18:17:38', '2026-07-14 18:17:38', 0);
+INSERT INTO `blood_test_indicator` VALUES (2076974566218756098, 2076973945793114114, 20.0, NULL, NULL, NULL, '阳性', NULL, NULL, NULL, NULL, '阳性', '阴性', '阴性', 5.00, NULL, 132.0, NULL, NULL, NULL, NULL, 200.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-07-14 18:18:19', '2026-07-14 18:18:19', 0);
+INSERT INTO `blood_test_indicator` VALUES (2076974676277293058, 2076974169873805313, 20.0, NULL, NULL, NULL, '阴性', NULL, NULL, NULL, NULL, '阴性', '阴性', '阴性', 5.00, NULL, 200.0, NULL, NULL, NULL, NULL, 200.00, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-07-14 18:18:45', '2026-07-14 18:18:45', 0);
 
 -- ----------------------------
 -- Table structure for donor
@@ -313,17 +360,17 @@ CREATE TABLE `donor`  (
 -- ----------------------------
 -- Records of donor
 -- ----------------------------
-INSERT INTO `donor` VALUES (2, 3, '李四', 'TFeQVarQH1cEvNLpFj87/zs9UMkIvVHepWrGrmovRuM=', 'B型', '13465363301', 'q9U8w8aJYr9WTAdbh0MY9w==', '正常', NULL, '2026-07-04 18:50:18', '2026-07-06 19:38:30', 0, '男', 1, '3', 0);
-INSERT INTO `donor` VALUES (3, 1, '张三', 'K67cL1djGmDfCc3++I05tu6jY9XxVAq2p7XhfdrnWCQ=', 'A型', '13465363302', 'LCMNVWqc8NRlWX4Dl0fqZA==', '正常', NULL, '2026-07-04 19:03:40', '2026-07-06 19:38:34', 0, '男', 1, '山东省淄博市张店区', 0);
+INSERT INTO `donor` VALUES (2, 3, '李四', 'TFeQVarQH1cEvNLpFj87/zs9UMkIvVHepWrGrmovRuM=', 'B型', '13465363301', 'q9U8w8aJYr9WTAdbh0MY9w==', '正常', '2026-07-13', '2026-07-04 18:50:18', '2026-07-06 19:38:30', 0, '男', 1, '3', 0);
+INSERT INTO `donor` VALUES (3, 1, '张三', 'K67cL1djGmDfCc3++I05tu6jY9XxVAq2p7XhfdrnWCQ=', 'A型', '13465363302', 'LCMNVWqc8NRlWX4Dl0fqZA==', '正常', '2026-07-13', '2026-07-04 19:03:40', '2026-07-06 19:38:34', 0, '男', 1, '山东省淄博市张店区', 0);
 INSERT INTO `donor` VALUES (6, NULL, '王文武', 'TFeQVarQH1cEvNLpFj87/9tlSqoL26kTZwOkbg4fNwg=', 'O型', '13465363302', 'RCDAr6v4nY/rkpH0Yy880g==', '正常', NULL, '2026-07-05 11:54:04', '2026-07-06 19:38:40', 0, '男', 4, '4', 0);
-INSERT INTO `donor` VALUES (7, NULL, '王五', 'DW+fU9BddIcL6Bpm1fG7vNtlSqoL26kTZwOkbg4fNwg=', 'O型', '15863904119', NULL, '正常', NULL, '2026-07-06 19:44:08', '2026-07-06 19:44:08', 0, '男', 21, '山东理工大学', 0);
-INSERT INTO `donor` VALUES (8, NULL, '李一', 'zljUu92TE0WJMLOTibjX6+SZB7hURFW8jDsDUAnoUsg=', 'B型', '15863904119', NULL, '正常', NULL, '2026-07-06 20:02:52', '2026-07-06 20:02:52', 0, '男', 36, '山东理工大学', 0);
-INSERT INTO `donor` VALUES (9, NULL, '李二', 'qajTYXK001aWpUEPOMtB7afKfTZu0chWcmwh+SqMmOM=', 'B型', '19819151223', NULL, '正常', NULL, '2026-07-06 20:11:54', '2026-07-06 20:11:54', 0, '女', 29, '淄博淄川', 0);
+INSERT INTO `donor` VALUES (7, NULL, '王五', 'DW+fU9BddIcL6Bpm1fG7vNtlSqoL26kTZwOkbg4fNwg=', 'O型', '15863904119', NULL, '正常', '2026-07-13', '2026-07-06 19:44:08', '2026-07-06 19:44:08', 0, '男', 21, '山东理工大学', 0);
+INSERT INTO `donor` VALUES (8, NULL, '李一', 'zljUu92TE0WJMLOTibjX6+SZB7hURFW8jDsDUAnoUsg=', 'B型', '15863904119', NULL, '正常', '2026-07-14', '2026-07-06 20:02:52', '2026-07-06 20:02:52', 0, '男', 36, '山东理工大学', 0);
+INSERT INTO `donor` VALUES (9, NULL, '李二', 'qajTYXK001aWpUEPOMtB7afKfTZu0chWcmwh+SqMmOM=', 'B型', '19819151223', NULL, '正常', '2026-07-14', '2026-07-06 20:11:54', '2026-07-06 20:11:54', 0, '女', 29, '淄博淄川', 0);
 INSERT INTO `donor` VALUES (10, NULL, '张二', 'CSpralndYFq55Y6A7lUr2G7SzzuMJ0VKNDhtRXCV4Eo=', 'A型', '19819151223', NULL, '正常', NULL, '2026-07-06 20:13:25', '2026-07-06 20:13:25', 0, '男', 37, '山东理工大学', 0);
 INSERT INTO `donor` VALUES (11, NULL, '钱六', 'Ngo6pJEPxqijfLAYjcI/r33sTe6ZW/b52Wk7rF/yn2k=', 'AB型', '19819151223', NULL, '正常', '2026-07-10', '2026-07-06 20:14:01', '2026-07-06 20:14:01', 0, '女', 28, '山东理工大学', 0);
 INSERT INTO `donor` VALUES (12, 2074430000000000002, '陈晓燕', 'aBcDeF1234567890abcdefghijklmnopqrstuvwxyz123=', 'A型', '13561678821', NULL, '正常', '2026-03-15', '2026-07-02 10:15:00', '2026-07-02 10:15:00', 0, '女', 26, '淄博市张店区共青团西路', 0);
 INSERT INTO `donor` VALUES (13, 2074430000000000003, '赵建国', 'bCdEfG2345678901bcdefghijklmnopqrstuvwxyz234=', 'B型', '13678654432', NULL, '正常', '2026-01-20', '2026-07-02 14:20:00', '2026-07-02 14:20:00', 0, '男', 42, '淄博市淄川区松龄路街道', 0);
-INSERT INTO `donor` VALUES (14, 2074430000000000004, '孙梦琪', 'cDeFgH3456789012cdefghijklmnopqrstuvwxyz345=', 'O型', '13853369901', NULL, '正常', NULL, '2026-07-03 08:45:00', '2026-07-03 08:45:00', 0, '女', 22, '山东理工大学西校区', 0);
+INSERT INTO `donor` VALUES (14, 2074430000000000004, '孙梦琪', 'cDeFgH3456789012cdefghijklmnopqrstuvwxyz345=', 'O型', '13853369901', NULL, '正常', '2026-07-14', '2026-07-03 08:45:00', '2026-07-03 08:45:00', 0, '女', 22, '山东理工大学西校区', 0);
 INSERT INTO `donor` VALUES (15, 2074430000000000005, '周浩然', 'dEfGhI4567890123defghijklmnopqrstuvwxyz456=', 'AB型', '15069327788', NULL, '正常', '2025-11-08', '2026-07-03 16:30:00', '2026-07-03 16:30:00', 0, '男', 31, '淄博市临淄区桓公路', 0);
 INSERT INTO `donor` VALUES (16, 2074430000000000006, '吴秀兰', 'eFgHiJ5678901234efghijklmnopqrstuvwxyz567=', 'O型', '13573356612', '高血压病史', '暂缓', '2026-07-08', '2026-07-04 11:00:00', '2026-07-04 11:00:00', 0, '女', 48, '淄博市博山区城东街道', 0);
 INSERT INTO `donor` VALUES (17, NULL, '郑海涛', 'fGhIjK6789012345fghijklmnopqrstuvwxyz678=', 'A型', '13964385523', NULL, '正常', '2026-02-28', '2026-07-04 09:30:00', '2026-07-04 09:30:00', 0, '男', 35, '淄博市周村区青年路', 0);
@@ -331,7 +378,7 @@ INSERT INTO `donor` VALUES (18, NULL, '王雅婷', 'gHiJkL7890123456ghijklmnopqr
 INSERT INTO `donor` VALUES (19, NULL, '刘志强', 'hIjKlM8901234567hijklmnopqrstuvwxyz890=', 'O型', '13583372201', NULL, '正常', '2026-04-12', '2026-07-05 08:20:00', '2026-07-05 08:20:00', 0, '男', 38, '淄博市桓台县索镇街道', 0);
 INSERT INTO `donor` VALUES (20, NULL, '张敏', 'iJkLmN9012345678ijklmnopqrstuvwxyz901=', 'AB型', '15965528877', NULL, '正常', NULL, '2026-07-05 13:40:00', '2026-07-05 13:40:00', 0, '女', 24, '山东理工大学东校区', 0);
 INSERT INTO `donor` VALUES (21, NULL, '陈磊', 'jKlMnO0123456789jklmnopqrstuvwxyz012=', 'A型', '13626439956', NULL, '正常', '2025-10-18', '2026-07-05 15:10:00', '2026-07-05 15:10:00', 0, '男', 45, '淄博市沂源县城区', 0);
-INSERT INTO `donor` VALUES (22, NULL, '李娜', 'kLmNoP1234567890klmnopqrstuvwxyz123=', 'O型', '15069364421', NULL, '暂缓', '2026-05-22', '2026-07-06 10:05:00', '2026-07-06 10:05:00', 0, '女', 33, '淄博市高青县田镇街道', 0);
+INSERT INTO `donor` VALUES (22, NULL, '李娜', 'kLmNoP1234567890klmnopqrstuvwxyz123=', 'O型', '15069364421', NULL, '暂缓', '2026-07-14', '2026-07-06 10:05:00', '2026-07-06 10:05:00', 0, '女', 33, '淄博市高青县田镇街道', 0);
 INSERT INTO `donor` VALUES (23, NULL, '黄勇', 'lMnOpQ2345678901lmnopqrstuvwxyz234=', 'B型', '13864417789', NULL, '正常', '2026-06-01', '2026-07-06 14:30:00', '2026-07-06 14:30:00', 0, '男', 52, '淄博市张店区南定镇', 1);
 
 -- ----------------------------
@@ -349,7 +396,7 @@ CREATE TABLE `operation_log`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `operator_id`(`operator_id`) USING BTREE,
   INDEX `operation_time`(`operation_time`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2075403630844145666 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '操作日志表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2076923080197554178 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '操作日志表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of operation_log
@@ -373,6 +420,18 @@ INSERT INTO `operation_log` VALUES (2075388464273825794, 2, '超级管理员', '
 INSERT INTO `operation_log` VALUES (2075388588811100162, 2, '超级管理员', '血液出库', '血液出库，库存ID：13，用血单位：淄博市中心医院', '2026-07-10 09:16:13', '0:0:0:0:0:0:0:1');
 INSERT INTO `operation_log` VALUES (2075402018734043137, 2, '超级管理员', '新增采血', '新增采血记录，献血者：钱六，血量：400ml', '2026-07-10 10:09:35', '0:0:0:0:0:0:0:1');
 INSERT INTO `operation_log` VALUES (2075403630844145665, 2, '超级管理员', '判定检验', '判定血液检验结果，检验ID：2075402018616602625，结果：合格', '2026-07-10 10:15:59', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2076601638255935490, 2, '超级管理员', '新增采血', '新增采血记录，献血者：张三，血量：400ml', '2026-07-13 17:36:27', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2076616478387093506, 2, '超级管理员', '删除采血', '删除采血记录，ID：2076601637974917122', '2026-07-13 18:35:25', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2076616534926311426, 2, '超级管理员', '新增采血', '新增采血记录，献血者：张三，血量：400ml', '2026-07-13 18:35:38', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2076620368411189250, 2, '超级管理员', '修改活动', '修改献血活动，ID：1，名称：市中心爱心献血屋日常采血', '2026-07-13 18:50:52', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2076620569729392642, 2, '超级管理员', '新增采血', '新增采血记录，献血者：李四，血量：400ml', '2026-07-13 18:51:40', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2076620670296219649, 2, '超级管理员', '新增采血', '新增采血记录，献血者：王五，血量：400ml', '2026-07-13 18:52:04', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2076923080197554177, 2, '超级管理员', '新增采血', '新增采血记录，献血者：李娜，血量：200ml', '2026-07-14 14:53:44', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2076973945927331841, 2, '超级管理员', '新增采血', '新增采血记录，献血者：李一，血量：400ml', '2026-07-14 18:15:52', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2076974169940914178, 2, '超级管理员', '新增采血', '新增采血记录，献血者：李二，血量：400ml', '2026-07-14 18:16:45', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2076974888261611522, 2, '超级管理员', '血液入库', '血液入库，采血记录ID：2076974169806696450', '2026-07-14 18:19:36', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2076975003407839233, 2, '超级管理员', '血液出库', '血液出库，库存ID：14，用血单位：淄博市市中心医院', '2026-07-14 18:20:04', '0:0:0:0:0:0:0:1');
+INSERT INTO `operation_log` VALUES (2077004583942320130, 2, '超级管理员', '新增采血', '新增采血记录，献血者：孙梦琪，血量：400ml', '2026-07-14 20:17:36', '0:0:0:0:0:0:0:1');
 
 -- ----------------------------
 -- Table structure for stock_threshold
@@ -397,6 +456,30 @@ INSERT INTO `stock_threshold` VALUES (3, 'O型', 5000, '2026-07-03 10:36:30', NU
 INSERT INTO `stock_threshold` VALUES (4, 'AB型', 5000, '2026-07-03 10:36:30', NULL);
 
 -- ----------------------------
+-- Table structure for sys_message
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_message`;
+CREATE TABLE `sys_message`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '消息ID',
+  `user_id` bigint NOT NULL COMMENT '接收用户ID',
+  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '消息标题',
+  `content` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '消息内容',
+  `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'system' COMMENT '消息类型：system-系统消息, collection-采血提醒, test-检验提醒',
+  `related_id` bigint NULL DEFAULT NULL COMMENT '关联业务ID',
+  `read_status` tinyint NOT NULL DEFAULT 0 COMMENT '阅读状态：0-未读 1-已读',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_user_id`(`user_id`) USING BTREE,
+  INDEX `idx_read_status`(`read_status`) USING BTREE,
+  CONSTRAINT `sys_message_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统消息表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of sys_message
+-- ----------------------------
+
+-- ----------------------------
 -- Table structure for sys_user
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_user`;
@@ -412,12 +495,12 @@ CREATE TABLE `sys_user`  (
   `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_username`(`username`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2075863283633344515 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户账号表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 2076942780432400387 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户账号表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 'admin', '$2a$10$BjIS9y7RP1vdQL/sMuWEQeYKb3tHKwMx7M.KhYVWRLsMzT4OvOija', '管理员', 'ROLE_ADMIN', 0, '2026-07-03 10:35:47', '2026-07-08 20:37:30', 0);
+INSERT INTO `sys_user` VALUES (1, 'admin', '$2a$10$BjIS9y7RP1vdQL/sMuWEQeYKb3tHKwMx7M.KhYVWRLsMzT4OvOija', '管理员', 'ROLE_ADMIN', 0, '2026-07-03 10:35:47', '2026-07-14 18:04:36', 0);
 INSERT INTO `sys_user` VALUES (2, 'superadmin', '$2a$10$g75E5/0RPtBhRUhfl5.j3.KqPUs1ohEWHdH7UNFMgYdXjc1amI1Qy', '超级管理员', 'ROLE_SUPER_ADMIN', 0, '2026-07-03 10:35:47', '2026-07-03 11:16:56', 0);
 INSERT INTO `sys_user` VALUES (3, 'donor001', '$2a$10$96VA1mfKlA9HykWBqotDwePic2zY/W07BFFfOGxj5FgYzCC06zR9C', '张三', 'ROLE_DONOR', 0, '2026-07-03 10:35:47', '2026-07-12 16:20:54', 0);
 INSERT INTO `sys_user` VALUES (2073333544196882434, 'admin01', '$2a$10$w2JBk2W/tjUPz61rOiVazeK7vO9zFedooi/phwStsT.sIHNPdB5zK', 'GGBOND', 'ROLE_DONOR', 0, '2026-07-04 17:10:12', '2026-07-11 17:06:40', 0);
@@ -428,7 +511,8 @@ INSERT INTO `sys_user` VALUES (2074430000000000004, 'donor004', '$2a$10$BjIS9y7R
 INSERT INTO `sys_user` VALUES (2074430000000000005, 'donor005', '$2a$10$BjIS9y7RP1vdQL/sMuWEQeYKb3tHKwMx7M.KhYVWRLsMzT4OvOija', '周浩然', 'ROLE_DONOR', 0, '2026-07-03 16:30:00', '2026-07-03 16:30:00', 0);
 INSERT INTO `sys_user` VALUES (2074430000000000006, 'donor006', '$2a$10$BjIS9y7RP1vdQL/sMuWEQeYKb3tHKwMx7M.KhYVWRLsMzT4OvOija', '吴秀兰', 'ROLE_DONOR', 0, '2026-07-04 11:00:00', '2026-07-04 11:00:00', 0);
 INSERT INTO `sys_user` VALUES (2074445831988928513, 'testuser', '$2a$10$3/8S4Xiv2wedk2099WF75O9XQpzCquXMusBTjOgAFc0KAb5nBxU.q', '赵胡克', 'ROLE_ADMIN', 0, '2026-07-07 18:50:02', '2026-07-09 17:14:46', 0);
-INSERT INTO `sys_user` VALUES (2075863283633344514, 'superadmin2', '$2a$10$wRey79dPfL5CyPqc7AAODu47f1qjTQ4GdOFQHk9JoHCs5c7y84Gcu', '111', 'ROLE_ADMIN', 0, '2026-07-11 16:42:29', '2026-07-13 12:49:43', 0);
-INSERT INTO `sys_user` VALUES (2075863283633344515, 'tester001', '$2a$10$BjIS9y7RP1vdQL/sMuWEQeYKb3tHKwMx7M.KhYVWRLsMzT4OvOija', '检验员张三', 'ROLE_TESTER', 0, NOW(), NOW(), 0);
+INSERT INTO `sys_user` VALUES (2075863283633344514, 'superadmin2', '$2a$10$wRey79dPfL5CyPqc7AAODu47f1qjTQ4GdOFQHk9JoHCs5c7y84Gcu', '111', 'ROLE_ADMIN', 0, '2026-07-11 16:42:29', '2026-07-14 16:16:52', 0);
+INSERT INTO `sys_user` VALUES (2075863283633344515, 'tester001', '$2a$10$BjIS9y7RP1vdQL/sMuWEQeYKb3tHKwMx7M.KhYVWRLsMzT4OvOija', '检验员张三', 'ROLE_TESTER', 0, '2026-07-13 17:22:20', '2026-07-13 17:22:20', 0);
+INSERT INTO `sys_user` VALUES (2076942780432400386, '714admin', '$2a$10$NZhMHa3VPMy4DZ63XrciyeSaeWD9O/6JDIYl96Y9usBI2Qe5wFihC', 'mgy', 'ROLE_ADMIN', 0, '2026-07-14 16:12:01', '2026-07-14 17:25:34', 0);
 
 SET FOREIGN_KEY_CHECKS = 1;

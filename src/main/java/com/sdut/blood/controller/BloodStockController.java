@@ -200,8 +200,9 @@ public class BloodStockController {
     @PutMapping("/out/{id}")
     public Result<Void> stockOut(@PathVariable Long id, @RequestBody java.util.Map<String, String> params) {
         String outUnit = params.get("outUnit");
-        bloodStockService.stockOut(id, outUnit);
-        operationLogService.saveLog("血液出库", "血液出库，库存ID：" + id + "，用血单位：" + outUnit);
+        String outPurpose = params.get("outPurpose");
+        bloodStockService.stockOut(id, outUnit, outPurpose);
+        operationLogService.saveLog("血液出库", "血液出库，库存ID：" + id + "，用血单位：" + outUnit + "，血液用途：" + outPurpose);
         return Result.success();
     }
 

@@ -49,6 +49,11 @@ public class BloodStock {
      */
     private String outUnit;
 
+    /**
+     * 血液用途
+     */
+    private String outPurpose;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;
